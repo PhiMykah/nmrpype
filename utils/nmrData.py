@@ -447,7 +447,8 @@ class NMRData:
         """ 
         try: 
             outSize = size # Data output size
-            zfSize = params['zf_size'] # Size of data based on zerofil
+            zfSize = params['zf_size'] # Size of data based on zerofill
+            zfCount = 1
             # See userproc.c line 453-468 for more information
             if (params['zf_inv']):
                 if (params['zf_count'] > 0):
