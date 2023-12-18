@@ -39,7 +39,7 @@ class Header:
             
     def setParam(self, param: str, value, dim):
         param = self.checkParamSyntax(param,dim)
-        if self.getParam(param):
+        if param in self.hDict.keys():
             self.hDict[param] = float(value)
             return True
         else:

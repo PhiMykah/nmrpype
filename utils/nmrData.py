@@ -216,7 +216,11 @@ class NMRData:
         try:
             if (self.header == None):
                 raise EmptyNMRData("No data to modify!")
-            self.header.setParam(param, value, dim) # Checks for valid param and sets if possible
+            isParamSet = self.header.setParam(param, value, dim) # Checks for valid param and sets if possible
+            if isParamSet:
+                return True
+            else:
+                raise UnknownHeaderParam("Parameter unable to be set!")
         except Exception as e:
             if hasattr(e,'message'):
                 raise type(e)(e.message + ' Unable to modify parameter.')
@@ -272,11 +276,8 @@ class NMRData:
         #Updates particular params based on the dimensions provided
         match int(hdr.getParam('FDDIMCOUNT')):
             case 1:
-                self.modifyParam('FDF2APOD', float(len(self.np_data)))
                 self.modifyParam('FDSIZE', float(len(self.np_data)))
-                #self.modifyParam()
             case 2:
-                self.modifyParam('FDF2APOD', float(len(self.np_data[0])))
                 self.modifyParam('FDSIZE', float(len(self.np_data[0])))
                 self.modifyParam('FDF1APOD', float(len(self.np_data)))
             case _:
@@ -368,13 +369,10 @@ class NMRData:
         # Implement `dataInfo->outQuadState = 2`
         
         self.modifyParam('NDFTSIZE', float(size), currDim) 
-        self.modifyParam('NDTDSIZE', float(size), currDim)
         # Check for real flag, and update based on real (divide the size by 2)
         if 'ft_real' in params:
-            timesize = size/2 if params['ft_real'] else size
-        else:
-            timesize = size
-        self.modifyParam('NDAPOD', float(timesize), currDim)  
+            size = size/2 if params['ft_real'] else size
+            self.modifyParam('NDAPOD', float(size), currDim)  
 
 
     """ 
