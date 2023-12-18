@@ -65,7 +65,7 @@ if __name__ == '__main__':
         mod(userData, args.modify[0], args.modify[1])
 
     # Process function from command line if provided
-    if hasattr(args, 'fc'):
+    if args.fc:
         runFunction(userData, args)
 
     # Delete imaginary element if prompted
