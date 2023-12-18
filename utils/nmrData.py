@@ -318,7 +318,7 @@ class NMRData:
                 raise EmptyNMRData("No data to modify!")
 
             # Obtain size before operation
-            size = self.getTDSize()
+            size = self.getParam('NDAPOD', self.header.currDim)
 
             # Obtain the options and parse the options accordingly
             try:
@@ -360,15 +360,15 @@ class NMRData:
         # Set NDAQSIGN and NDFTSIZE
         if (bool(self.getParam('NDFTFLAG'))):
             self.modifyParam('NDAQSIGN', float(0), currDim)
-            self.modifyParam('NDFTSIZE', size)
+            self.modifyParam('NDFTSIZE', self.getTDSize(), currDim)
+        else:
+            # Implement `dataInfo->outQuadState = 2`
+            self.modifyParam('NDFTSIZE', self.getTDSize(), currDim) 
 
         # Add flag for complex
         self.modifyParam('FDQUADFLAG', float(0))
-        self.modifyParam('NDQUADFLAG', float(0), currDim)
-
-        # Implement `dataInfo->outQuadState = 2`
+        self.modifyParam('NDQUADFLAG', float(0), currDim)  
         
-        self.modifyParam('NDFTSIZE', float(size), currDim) 
         # Check for real flag, and update based on real (divide the size by 2)
         if 'ft_real' in params:
             size = size/2 if params['ft_real'] else size
