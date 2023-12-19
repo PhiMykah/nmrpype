@@ -78,4 +78,12 @@ class Header:
             if param.startswith('ND'):
                 dimCode =  int(self.hDict['FDDIMORDER'][0])
                 param = 'FDF' + str(dimCode) + param[2:]
+
+        # Check if the param ends with size and fix to match sizes
+        if param.endswith('SIZE'):
+            match param:
+                case 'FDF2SIZE':
+                    param = 'FDSIZE'
+                case 'FDF1SIZE':
+                    param = 'FDSPECNUM'
         return param

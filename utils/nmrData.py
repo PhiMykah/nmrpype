@@ -279,7 +279,16 @@ class NMRData:
                 self.modifyParam('FDSIZE', float(len(self.np_data)))
             case 2:
                 self.modifyParam('FDSIZE', float(len(self.np_data[0])))
-                self.modifyParam('FDF1APOD', float(len(self.np_data)))
+                self.modifyParam('FDSPECNUM', float(len(self.np_data)))
+            case 3:
+                self.modifyParam('FDSIZE', float(len(self.np_data[0][0])))
+                self.modifyParam('FDSPECNUM', float(len(self.np_data[0])))
+                self.modifyParam('FDF3SIZE', float(len(self.np_data)))
+            case 4:
+                self.modifyParam('FDSIZE', float(len(self.np_data[0][0][0])))
+                self.modifyParam('FDSPECNUM', float(len(self.np_data[0][0])))
+                self.modifyParam('FDF3SIZE', float(len(self.np_data[0])))
+                self.modifyParam('FDF4SIZE', float(len(self.np_data)))
             case _:
                 raise UnsupportedDimension('Dimension provided in \
                                                       header is currently unsupported!')
