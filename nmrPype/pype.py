@@ -16,7 +16,10 @@ def fileInput(userData, file):
     try:
         userData.readFile(file)
     except Exception as e:
-        raise type(e)(e.message + ' Exception has occured whist attempting to read data stream!')
+        if hasattr(e,'message'):
+            raise type(e)(e.message + ' Exception has occured whist attempting to read data stream!')
+        else:
+            raise type(e)(' Exception has occured whist attempting to read data stream!')
 
 
 def fileOutput(userData, output, overwrite):
@@ -24,7 +27,10 @@ def fileOutput(userData, output, overwrite):
     try:
         userData.writeOut(output,overwrite)
     except Exception as e:
-        raise type(e)(e.message + 'An exception occured when attempting to write data!')
+        if hasattr(e,'message'):
+            raise type(e)(e.message + 'An exception occured when attempting to write data!')
+        else:
+            raise type(e)(' An exception occured when attempting to write data!')
 
 
 def mod(userData, param, value):
@@ -48,11 +54,11 @@ def runFunction(userData, args):
 
 def main(): 
     import sys
-    from parse import parsePypeArgs as parse
+    from parse import parser
     from utils import NMRData
     userData = NMRData() # Initialize NMR Data object for handling the data
 
-    args = parse(sys.argv[1:]) # Parse the command line arguments from user
+    args = parser(sys.argv[1:]) # Parse the command line arguments from user
     
     fileInput(userData, args.input) # Process input stream, from file or stdin
 
