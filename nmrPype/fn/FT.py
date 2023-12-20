@@ -1,7 +1,7 @@
 from .function import nmrFunction as Function
-from utils import UnsupportedDimension, NMRData, EmptyNMRData
 
 class FourierTransform(Function):
+    from utils import NMRData
     def __init__(self, data : NMRData, ft_inv, ft_real, ft_neg, ft_alt):
         self.ft_inv = ft_inv 
         self.ft_real = ft_real
@@ -10,7 +10,9 @@ class FourierTransform(Function):
         params = {'ft_inv':ft_inv, 'ft_real': ft_real, 'ft_neg': ft_neg, 'ft_alt': ft_alt}
         super().__init__(data, params) 
 
+
     def run(self):
+        from utils import EmptyNMRData
         from scipy.fft import fft,ifft
         """
         fn run
