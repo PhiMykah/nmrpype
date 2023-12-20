@@ -1,4 +1,4 @@
-from function import nmrFunction as Function
+from .function import nmrFunction as Function
 
 class PhaseCorrection(Function):
     def __init__(self):
