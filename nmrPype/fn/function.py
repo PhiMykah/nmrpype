@@ -1,10 +1,14 @@
-from ..utils import UnsupportedDimension, NMRData
-
 class nmrFunction:
-    def __init__(self, **params):
-        self.params = params
+    from utils import NMRData
+    def __init__(self,  data: NMRData, params : dict = {}):
+        self.data = data # Stores the NMRData object
+        self.params = params # Store params as a dictionary by default
 
-    def updateHeader(self, nmrData: NMRData, size : int, fn_params: dict = {}):
+    def run(self): 
+        pass
+
+    def updateHeader(self):
+        from utils import UnsupportedDimension
         """
         fn updateHeader
 
@@ -23,32 +27,32 @@ class nmrFunction:
         fn_params : dict
             Operations dictionary provided for a called function if provided
         """
-
-        hdr = nmrData.header # Variable for code simplification
+        # Variables for code simplification
+        nmrData = self.data
+        set = nmrData.modifyParam
+        np_data = nmrData.np_data
+        hdr = nmrData.header 
 
         #Updates particular params based on the dimensions provided
         match int(hdr.getParam('FDDIMCOUNT')):
             case 1:
-                nmrData.modifyParam('FDSIZE', float(len(self.np_data)))
+                set('FDSIZE', float(len(np_data)))
             case 2:
-                nmrData.modifyParam('FDSIZE', float(len(self.np_data[0])))
-                nmrData.modifyParam('FDSPECNUM', float(len(self.np_data)))
+                set('FDSIZE', float(len(np_data[0])))
+                set('FDSPECNUM', float(len(np_data)))
             case 3:
-                nmrData.modifyParam('FDSIZE', float(len(self.np_data[0][0])))
-                nmrData.modifyParam('FDSPECNUM', float(len(self.np_data[0])))
-                nmrData.modifyParam('FDF3SIZE', float(len(self.np_data)))
+                set('FDSIZE', float(len(np_data[0][0])))
+                set('FDSPECNUM', float(len(np_data[0])))
+                set('FDF3SIZE', float(len(np_data)))
             case 4:
-                nmrData.modifyParam('FDSIZE', float(len(self.np_data[0][0][0])))
-                nmrData.modifyParam('FDSPECNUM', float(len(self.np_data[0][0])))
-                nmrData.modifyParam('FDF3SIZE', float(len(self.np_data[0])))
-                nmrData.modifyParam('FDF4SIZE', float(len(self.np_data)))
+                set('FDSIZE', float(len(np_data[0][0][0])))
+                set('FDSPECNUM', float(len(np_data[0][0])))
+                set('FDF3SIZE', float(len(np_data[0])))
+                set('FDF4SIZE', float(len(np_data)))
             case _:
                 raise UnsupportedDimension('Dimension provided in \
                                                       header is currently unsupported!')
 
-        # Modify function specific header values
-        self.updateFunctionHeader(nmrData, size)
-
-    def updateFunctionHeader(nmrData, size):
+    def updateFunctionHeader(size = 0):
         # Empty function for parent function class, implemented in the child classes
         pass 

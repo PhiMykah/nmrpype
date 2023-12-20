@@ -1,6 +1,6 @@
 import numpy as np
 from .header import UnknownHeaderParam, UnsupportedDimension, EmptyNMRData
-from scipy.fft import fft,ifft
+
 from nmrglue import pipe
 import sys
 
@@ -250,114 +250,32 @@ class NMRData:
         """
         return(self.header.getParam(param, dim))
 
-
-    def updateHeader(self, size : int, function : str = None, fn_params: dict = {}):
+    def runFunction(self, fn : str, arguments: dict):
+        from fn import Function
+        from fn import FT
         """
-        fn updateHeader
+        fn runFunction
 
-        Function that handles the updating of the header
-            - Updates parameters based on the dimension count
-            - Updates function parameters
-            - Updates any miscellaneous fields
+        Function that runs the function passed as a string keyword
+        using the Function class and its children.
 
         Parameters
         ----------
-        size
-            The size of the data prior to any operations performed
-                used for header storage
-        function : str
-            function code if a function has been performed to update
-                function-specific header parameters
-        fn_params : dict
-            Operations dictionary provided for a called function if provided
+        fn : str
+            Function code for the designated function to run
+        arguments : dict
+            Dictionary of arguments for the designated function
         """
-
-        hdr = self.header # Variable for code simplification
-
-        #Updates particular params based on the dimensions provided
-        match int(hdr.getParam('FDDIMCOUNT')):
-            case 1:
-                self.modifyParam('FDSIZE', float(len(self.np_data)))
-            case 2:
-                self.modifyParam('FDSIZE', float(len(self.np_data[0])))
-                self.modifyParam('FDSPECNUM', float(len(self.np_data)))
-            case 3:
-                self.modifyParam('FDSIZE', float(len(self.np_data[0][0])))
-                self.modifyParam('FDSPECNUM', float(len(self.np_data[0])))
-                self.modifyParam('FDF3SIZE', float(len(self.np_data)))
-            case 4:
-                self.modifyParam('FDSIZE', float(len(self.np_data[0][0][0])))
-                self.modifyParam('FDSPECNUM', float(len(self.np_data[0][0])))
-                self.modifyParam('FDF3SIZE', float(len(self.np_data[0])))
-                self.modifyParam('FDF4SIZE', float(len(self.np_data)))
-            case _:
-                raise UnsupportedDimension('Dimension provided in \
-                                                      header is currently unsupported!')
-
-        # Check if Transform has been performed 
-        match function:
+        match fn:
             case 'FT':
-                self.updateFT(size, fn_params)
-            case 'ZF':
-                self.updateZF(size, fn_params)
-            case 'DI':
-                pass
-    
+                function = FT(self, **arguments)
+            case _:
+                function = Function(self, arguments)
+        function.run()
     
     ###############
     #  Functions  #
     ###############
-
-    """ 
-    Fourier Transform (FT)
-    """
-    def fnFourierTransform(self, params: dict = {}):
-        """
-        fn fnFourierTransform
-
-        Performs a fast fourier transform operation on the data
-            Afterwards, update the header accordingly
-
-        Parameters
-        ----------
-        params : dict
-            Dictionary of all options for the Fourier Transform
-        """
-        try:
-            if (type(self.np_data) == type(None)):
-                raise EmptyNMRData("No data to modify!")
-
-            # Obtain size before operation
-            size = self.getParam('NDAPOD', self.header.currDim)
-
-            # Obtain the options and parse the options accordingly
-            try:
-                if (params['ft_inverse']):
-                    self.np_data = ifft(self.np_data)
-                elif (params['ft_real']):
-                    self.np_data = fft(self.np_data.real)
-                elif (params['ft_neg']):
-                    # Negate imaginaries when performing FT
-                    pass 
-                elif (params['ft_alt']):
-                    # Use sign alternation when performing FT
-                    pass
-                else:
-                    self.np_data = fft(self.np_data)
-            except KeyError:
-                self.np_data = fft(self.np_data)
-
-            """
-            After performing operation, the header must be updated
-            """
-            # Update header values as a result of the FFT completing
-            self.updateHeader(size, 'FT', params)
-
-        except Exception as e:
-            if hasattr(e, 'message'):
-                raise type(e)(e.message + ' Unable to perform Fourier transform.')
-            else:
-                raise type(e)(' Unable to perform Fourier transform.')
             
     def updateFT(self, size, params):
         currDim = self.header.getcurrDim()

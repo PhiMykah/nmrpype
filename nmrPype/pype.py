@@ -6,11 +6,6 @@ BITSPERWORD = 32
 LARGENUM = 10.0E+16
 PI = 3.14159265s
 """
-
-functions_dict = {'FT': 'fnFourierTransform',
-                  'ZF': 'fnZeroFill'
-}
-
 def fileInput(userData, file):
     # Attempt to read the input stream
     try:
@@ -37,19 +32,17 @@ def mod(userData, param, value):
     userData.modifyParam(param,value)
 
 
-def runFunction(userData, args):
+def function(userData, args):
     fn = args.fc
-
-    # Run function based on what function key the user has inputted.
-    operation = getattr(userData, functions_dict[fn])
     
     fn_params = {}
     # Add operations based on the function
     for opt in vars(args):
         if (opt.startswith(fn.lower())):
             fn_params[opt] = getattr(args, opt)
+
     # Attempt to run operation, error handling within is handled per function 
-    operation(fn_params)
+    userData.runFunction(fn, fn_params)
 
 
 def main(): 
@@ -71,7 +64,7 @@ def main():
 
     # Process function from command line if provided
     if args.fc:
-        runFunction(userData, args)
+        function(userData, args)
 
     # Delete imaginary element if prompted
     if args.delete_imaginary:
