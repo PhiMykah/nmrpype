@@ -1,3 +1,11 @@
+from .function import nmrFunction as Function
+
+class DeleteImaginary(Function):
+    def __init__(self, data):
+        params = {}
+        super().__init__(data, params)
+
+
 def run(self):
     """
     fn run (Delete Imaginary)
@@ -31,5 +39,5 @@ def run(self):
     except:
         pass
 
-def updateFunctionHeader(size):
+def updateFunctionHeader(self, size):
     pass
