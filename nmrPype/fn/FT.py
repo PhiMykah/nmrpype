@@ -1,8 +1,7 @@
 from .function import nmrFunction as Function
 
 class FourierTransform(Function):
-    from utils import NMRData
-    def __init__(self, data : NMRData, ft_inv, ft_real, ft_neg, ft_alt):
+    def __init__(self, data, ft_inv: bool = False, ft_real: bool = False, ft_neg: bool = False, ft_alt: bool = False):
         self.ft_inv = ft_inv 
         self.ft_real = ft_real
         self.ft_neg = ft_neg

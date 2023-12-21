@@ -1,6 +1,5 @@
 class nmrFunction:
-    from utils import NMRData
-    def __init__(self,  data: NMRData, params : dict = {}):
+    def __init__(self,  data, params : dict = {}):
         self.data = data # Stores the NMRData object
         self.params = params # Store params as a dictionary by default
 

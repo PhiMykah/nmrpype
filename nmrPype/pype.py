@@ -1,11 +1,7 @@
 """
-Constant definitions
-NAMELEN = 1023
-BYTESPERWORD = 4
-BITSPERWORD = 32
-LARGENUM = 10.0E+16
-PI = 3.14159265s
+Pype.py: Functions similarly to nmrPipe but as a python script
 """
+
 def fileInput(userData, file):
     # Attempt to read the input stream
     try:

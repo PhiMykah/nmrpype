@@ -1,8 +1,8 @@
 from .function import nmrFunction as Function
 
 class ZeroFill(Function):
-    from utils import NMRData
-    def __init__(self, data : NMRData, zf_count, zf_pad, zf_size, zf_auto, zf_inv):
+    def __init__(self, data, zf_count : int = 0, zf_pad : int = 0, zf_size : int = 0,
+                            zf_auto : bool = False, zf_inv: bool = False):
         self.zf_count = zf_count
         self.zf_pad = zf_pad
         self.zf_size = zf_size
