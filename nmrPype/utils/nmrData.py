@@ -41,7 +41,7 @@ class NMRData:
         return size
     
     def readFile(self, file):
-        from utils import Header
+        from . import Header
         """
         fn readFile
 
@@ -73,7 +73,7 @@ class NMRData:
 
 
     def writeOut(self, output, overwrite: bool):
-        from utils import Header
+        from . import Header
         """
         fn writeOut
 
