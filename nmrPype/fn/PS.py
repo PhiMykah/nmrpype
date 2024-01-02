@@ -72,6 +72,12 @@ class PhaseCorrection(Function):
             case _:
                 raise UnsupportedDimension('Dimension provided in \
                                                       header is currently unsupported!')
+        # Add values to header if noup is off
+        if (not self.ps_noup):
+            currDim = self.data.header.getcurrDim()
+            setParam = self.data.modifyParam
+            setParam('NDP0', float(self.ps_p0), currDim)
+            setParam('NDP1', float(self.ps_p1), currDim)
     
     def phase1D(self, size): 
         from numpy import zeros
