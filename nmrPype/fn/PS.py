@@ -1,13 +1,13 @@
 from .function import nmrFunction as Function
 
 class PhaseCorrection(Function):
-    def __init__(self, data, ps_degP0: float = 0, ps_degP1: float = 0,
+    def __init__(self, data, ps_p0: float = 0, ps_p1: float = 0,
                  ps_inv: bool = False, ps_hdr = False, ps_noup = False, ps_df = False, 
                  ps_ht: bool = False, ps_zf=False):
         
         # Variable declarations
-        self.ps_degP0 = ps_degP0
-        self.ps_degP1 = ps_degP1
+        self.ps_p0 = ps_p0
+        self.ps_p1 = ps_p1
         self.ps_inv = ps_inv     
         self.ps_hdr = ps_hdr
         self.ps_noup = ps_noup   
@@ -20,7 +20,7 @@ class PhaseCorrection(Function):
         self.arrImag = []
 
         # Parameter storing for development purposes
-        params = { 'ps_degP0':ps_degP0, 'ps_degP1':ps_degP1,
+        params = { 'ps_p0':ps_p0, 'ps_p1':ps_p1,
                   'ps_inv':ps_inv, 'ps_hdr':ps_hdr, 'ps_noup':ps_noup, 'ps_df':ps_df,
                   'ps_ht':ps_ht, 'ps_zf':ps_zf}
         super().__init__(data, params)
@@ -38,8 +38,8 @@ class PhaseCorrection(Function):
         size = self.data.getTDSize()
 
         # C code uses 3.14159265
-        p0 = 2.0*PI*self.ps_degP0/360.0
-        p1 = 2.0*PI*self.ps_degP1/360.0
+        p0 = 2.0*PI*self.ps_p0/360.0
+        p1 = 2.0*PI*self.ps_p1/360.0
 
         for x in range(size):
             realVal = cos(p0 + (p1*x)/size) # Ensure radians output is sufficient
@@ -75,18 +75,22 @@ class PhaseCorrection(Function):
     
     def phase1D(self, size): 
         from numpy import zeros
+        from numpy import float32
         arr = self.data.np_data
-        realVals = zeros(arr.shape)
-        imagVals = zeros(arr.shape)
+        realVals = zeros(arr.shape, dtype=float32)
+        imagVals = zeros(arr.shape, dtype=float32)
         for i in range(size):
             realVals[i] = arr.real[i] * self.arrReal[i] \
                         - arr.imag[i] * self.arrImag[i]
             
             imagVals[i] = arr.imag[i] * self.arrImag[i] \
                         + arr.imag[i] * self.arrReal[i]
-        arr = realVals + 1j*imagVals
+        newArr = realVals + 1j*imagVals
+        # Return array to nmr dataset, ensuring float32 datatype
+        self.data.np_data = newArr
+        
     
-    def phase1D(self, xSize, ySize): 
+    def phase2D(self, xSize, ySize): 
         pass
 
     def phase3D(self, xSize, ySize, zSize): 
