@@ -12,7 +12,7 @@ class FourierTransform(Function):
 
     def run(self):
         from utils import EmptyNMRData
-        from scipy.fft import fft,ifft
+        from scipy.fft import fftn,ifftn,rfftn
         """
         fn run
 
@@ -27,12 +27,13 @@ class FourierTransform(Function):
             # Obtain size before operation
             size = data.getParam('NDAPOD', data.header.currDim)
 
+            dimCount = int(data.getParam('FDDIMCOUNT'))
             # Obtain the options and parse the options accordingly
             try:
                 if (self.ft_inv):
-                    data.np_data = ifft(data.np_data)
+                    data.np_data = ifftn(data.np_data, axes=(dimCount-1))
                 elif (self.ft_real):
-                    data.np_data = fft(data.np_data.real)
+                    data.np_data = rfftn(data.np_data.real, axes=(dimCount-1))
                 elif (self.ft_neg):
                     # Negate imaginaries when performing FT
                     pass 
@@ -40,9 +41,9 @@ class FourierTransform(Function):
                     # Use sign alternation when performing FT
                     pass
                 else:
-                    data.np_data = fft(data.np_data)
+                    data.np_data = fftn(data.np_data, axes=(dimCount-1))
             except KeyError:
-                data.np_data = fft(data.np_data)
+                data.np_data = fftn(data.np_data, axes=(dimCount-1))
 
             """
             After performing operation, the header must be updated

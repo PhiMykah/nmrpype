@@ -42,36 +42,31 @@ class NMRData:
         size : int
             Time-domain size
         """
-        dimCount = self.getParam('FDDIMCOUNT')
-        
-        # Match the length of the current dimension based on 
-        #   the dimensionality of the data
-        if self.header.currDim == 1:
-            match dimCount:
-                case 4:
-                    size = len(self.np_data[0][0][0])
-                case 3:
-                    size = len(self.np_data[0][0])
-                case 2:
-                    size = len(self.np_data[0])
-                case _:
-                    size = len(self.np_data)
-        elif self.header.currDim == 2:
-            match dimCount:
-                case 4:
-                    size = len(self.np_data[0][0])
-                case 3:
-                    size = len(self.np_data[0])
-                case _:
-                    size = len(self.np_data)
-        elif self.header.currDim == 3:
-            match dimCount:
-                case 4:
-                    size = len(self.np_data[0])
-                case _:
-                    size = len(self.np_data)
-        else:
-            size = len(self.np_data)
+
+        # Extract sizes from the np array axes
+        match int(self.getParam('FDDIMCOUNT')):
+            case 1:
+                lenX = self.np_data.shape
+            case 2:
+                lenY, lenX = self.np_data.shape
+            case 3:
+                lenZ, lenY, lenX = self.np_data.shape
+            case 4:
+                lenA, lenZ, lenY, lenX = self.np_data.shape
+
+        # Return the correct size based on the dimension
+        match self.header.currDim:
+            case 1:
+                size = lenX
+            case 2:
+                size = lenY
+            case 3:
+                size = lenZ
+            case 4:
+                size = lenA
+            case _:
+                size = lenX
+    
         return size
     
     def readFile(self, file):

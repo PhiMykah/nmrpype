@@ -38,7 +38,17 @@ class Header:
     def __init__(self, hDict: dict = None, hStream : bytes = None):
         self.hDict = hDict
         self.hStream = hStream
-        self.setCurrDim(1)
+        if hDict:
+            firstDim = int(self.getparam('FDDIMORDER1'))
+            match firstDim:
+                case 2:
+                    self.setCurrDim(1)
+                case 1:
+                    self.setCurrDim(2)
+                case _:
+                    self.setCurrDim(firstDim)
+        else:
+            self.setCurrDim(1)
 
     def __repr__(self):
         # function __repr__ prints header in key value format

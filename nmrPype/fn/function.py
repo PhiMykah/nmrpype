@@ -32,22 +32,27 @@ class nmrFunction:
         np_data = nmrData.np_data
         hdr = nmrData.header 
 
-        #Updates particular params based on the dimensions provided
+        # Extract sizes from the np array axes, then
+        # Updates particular params based on the dimension count
         match int(hdr.getParam('FDDIMCOUNT')):
             case 1:
-                set('FDSIZE', float(len(np_data)))
+                lenX = self.np_data.shape
+                set('FDSize', float(lenX))
             case 2:
-                set('FDSIZE', float(len(np_data[0])))
-                set('FDSPECNUM', float(len(np_data)))
+                lenY, lenX = self.np_data.shape
+                set('FDSIZE', float(lenX))
+                set('FDSPECNUM', float(lenY))
             case 3:
-                set('FDSIZE', float(len(np_data[0][0])))
-                set('FDSPECNUM', float(len(np_data[0])))
-                set('FDF3SIZE', float(len(np_data)))
+                lenZ, lenY, lenX = self.np_data.shape
+                set('FDSIZE', float(lenX))
+                set('FDSPECNUM', float(lenY))
+                set('FDF3SIZE', float(lenZ))
             case 4:
-                set('FDSIZE', float(len(np_data[0][0][0])))
-                set('FDSPECNUM', float(len(np_data[0][0])))
-                set('FDF3SIZE', float(len(np_data[0])))
-                set('FDF4SIZE', float(len(np_data)))
+                lenA, lenZ, lenY, lenX = self.np_data.shape
+                set('FDSIZE', float(lenX))
+                set('FDSPECNUM', float(lenY))
+                set('FDF3SIZE', float(lenZ))
+                set('FDF4SIZE', float(lenA))
             case _:
                 raise UnsupportedDimension('Dimension provided in \
                                                       header is currently unsupported!')
