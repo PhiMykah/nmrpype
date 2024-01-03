@@ -36,19 +36,19 @@ class nmrFunction:
         # Updates particular params based on the dimension count
         match int(hdr.getParam('FDDIMCOUNT')):
             case 1:
-                lenX = self.np_data.shape
-                set('FDSize', float(lenX))
+                lenX = np_data.shape[0]
+                set('FDSIZE', float(lenX))
             case 2:
-                lenY, lenX = self.np_data.shape
+                lenY, lenX = np_data.shape
                 set('FDSIZE', float(lenX))
                 set('FDSPECNUM', float(lenY))
             case 3:
-                lenZ, lenY, lenX = self.np_data.shape
+                lenZ, lenY, lenX = np_data.shape
                 set('FDSIZE', float(lenX))
                 set('FDSPECNUM', float(lenY))
                 set('FDF3SIZE', float(lenZ))
             case 4:
-                lenA, lenZ, lenY, lenX = self.np_data.shape
+                lenA, lenZ, lenY, lenX = np_data.shape
                 set('FDSIZE', float(lenX))
                 set('FDSPECNUM', float(lenY))
                 set('FDF3SIZE', float(lenZ))

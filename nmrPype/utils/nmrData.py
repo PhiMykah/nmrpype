@@ -46,7 +46,7 @@ class NMRData:
         # Extract sizes from the np array axes
         match int(self.getParam('FDDIMCOUNT')):
             case 1:
-                lenX = self.np_data.shape
+                lenX = self.np_data.shape[0]
             case 2:
                 lenY, lenX = self.np_data.shape
             case 3:

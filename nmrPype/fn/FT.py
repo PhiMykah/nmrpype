@@ -12,7 +12,7 @@ class FourierTransform(Function):
 
     def run(self):
         from utils import EmptyNMRData
-        from scipy.fft import fftn,ifftn,rfftn
+        from scipy import fft
         """
         fn run
 
@@ -31,9 +31,10 @@ class FourierTransform(Function):
             # Obtain the options and parse the options accordingly
             try:
                 if (self.ft_inv):
-                    data.np_data = ifftn(data.np_data, axes=(dimCount-1))
+                    data.np_data = fft.ifftn(data.np_data, axes=(dimCount-1))
+                    
                 elif (self.ft_real):
-                    data.np_data = rfftn(data.np_data.real, axes=(dimCount-1))
+                    data.np_data = fft.rfftn(data.np_data.real, axes=(dimCount-1))
                 elif (self.ft_neg):
                     # Negate imaginaries when performing FT
                     pass 
@@ -41,9 +42,13 @@ class FourierTransform(Function):
                     # Use sign alternation when performing FT
                     pass
                 else:
-                    data.np_data = fftn(data.np_data, axes=(dimCount-1))
+                    data.np_data = fft.fftn(data.np_data, axes=(dimCount-1))
             except KeyError:
-                data.np_data = fftn(data.np_data, axes=(dimCount-1))
+                data.np_data = fft.fftn(data.np_data, axes=(dimCount-1))
+            if (self.ft_inv):
+                data.np_data = fft.ifftshift(data.np_data, axes=(dimCount-1))
+            else:
+                data.np_data = fft.fftshift(data.np_data, axes=(dimCount-1))
 
             """
             After performing operation, the header must be updated

@@ -39,7 +39,7 @@ class Header:
         self.hDict = hDict
         self.hStream = hStream
         if hDict:
-            firstDim = int(self.getparam('FDDIMORDER1'))
+            firstDim = int(hDict['FDDIMORDER1'])
             match firstDim:
                 case 2:
                     self.setCurrDim(1)
