@@ -34,9 +34,7 @@ class ZeroFill(Function):
             arr = data.np_data
             dimCount = int(data.getParam('FDDIMCOUNT'))
             # Make sure that multidimensional data appends to the correct axis
-            target_axis = 0 if \
-                (dimCount == 1) \
-                else 1
+            target_axis = dimCount - 1
             
             currDim = int(data.header.currDim)
             size = data.getTDSize()
