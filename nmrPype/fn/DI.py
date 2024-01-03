@@ -11,7 +11,7 @@ def run(self):
     fn run (Delete Imaginary)
 
     Remove imaginary element from data
-        Then update the header to indicate performa
+        Then update the header to indicate action has been performed
     """
     from numpy import real
     data = self.data

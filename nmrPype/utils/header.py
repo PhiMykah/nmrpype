@@ -13,18 +13,43 @@ class UnknownHeaderParam(Exception):
     pass
 
 class Header:
-    axisLetters = {
-        0: ["x","X"], "x": 0, "X" : 0,
-        1: ["y","Y"], "y" : 1, "Z" : 1,
-        2: ["z","Z"], "z" : 2, "Z" : 2,
-        3: ["a","A"], "a" : 3, "A" : 3,
-    }
+    """
+    class Header
 
+    Stores header data from nmr format in an object for easier management
+
+    Variables
+    ----------
+    hdict : dict
+        Dictionary containing Header keys and values
+    hStream: bytes
+        Full header binary stream in python bytes format
+
+    Methods
+    ----------
+    Python overloads
+        __repr__()
+
+    Getters and Setters
+        setDict(dict), getDict()
+        getCurrDim(), setCurrDim(dim)
+        setParam(param, dim) getParam(param, dim)
+    """
     def __init__(self, hDict: dict = None, hStream : bytes = None):
         self.hDict = hDict
         self.hStream = hStream
         self.setCurrDim(1)
 
+    def __repr__(self):
+        # function __repr__ prints header in key value format
+        output = ""
+        for k,v in self.hDict.items():
+                output += "({0} = {1})\n".format(k,v)
+        return output
+    
+    #########################
+    #  Getters and Setters  #
+    #########################
     def setDict(self, dict):
         self.hDict = dict
 
@@ -53,17 +78,18 @@ class Header:
             return self.hDict[param]
         else:
             raise UnknownHeaderParam('Unknown Param \'{0}\''.format(param))
-    
-    def getAxisChar(self, code: int, isUpper: bool):
-        return self.axisLetters[code][isUpper]
-    
-    def __repr__(self):
-        output = ""
-        for k,v in self.hDict.items():
-                output += "({0} = {1})\n".format(k,v)
-        return output
 
     def checkParamSyntax(self, param, dim : int):
+        """
+        fn checkParamSyntax
+
+        Converts header keywords from ND to proper parameter syntax if necessary
+
+        Parameters
+        ----------
+        dim : int
+            Target dimension to convert syntax to
+        """
         # Map the ND param to the fdfx param equivalent
         if dim:
             try: 
@@ -87,4 +113,18 @@ class Header:
                 case 'FDF1SIZE':
                     param = 'FDSPECNUM'
         return param
+    
+    """
+    # unused #
 
+    axisLetters = {
+        0: ["x","X"], "x": 0, "X" : 0,
+        1: ["y","Y"], "y" : 1, "Z" : 1,
+        2: ["z","Z"], "z" : 2, "Z" : 2,
+        3: ["a","A"], "a" : 3, "A" : 3,
+    }
+
+    def getAxisChar(self, code: int, isUpper: bool):
+        return self.axisLetters[code][isUpper]
+
+    """

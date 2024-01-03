@@ -6,7 +6,7 @@ import sys
 
 class NMRData:
     """
-    NMRData class
+    class NMRData
 
     Object containing the information about the NMR data as well as the data itself,
     with methods for accessing and modifying the data based on the header included with the data.
@@ -15,8 +15,9 @@ class NMRData:
     ----------
     file : str
         Input file or stream to obtain the header and nmr data from
+        
     Values
-    ----------
+    ------
     header : Header
         Header class object containing the header as a dictionary,
           as binary data, and methods for manipulating the parameters
@@ -30,12 +31,45 @@ class NMRData:
             self.readFile(file)
 
 
-    def getTDSize(self): 
+    def getTDSize(self):
+        """
+        fn getTDSize
+
+        Obtain the current expected time domain size of the current
+
+        Returns
+        -------
+        size : int
+            Time-domain size
+        """
         dimCount = self.getParam('FDDIMCOUNT')
+        
+        # Match the length of the current dimension based on 
+        #   the dimensionality of the data
         if self.header.currDim == 1:
-            size = len(self.np_data[0]) if dimCount > 1 else len(self.np_data)
+            match dimCount:
+                case 4:
+                    size = len(self.np_data[0][0][0])
+                case 3:
+                    size = len(self.np_data[0][0])
+                case 2:
+                    size = len(self.np_data[0])
+                case _:
+                    size = len(self.np_data)
         elif self.header.currDim == 2:
-            size = len(self.np_data)
+            match dimCount:
+                case 4:
+                    size = len(self.np_data[0][0])
+                case 3:
+                    size = len(self.np_data[0])
+                case _:
+                    size = len(self.np_data)
+        elif self.header.currDim == 3:
+            match dimCount:
+                case 4:
+                    size = len(self.np_data[0])
+                case _:
+                    size = len(self.np_data)
         else:
             size = len(self.np_data)
         return size
@@ -52,24 +86,27 @@ class NMRData:
         file
             Input file or stream to obtain the header and nmr data from
         """
-        try: # Attempt to read file using nmr glue
+        try:
+            # Attempt to read file using nmr glue
             dic,data = pipe.read(file)
-            try:
-                if hasattr(file, "read"):
-                    hStream = file.read(512)
-                else:
-                    with open(file, 'rb') as f:
-                        hStream = f.read(512)
-            except Exception as e:
-                print(f"{e}: Unable to read header stream!")
-                sys.exit(0)
-                return
         except Exception as e:
             print(f"{e}: Unable to read file!")
             sys.exit(0)
-        else:
-            self.header = Header(dic, hStream)
-            self.np_data = data
+        try:
+            # Attempt to store file as bytes
+            # Check if data stream is binary data
+            if hasattr(file, "read"):
+                hStream = file.read(512)
+            else:
+                with open(file, 'rb') as f:
+                    hStream = f.read(512)
+        except Exception as e:
+            print(f"{e}: Unable to read header stream!")
+            sys.exit(0)
+        
+        # Add dictionary and bytes to header and array to data
+        self.header = Header(dic, hStream)
+        self.np_data = data
 
 
     def writeOut(self, output, overwrite: bool):
@@ -92,17 +129,22 @@ class NMRData:
         if not hasattr(output, 'write'):
             self.writeToFile(output, overwrite)
         else:
+            # Mimic nmrglue's write to standard output buffer if output to datastream
             match self.np_data.ndim:
                 case 1:
                     self.writeToBuffer(output, self.header.getDict(), self.np_data)
                 case 2:
                     self.writeToBuffer(output, self.header.getDict(), self.np_data)
                 case 3:
+                    # Write each plane to buffer
                     lenZ, lenY, lenX = self.np_data.shape
                     for zi in range(lenZ):
                         plane = self.np_data[zi]
                         self.writeToBuffer(output, self.header.getDict(), plane)
                 case 4:
+                    ######################
+                    # Currently untested #
+                    ######################
                     lenA, lenZ, lenY, lenX = self.np_data.shape
                     new_header = Header(self.header.hDict, self.header.hStream)
                     for ai in range(lenA):
@@ -138,7 +180,7 @@ class NMRData:
         try:
             pipe.write(outFileName, self.header.getDict(), self.np_data, overwrite)
         except Exception as e:
-            print(e)
+            print(f"{e}: Unable to write to file!")
 
 
     def writeToBuffer(self, bufferStream, dic, data): 
@@ -190,8 +232,7 @@ class NMRData:
             bufferStream.write(data.tobytes())
             
         except Exception as e:
-            print(e)
-            print("An exception occured when attempting to write data to buffer!")
+            print(f"{e}: An exception occured when attempting to write data to buffer!")
             pass
 
 

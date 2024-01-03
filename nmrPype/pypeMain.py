@@ -1,5 +1,5 @@
 """
-Pype.py: Functions similarly to nmrPipe but as a python script
+pypeMain.py: Functions similarly to nmrPipe but as a python script
 """
 
 def fileInput(userData, file):
