@@ -1,5 +1,4 @@
 def fnSubparser(subparser):
-    from sys import stdin,stdout
     # FT subparser
     FT = subparser.add_parser('FT', help='Perform a Fourier transform (FT) on the data')
     FT.add_argument('-inverse', '-inv', action='store_true',
@@ -11,12 +10,8 @@ def fnSubparser(subparser):
     FT.add_argument('-alt', action='store_true',
                     dest='ft_alt', help='Use sign alternation when performing FT')
     
-    # Handle output following function
-    FT.add_argument('-output', '-out', nargs='?', dest='output',
-                        default=(stdout.buffer if hasattr(stdout,'buffer') else stdout))
-    FT.add_argument('-overwrite', '-ov', action='store_true', dest='overwrite',
-                        help='Call this argument to overwrite when sending output to file.')
-    
+    # Handle output commands following function 
+    universalCommands(FT)
 
     # ZF subparser
     ZF = subparser.add_parser('ZF', help='Perform a Zero Fill (ZF) Operation on the data')
@@ -33,12 +28,8 @@ def fnSubparser(subparser):
     group.add_argument('-inv', action='store_true',
                     dest='zf_inv', help='Extract Original Time Domain.')
 
-    # Handle output following function
-    ZF.add_argument('-output', '-out', nargs='?', dest='output',
-                        default=(stdout.buffer if hasattr(stdout,'buffer') else stdout))
-    ZF.add_argument('-overwrite', '-ov', action='store_true', dest='overwrite',
-                        help='Call this argument to overwrite when sending output to file.')
-    
+    # Handle output following function or imaginary removal
+    universalCommands(ZF)
 
     # PS subparser
     PS = subparser.add_parser('PS', help='Perform a Phase Correction (PS) on the data')
@@ -55,13 +46,20 @@ def fnSubparser(subparser):
     PS.add_argument('-df', action='store_true',
                     dest='ps_df', help='Adjust P1 for Digital Oversampling')
     
-    # Handle output following function
-    PS.add_argument('-output', '-out', nargs='?', dest='output',
+    # Handle output following function or imaginary removal
+    universalCommands(PS)
+
+
+def universalCommands(parser):
+    from sys import stdout
+    parser.add_argument('-di', '--delete-imaginary', action='store_true', dest = 'di',
+                        help='Remove imaginary elements from dataset')
+    parser.add_argument('-output', '-out', nargs='?', dest='output',
                         default=(stdout.buffer if hasattr(stdout,'buffer') else stdout))
-    PS.add_argument('-overwrite', '-ov', action='store_true', dest='overwrite',
+    parser.add_argument('-overwrite', '-ov', action='store_true', dest='overwrite',
                         help='Call this argument to overwrite when sending output to file.')
-    
-    
+
+
 def parseArgs(input_args : list):
     from argparse import ArgumentParser
     from sys import stdin,stdout
