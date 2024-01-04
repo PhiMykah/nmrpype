@@ -4,4 +4,6 @@ from .FT import FourierTransform as FT
 from .ZF import ZeroFill as ZF
 from .PS import PhaseCorrection as PS 
 
+fn_list = [FT, ZF, PS]
+
 __all__ = ['Function', 'FT', 'ZF', 'PS']

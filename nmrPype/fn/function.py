@@ -5,7 +5,35 @@ class nmrFunction:
 
     def run(self): 
         pass
+    
+    @staticmethod
+    def commands(subparser):
+        """
+        fn commands (Template)
 
+        Adds function parser to the subparser, with its corresponds
+        Called in nmrParse.py
+
+        Destinations are formatted typically by {function}_{argument}
+            e.g. the zf_pad destination stores the pad argument for the zf function
+
+        Parameters
+        ----------
+        subparser : _SubParsersAction[ArgumentParser]
+            Subparser object that will receive function and its arguments
+        """
+        pass 
+    
+    @staticmethod
+    def universalCommands(parser):
+        from sys import stdout
+        parser.add_argument('-di', '--delete-imaginary', action='store_true', dest = 'di',
+                            help='Remove imaginary elements from dataset')
+        parser.add_argument('-output', '-out', nargs='?', dest='output',
+                            default=(stdout.buffer if hasattr(stdout,'buffer') else stdout))
+        parser.add_argument('-overwrite', '-ov', action='store_true', dest='overwrite',
+                            help='Call this argument to overwrite when sending output to file.')
+        
     def updateHeader(self):
         from utils import UnsupportedDimension
         """

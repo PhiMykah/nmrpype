@@ -26,6 +26,39 @@ class PhaseCorrection(Function):
         super().__init__(data, params)
         self.initialize()
 
+    @staticmethod
+    def commands(subparser):    
+        """
+        fn commands
+
+        Adds Fourier Transform parser to the subparser, with its corresponds
+        Called in nmrParse.py
+
+        Destinations are formatted typically by {function}_{argument},
+            e.g. the ps_p0 destination stores the p0 value for the ps function
+
+        Parameters
+        ----------
+        subparser : _SubParsersAction[ArgumentParser]
+            Subparser object that will receive function and its arguments
+        """
+        PS = subparser.add_parser('PS', help='Perform a Phase Correction (PS) on the data')
+        PS.add_argument('-p0', type=float, metavar='p0Deg', default=0.0,
+                        dest='ps_p0', help='Zero Order Phase, Degrees')
+        PS.add_argument('-p1', type=float, metavar='p1Deg', default=0.0,
+                        dest='ps_p1', help='First Order Phase, Degrees')
+        PS.add_argument('-inv', action='store_true',
+                        dest='ps_inv', help='Inverse Phase Correction')
+        PS.add_argument('-hdr', action='store_true',
+                        dest='ps_hdr', help='Use Phase Values in Header')
+        PS.add_argument('-noup', action='store_true',
+                        dest='ps_noup', help='Don\'t Update Values Header')
+        PS.add_argument('-df', action='store_true',
+                        dest='ps_df', help='Adjust P1 for Digital Oversampling')
+        
+        # Include universal commands proceeding function call
+        Function.universalCommands(PS)
+
     def initialize(self):
         from math import pi as PI
         from math import cos, sin

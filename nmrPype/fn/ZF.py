@@ -11,6 +11,39 @@ class ZeroFill(Function):
         params = {'zf_count':zf_count, 'zf_pad':zf_pad, 'zf_size':zf_size, 'zf_auto':zf_auto, 'zf_inv':zf_inv}
         super().__init__(data,params)
 
+    @staticmethod
+    def commands(subparser):
+        """
+        fn commands
+
+        Adds Zero Fill parser to the subparser, with its corresponds
+        Called in nmrParse.py
+
+        Destinations are formatted typically by {function}_{argument},
+            e.g. the zf_pad destination stores the pad argument for the zf function
+
+        Parameters
+        ----------
+        subparser : _SubParsersAction[ArgumentParser]
+            Subparser object that will receive function and its arguments
+        """
+        ZF = subparser.add_parser('ZF', help='Perform a Zero Fill (ZF) Operation on the data')
+
+        group = ZF.add_mutually_exclusive_group() 
+        group.add_argument('-zf', type=int, metavar='count', default=0,
+                        dest='zf_count', help='-Number of Times to Double the size')
+        group.add_argument('-pad', type=int, metavar='padCount', default=0,
+                        dest='zf_pad', help='Zeros to Add by Padding')
+        group.add_argument('-size', type=int, metavar='xSize', default=0,
+                        dest='zf_size', help='Desired Final size')
+        group.add_argument('-auto', action='store_true',
+                        dest='zf_auto', help='Round Final Size to Power of 2.')
+        group.add_argument('-inv', action='store_true',
+                        dest='zf_inv', help='Extract Original Time Domain.')
+
+        # Include universal commands proceeding function call
+        Function.universalCommands(ZF)
+
     def nextPowerOf2(x : int):
         return 1 if x == 0 else 2**(x-1).bit_length()
 

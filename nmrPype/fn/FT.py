@@ -9,6 +9,35 @@ class FourierTransform(Function):
         params = {'ft_inv':ft_inv, 'ft_real': ft_real, 'ft_neg': ft_neg, 'ft_alt': ft_alt}
         super().__init__(data, params) 
 
+    @staticmethod
+    def commands(subparser):
+        """
+        fn commands
+
+        Adds Fourier Transform parser to the subparser, with its corresponds
+        Called in nmrParse.py
+
+        Destinations are formatted typically by {function}_{argument},
+            e.g. the ft_inv destination stores the inv bool argument for the ft function
+
+        Parameters
+        ----------
+        subparser : _SubParsersAction[ArgumentParser]
+            Subparser object that will receive function and its arguments
+        """
+        # FT subparser
+        FT = subparser.add_parser('FT', help='Perform a Fourier transform (FT) on the data')
+        FT.add_argument('-inverse', '-inv', action='store_true',
+                        dest='ft_inv', help='Perform inverse FT')
+        FT.add_argument('-real', action='store_true',
+                        dest='ft_real', help='Perform a FT only on the real portion of the data')
+        FT.add_argument('-neg', action='store_true',
+                        dest='ft_neg', help='Negate imaginaries when performing FT')
+        FT.add_argument('-alt', action='store_true',
+                        dest='ft_alt', help='Use sign alternation when performing FT')
+        
+        # Include universal commands proceeding function call
+        Function.universalCommands(FT)
 
     def run(self):
         from utils import EmptyNMRData
