@@ -33,10 +33,12 @@ class ZeroFill(Function):
             data = self.data
             arr = data.np_data
             dimCount = int(data.getParam('FDDIMCOUNT'))
-            # Make sure that multidimensional data appends to the correct axis
-            target_axis = dimCount - 1
             
             currDim = int(data.header.currDim)
+
+            # Make sure that multidimensional data appends to the correct axis
+            target_axis = dimCount - currDim
+            
             size = data.getTDSize()
             shape = arr.shape
 

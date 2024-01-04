@@ -13,6 +13,7 @@ class FourierTransform(Function):
     def run(self):
         from utils import EmptyNMRData
         from scipy import fft
+        from numpy import flip
         """
         fn run
 
@@ -27,14 +28,19 @@ class FourierTransform(Function):
             # Obtain size before operation
             size = data.getParam('NDAPOD', data.header.currDim)
 
+            # Calculate which axes to perform the operation over based on
+            #   the number of axes (dimCount) and the current dimension (currDim)
             dimCount = int(data.getParam('FDDIMCOUNT'))
+            currDim = int(data.header.currDim)
+            targetAxis = dimCount - currDim
+
             # Obtain the options and parse the options accordingly
             try:
                 if (self.ft_inv):
-                    data.np_data = fft.ifftn(data.np_data, axes=(dimCount-1))
+                    data.np_data = fft.ifftn(data.np_data, axes=(targetAxis))
                     
                 elif (self.ft_real):
-                    data.np_data = fft.rfftn(data.np_data.real, axes=(dimCount-1))
+                    data.np_data = fft.rfftn(data.np_data.real, axes=(targetAxis))
                 elif (self.ft_neg):
                     # Negate imaginaries when performing FT
                     pass 
@@ -42,13 +48,15 @@ class FourierTransform(Function):
                     # Use sign alternation when performing FT
                     pass
                 else:
-                    data.np_data = fft.fftn(data.np_data, axes=(dimCount-1))
+                    data.np_data = fft.fftn(data.np_data, axes=(targetAxis))
             except KeyError:
-                data.np_data = fft.fftn(data.np_data, axes=(dimCount-1))
+                data.np_data = fft.fftn(data.np_data, axes=(targetAxis))
             if (self.ft_inv):
-                data.np_data = fft.ifftshift(data.np_data, axes=(dimCount-1))
+                data.np_data = fft.ifftshift(data.np_data, axes=(targetAxis))
             else:
-                data.np_data = fft.fftshift(data.np_data, axes=(dimCount-1))
+                print('Shifting')
+                data.np_data = fft.fftshift(data.np_data, axes=(targetAxis))
+            data.np_data = flip(data.np_data, axis=targetAxis)
 
             """
             After performing operation, the header must be updated
