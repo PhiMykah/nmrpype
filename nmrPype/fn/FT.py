@@ -54,7 +54,6 @@ class FourierTransform(Function):
             if (self.ft_inv):
                 data.np_data = fft.ifftshift(data.np_data, axes=(targetAxis))
             else:
-                print('Shifting')
                 data.np_data = fft.fftshift(data.np_data, axes=(targetAxis))
             data.np_data = flip(data.np_data, axis=targetAxis)
 
