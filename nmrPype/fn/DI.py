@@ -40,4 +40,6 @@ def run(self):
         pass
 
 def updateFunctionHeader(self, size):
+    #FDQUADFLAG
+    #NDQUADFLAG
     pass

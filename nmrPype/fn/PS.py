@@ -52,23 +52,23 @@ class PhaseCorrection(Function):
         arr = self.data.np_data
         match int(self.data.getParam('FDDIMCOUNT')): 
             case 1:
-                xSize = len(arr)
-                self.phase1D(xSize)
+                lenX = arr.shape[0]
+                set('FDSIZE', float(lenX))
             case 2:
-                xSize = len(arr[0])
-                ySize = len(arr)
-                self.phase2D(xSize, ySize)
+                lenY, lenX = arr.shape
+                set('FDSIZE', float(lenX))
+                set('FDSPECNUM', float(lenY))
             case 3:
-                xSize = len(arr[0][0])
-                ySize = len(arr[0])
-                zSize = len(arr)
-                self.phase3D(xSize, ySize, zSize)
+                lenZ, lenY, lenX = arr.shape
+                set('FDSIZE', float(lenX))
+                set('FDSPECNUM', float(lenY))
+                set('FDF3SIZE', float(lenZ))
             case 4:
-                xSize = len(arr[0][0][0])
-                ySize = len(arr[0][0])
-                zSize = len(arr[0])
-                aSize = len(arr)
-                self.phase4D(xSize, ySize, zSize, aSize)
+                lenA, lenZ, lenY, lenX = arr.shape
+                set('FDSIZE', float(lenX))
+                set('FDSPECNUM', float(lenY))
+                set('FDF3SIZE', float(lenZ))
+                set('FDF4SIZE', float(lenA))
             case _:
                 raise UnsupportedDimension('Dimension provided in \
                                                       header is currently unsupported!')
