@@ -85,7 +85,7 @@ class NMRData:
             # Attempt to read file using nmr glue
             dic,data = pipe.read(file)
         except Exception as e:
-            print(f"{e}: Unable to read file!")
+            print(f"{e}: Unable to read file!", file=sys.stderr)
             sys.exit(0)
         try:
             # Attempt to store file as bytes
@@ -96,7 +96,7 @@ class NMRData:
                 with open(file, 'rb') as f:
                     hStream = f.read(512)
         except Exception as e:
-            print(f"{e}: Unable to read header stream!")
+            print(f"{e}: Unable to read header stream!", file=sys.stderr)
             sys.exit(0)
         
         # Add dictionary and bytes to header and array to data
@@ -175,7 +175,7 @@ class NMRData:
         try:
             pipe.write(outFileName, self.header.getDict(), self.np_data, overwrite)
         except Exception as e:
-            print(f"{e}: Unable to write to file!")
+            print(f"{e}: Unable to write to file!", file=sys.stderr)
 
 
     def writeToBuffer(self, bufferStream, dic, data): 
@@ -218,7 +218,6 @@ class NMRData:
             """
             # check for proper datatypes
             if data.dtype != 'float32':
-                # print(data.dtype)
                 raise TypeError('data.dtype is not float32')
             if fdata.dtype != 'float32':
                 raise TypeError('fdata.dtype is not float32')
@@ -227,7 +226,7 @@ class NMRData:
             bufferStream.write(data.tobytes())
             
         except Exception as e:
-            print(f"{e}: An exception occured when attempting to write data to buffer!")
+            print(f"{e}: An exception occured when attempting to write data to buffer!", sys.stderr)
             pass
 
 

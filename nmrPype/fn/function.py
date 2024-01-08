@@ -1,11 +1,64 @@
+import sys 
+
 class nmrFunction:
     def __init__(self,  data, params : dict = {}):
         self.data = data # Stores the NMRData object
         self.params = params # Store params as a dictionary by default
 
-    def run(self): 
-        pass
+    def run(self):
+        """
+        fn run 
+
+        Runs the designated operation in 1-D slices for parallel processing
+        
+        func is defined in child classes
+        """
+        from utils import EmptyNMRData
+
+        try:
+            from numpy import nditer
+            array = self.data.np_data
+            if type(array) is None:
+                raise EmptyNMRData("No data to modify!")
+            
+            dataLength = array.shape[-1]
+
+            # Update header before processing data
+            # Take parameters from dictionary and allocate to designated header locations
+
+            self.updateHeader()
+            
+            # Obtain all sizes before operation
+            sizes = {}
+            for dim in range(array.ndim): # This implementation feels inefficient, likely requires rewrite
+                param = self.data.header.checkParamSyntax('NDAPOD', dim+1)
+                param2 = self.data.header.checkParamSyntax('NDSIZE', dim+1)
+
+                sizes[param] = int(self.data.getParam('NDAPOD', dim+1))
+                sizes[param2] = int(self.data.getParam('NDSIZE', dim+1))
+
+            # Process data stream in a series of 1-D arrays
+            with nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength) as it:
+                for x in it:
+                    x[...] = self.func(x)
+            # Process data 
+            self.updateFunctionHeader(sizes)
+
+        # Exceptions
+        except EmptyNMRData as e:
+            # Output error to std error
+            print("{0}: {1}".format(type(e), e.message), file=sys.stderr)
+        except Exception as e:
+            # Set exception message if exception doesn't have message 
+            message = "Unable to run function {0}!".format(type(self).__name__)
+            message += "" if not hasattr(e, message) else " {0}".format(e.message)
+
+            # Ouptut error to std error
+
     
+    def func(self, array):
+        pass 
+
     @staticmethod
     def commands(subparser):
         """
@@ -85,6 +138,6 @@ class nmrFunction:
                 raise UnsupportedDimension('Dimension provided in \
                                                       header is currently unsupported!')
 
-    def updateFunctionHeader(size = 0):
+    def updateFunctionHeader(sizes = {}):
         # Empty function for parent function class, implemented in the child classes
         pass 

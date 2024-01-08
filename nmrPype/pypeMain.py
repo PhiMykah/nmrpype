@@ -19,9 +19,9 @@ def fileOutput(userData, output, overwrite):
         userData.writeOut(output,overwrite)
     except Exception as e:
         if hasattr(e,'message'):
-            raise type(e)(e.message + 'An exception occured when attempting to write data!')
+            raise Exception(e.message + 'An exception occured when attempting to write data!')
         else:
-            raise type(e)(' An exception occured when attempting to write data!')
+            raise Exception(' An exception occured when attempting to write data!')
 
 
 def mod(userData, param, value):
@@ -45,29 +45,35 @@ def main():
     import sys
     from parse import parser
     from utils import NMRData
-    userData = NMRData() # Initialize NMR Data object for handling the data
 
-    args = parser(sys.argv[1:]) # Parse the command line arguments from user
-    
-    fileInput(userData, args.input) # Process input stream, from file or stdin
+    try:
+        userData = NMRData() # Initialize NMR Data object for handling the data
 
-    if hasattr(args.input, 'close'): # Close the input file if necessary 
-        args.input.close() 
+        args = parser(sys.argv[1:]) # Parse the command line arguments from user
+        
+        fileInput(userData, args.input) # Process input stream, from file or stdin
 
-    # Modify header if modification parameters are provided
-    if args.modify:
-        mod(userData, args.modify[0], args.modify[1])
+        if hasattr(args.input, 'close'): # Close the input file if necessary 
+            args.input.close() 
 
-    # Process function from command line if provided
-    if args.fc:
-        function(userData, args)
+        # Modify header if modification parameters are provided
+        if args.modify:
+            mod(userData, args.modify[0], args.modify[1])
 
-    # Delete imaginary element if prompted
-    if args.delete_imaginary:
-        userData.deleteImaginary()
+        # Process function from command line if provided
+        if args.fc:
+            function(userData, args)
 
-    # Output NMR data after changes made
-    fileOutput(userData, args.output, args.overwrite)
+        # Delete imaginary element if prompted
+        if args.delete_imaginary:
+            userData.deleteImaginary()
+
+        # Output NMR data after changes made
+        fileOutput(userData, args.output, args.overwrite)
+    except Exception as e:
+        # Set exception message if exception doesn't have message 
+        message = "Unable to run nmrPype!"
+        message += "" if not hasattr(e, message) else " {0}".format(e.message)
 
 
 if __name__ == '__main__':

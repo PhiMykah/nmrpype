@@ -39,68 +39,72 @@ class FourierTransform(Function):
         # Include universal commands proceeding function call
         Function.universalCommands(FT)
 
-    def run(self):
-        from utils import EmptyNMRData
+    def func(self, array):
         from scipy import fft
-        from numpy import flip
+        from numpy import flip, roll
         """
-        fn run
+        fn func
 
-        Performs a fast fourier transform operation on the data
-            Afterwards, update the header accordingly
+        Performs a fast fourier transform operation on 1-D array
+        
+        Header updating operations are performed outside scope
+
+        Parameters
+        ----------
+        array : ndarray (1-D)
+            Array to perform operation on, passed from run
+        Returns
+        -------
+        array : ndarray
+            Modified 1-D array after operation
         """
-        try:
-            data = self.data
-            if (type(data.np_data) == type(None)):
-                raise EmptyNMRData("No data to modify!")
+        # Operations to perform on the data, transform then shift
+        ft = fft.fft
+        shift = fft.fftshift
 
-            # Obtain size before operation
-            size = data.getParam('NDAPOD', data.header.currDim)
+        # Change operations based on the parameters
+        if (self.ft_inv):
+            # Perform an inverse fft
+            ft = fft.ifft
+            shift = fft.ifftshift
+            
+        elif (self.ft_real):
+            # Perform a real fft
+            ft = fft.rfft
 
-            # Calculate which axes to perform the operation over based on
-            #   the number of axes (dimCount) and the current dimension (currDim)
-            dimCount = int(data.getParam('FDDIMCOUNT'))
-            currDim = int(data.header.currDim)
-            targetAxis = dimCount - currDim
+        elif (self.ft_neg):
+            # Negate imaginaries when performing FT
+            pass 
 
-            # Obtain the options and parse the options accordingly
-            try:
-                if (self.ft_inv):
-                    data.np_data = fft.ifftn(data.np_data, axes=(targetAxis))
-                    
-                elif (self.ft_real):
-                    data.np_data = fft.rfftn(data.np_data.real, axes=(targetAxis))
-                elif (self.ft_neg):
-                    # Negate imaginaries when performing FT
-                    pass 
-                elif (self.ft_alt):
-                    # Use sign alternation when performing FT
-                    pass
-                else:
-                    data.np_data = fft.fftn(data.np_data, axes=(targetAxis))
-            except KeyError:
-                data.np_data = fft.fftn(data.np_data, axes=(targetAxis))
-            if (self.ft_inv):
-                data.np_data = fft.ifftshift(data.np_data, axes=(targetAxis))
-            else:
-                data.np_data = fft.fftshift(data.np_data, axes=(targetAxis))
-            data.np_data = flip(data.np_data, axis=targetAxis)
+        elif (self.ft_alt):
+            # Use sign alternation when performing FT
+            pass
+        
+        # Perform operation
+        array = ft(array)
+        
+        # Shift the data 
+        array = shift(array)
 
-            """
-            After performing operation, the header must be updated
-            """
-            # Update header values as a result of the FFT completing
-            self.updateHeader()
-            self.updateFunctionHeader(size)
+        # Flip data, then move the data over by 1 (correction based on previous operations)
+        array = flip(array)
+        array = roll(array, 1)
 
-        except Exception as e:
-            if hasattr(e, 'message'):
-                raise type(e)(e.message + ' Unable to perform Fourier transform.')
-            else:
-                raise type(e)(' Unable to perform Fourier transform.')
+        return array
 
 
-    def updateFunctionHeader(self, size):
+    def updateFunctionHeader(self, sizes):
+        """ 
+        fn updateFunctionHeader
+
+        Update the header after function processing
+            based on the function itself 
+
+        Parameters
+        ----------
+        sizes : list of ints
+            Parameter sizes before function operation
+        """
         nmrData = self.data
         get = nmrData.getParam
         mod = nmrData.modifyParam
@@ -124,5 +128,9 @@ class FourierTransform(Function):
         mod('NDQUADFLAG', float(0), currDim)  
         
         # Check for real flag, and update based on real (divide the size by 2)
-        size = size/2 if self.ft_real else size
-        mod('NDAPOD', float(size), currDim)  
+        apod = self.data.header.checkParamSyntax('NDAPOD', currDim)
+        currDimSize = sizes[apod]
+        
+        currDimSize = currDimSize/2 if self.ft_real else currDimSize
+        mod('NDAPOD', float(currDimSize), currDim)  
+        
