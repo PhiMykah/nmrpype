@@ -5,18 +5,46 @@ class nmrFunction:
         self.data = data # Stores the NMRData object
         self.params = params # Store params as a dictionary by default
 
+    def obtainSizes(self): 
+        """
+        fn obtainSizes
+
+        Returns dictionary of current dimension sizes from the header
+
+        Return
+        ------
+        sizes : dict
+            Dictionary of dataset's header sizes
+        """
+        # Obtain all sizes before operation
+        sizes = {}
+        paramStr = self.data.header.checkParamSyntax
+
+        for dim in range(self.data.np_data.ndim): # This implementation feels inefficient, likely requires rewrite
+            param = paramStr('NDAPOD', dim+1)
+            param2 = paramStr('NDSIZE', dim+1)
+
+            sizes[param] = int(self.data.getParam('NDAPOD', dim+1))
+            sizes[param2] = int(self.data.getParam('NDSIZE', dim+1))
+
+        return sizes
+    
     def run(self):
         """
         fn run 
 
         Runs the designated operation in 1-D slices for parallel processing
-        
-        func is defined in child classes
+
+        Run is overwriten in some cases
+
+        func is defined in child classes, with exceptions
         """
         from utils import EmptyNMRData
 
         try:
             from numpy import nditer
+
+            # Ensure data is available to modify
             array = self.data.np_data
             if type(array) is None:
                 raise EmptyNMRData("No data to modify!")
@@ -28,32 +56,28 @@ class nmrFunction:
 
             self.updateHeader()
             
-            # Obtain all sizes before operation
-            sizes = {}
-            for dim in range(array.ndim): # This implementation feels inefficient, likely requires rewrite
-                param = self.data.header.checkParamSyntax('NDAPOD', dim+1)
-                param2 = self.data.header.checkParamSyntax('NDSIZE', dim+1)
-
-                sizes[param] = int(self.data.getParam('NDAPOD', dim+1))
-                sizes[param2] = int(self.data.getParam('NDSIZE', dim+1))
+            sizes = self.obtainSizes()
 
             # Process data stream in a series of 1-D arrays
             with nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength) as it:
                 for x in it:
                     x[...] = self.func(x)
+                    
             # Process data 
+            self.updateHeader()
             self.updateFunctionHeader(sizes)
 
         # Exceptions
         except EmptyNMRData as e:
             # Output error to std error
-            print("{0}: {1}".format(type(e), e.message), file=sys.stderr)
+            print(f"{type(e)}: {message}", file=sys.stderr)
         except Exception as e:
             # Set exception message if exception doesn't have message 
             message = "Unable to run function {0}!".format(type(self).__name__)
-            message += "" if not hasattr(e, message) else " {0}".format(e.message)
+            message += "" if not hasattr(e, message) else f" {e.message}"
 
             # Ouptut error to std error
+            print(f"{type(e)}: {message}", file=sys.stderr)
 
     
     def func(self, array):

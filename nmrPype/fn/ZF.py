@@ -48,62 +48,125 @@ class ZeroFill(Function):
         return 1 if x == 0 else 2**(x-1).bit_length()
 
     def run(self):
-        from utils import UnsupportedDimension
-        from numpy import zeros
-        from numpy import append
         """
-        fn fnZeroFill
+        fn run
 
-        Performs a zero fill operation on the data
-            Afterwards, update the header accordingly
+        Zerofill has a unique run operation due to allocating new data
 
         Parameters
         ----------
-        params : dict
-            Dictionary of all options for the Fourier Transform
+        array : ndarray (1-D)
+            Array to perform operation on, passed from run
         """
+        from utils import EmptyNMRData
+        import sys
+
         try:
-            data = self.data
-            arr = data.np_data
-            dimCount = int(data.getParam('FDDIMCOUNT'))
+            # Ensure data is available to modify
+            array = self.data.np_data
+            if type(array) is None:
+                raise EmptyNMRData("No data to modify!")
             
-            currDim = int(data.header.currDim)
-
-            # Make sure that multidimensional data appends to the correct axis
-            target_axis = dimCount - currDim
-            
-            size = data.getTDSize()
-            shape = arr.shape
-
-            # Add Zeroes to designated data location
-            if (self.zf_pad):
-                if (len(shape) >= data.header.currDim):
-                    # Convert shape to list to change shape dimensions
-                    shape = list(shape)
-                    # Change the target dimension to zeroes amount
-                    shape[currDim-1] = self.zf_pad
-                    shape = tuple(shape)
-                else:
-                    raise UnsupportedDimension
-
-            # Create zeros nparray
-            zf = zeros(shape, dtype='float32')
-                    
-            
-            # Add zeroes to the data array
-            data.np_data = append(arr, zf, target_axis)
-            
-            # Update header parameters
+            # Update header before processing data
             self.updateHeader()
-            self.updateFunctionHeader(size)
 
+            # Take parameters from dictionary and allocate to designated header locations
+            sizes = self.obtainSizes()
+
+            # Update np_data array to new modified array
+            self.data.np_data = self.func(array)
+
+            # Process data 
+            self.updateHeader()
+            self.updateFunctionHeader(sizes)
+
+        # Exceptions
+        except EmptyNMRData as e:
+            # Output error to std error
+            print(f"{type(e)}: {message}", file=sys.stderr)
         except Exception as e:
-            if hasattr(e, 'message'):
-                raise type(e)(e.message + ' Unable to perform zero fill operation.')
-            else:
-                raise type(e)(' Unable to perform zero fill operation.')
-            
-    def updateFunctionHeader(self, size):
+            # Set exception message if exception doesn't have message 
+            message = "Unable to run function {0}!".format(type(self).__name__)
+            message += "" if not hasattr(e, message) else f" {e.message}"
+
+            # Ouptut error to std error
+            print(f"{type(e)}: {message}", file=sys.stderr)
+
+
+    def func(self, array):
+        """
+        fn func 
+        Expands the array shape then copys data over through 1-D strips
+
+        Header updating operations are performed outside scope
+
+        This implementation is unique because the loop is contained here rather
+            than in run()
+
+        Parameters
+        ----------
+        array : ndarray
+            N-dimensional array to perform operation on, passed from run
+        Returns
+        -------
+        new_array : ndarray
+            Modified array of N dimensions after operation
+        """
+        from numpy import zeros
+        from numpy import nditer
+        # Collect last axis shape to fill array size
+        dataLength = array.shape[-1]
+
+        # By default multiply size by 2
+        new_size = dataLength * 2
+
+        # check if undoing zero-fill operation
+        if self.zf_inv:
+            if self.zf_count:
+                # Reduce size by 2 zf_count times, ensure size is nonzero positive
+                new_size = int(dataLength / (2**self.zf_count))
+                new_size = new_size if new_size > 0 else 1
+            elif self.zf_pad:
+                # Subtract padding, ensure size is nonzero positive
+                new_size = dataLength - self.zf_pad
+                new_size = new_size if new_size >= 1 else 1
+            else: 
+                # Divide size by 2 by default
+                new_size = dataLength / 2
+        else:
+            if self.zf_pad:
+                # Add amount of zeros corresponding to pad amount
+                new_size += self.zf_pad
+            elif self.zf_count:
+                # Double data zf_count times
+                magnitude = 2**self.zf_count
+                new_size = dataLength * magnitude
+            elif self.zf_size:
+                # Match user inputted size for new array
+                new_size = self.zf_size 
+            if self.zf_auto:
+                # Reach next power of 2 with auto
+                new_size = self.nextPowerOf2(dataLength)
+        
+        # Obtain new array shape and then create dummy array for data transfer
+        new_shape = array.shape[:-1] + (new_size,)
+        new_array = zeros(new_shape, dtype=array.dtype)
+
+        # Ensure both arrays are matching for nditer operation based on size
+        a = array if new_size > dataLength else array[...,:new_size]
+        b = new_array[...,:dataLength] if new_size > dataLength else new_array
+
+        # Iterate through each 1-D strip and copy over existing data
+        it = nditer([a,b], flags=['external_loop','buffered'],
+            op_flags=[['readonly'],['writeonly']],
+            buffersize=dataLength)
+        with it:
+            for x, y in it:
+                y[...] = x
+
+        return new_array
+    
+    def updateFunctionHeader(self, sizes):
         """
         fn updateFunctionHeader
 
@@ -119,7 +182,9 @@ class ZeroFill(Function):
         mod = self.data.modifyParam
         currDim = int(self.data.header.currDim)
         try: 
-            outSize = size # Data output size
+            apod = self.data.header.checkParamSyntax('NDAPOD', currDim)
+            currDimSize = sizes[apod]
+            outSize = currDimSize # Data output size
             zfSize = self.zf_size # Size of data based on zerofill
             zfCount = 1
             # See userproc.c line 453-468 for more information
@@ -130,7 +195,7 @@ class ZeroFill(Function):
                     zfSize = outSize if (outSize > 0) else 1
                     outSize = zfSize
                 elif(self.zf_pad > 0):
-                    zfSize = size - self.zf_pad
+                    zfSize = currDimSize - self.zf_pad
                     zfSize = 1 if (zfSize < 1) else zfSize
                     outSize = zfSize
                 else:
@@ -151,7 +216,7 @@ class ZeroFill(Function):
                     zfSize = self.nextPowerOf2(int(zfSize))
                     outSize = zfSize
         except KeyError: # Use default values if params is empty or inaccessible 
-            zfSize = size * 2
+            zfSize = currDimSize * 2
             outSize = zfSize
 
         # Parameters to update based on zerofill
@@ -167,7 +232,7 @@ class ZeroFill(Function):
 
         # Check if FT has been performed on data, unlikely but plausible
         if (bool(get('NDFTFLAG'))):
-            mid += (outSize - size)
+            mid += (outSize - currDimSize)
             mod('NDCENTER', mid, currDim)
         else:
             if (get('NDQUADFLAG', currDim) == 1):
