@@ -15,9 +15,8 @@ class PhaseCorrection(Function):
         self.ps_ht = ps_ht
         self.ps_zf = ps_zf
 
-        # Initialize arrays for later
-        self.arrReal = []
-        self.arrImag = []
+        # Initialize array for later
+        self.phase = None
 
         # Parameter storing for development purposes
         params = { 'ps_p0':ps_p0, 'ps_p1':ps_p1,
@@ -60,8 +59,8 @@ class PhaseCorrection(Function):
         Function.universalCommands(PS)
 
     def initialize(self):
-        from math import pi as PI
-        from math import cos, sin
+        from numpy import pi as PI
+        from numpy import cos, sin, radians, array
         """
         fn initialize
             
@@ -70,47 +69,40 @@ class PhaseCorrection(Function):
         # Obtain size for phase correction from data
         size = self.data.getTDSize()
 
+        # Convert from 
         # C code uses 3.14159265
-        p0 = 2.0*PI*self.ps_p0/360.0
-        p1 = 2.0*PI*self.ps_p1/360.0
+        p0 = radians(self.ps_p0)
+        p1 = radians(self.ps_p1)
 
+        realList = []
+        imagList = []
         for x in range(size):
             realVal = cos(p0 + (p1*x)/size) # Ensure radians output is sufficient
             imagVal = sin(p0 + (p1*x)/size)
-            self.arrReal.append(float(realVal))
-            self.arrImag.append(float(imagVal))
+            realList.append(float(realVal))
+            imagList.append(float(imagVal))
 
-    def run(self):
-        from utils import UnsupportedDimension
-        arr = self.data.np_data
-        match int(self.data.getParam('FDDIMCOUNT')): 
-            case 1:
-                lenX = arr.shape[0]
-                set('FDSIZE', float(lenX))
-            case 2:
-                lenY, lenX = arr.shape
-                set('FDSIZE', float(lenX))
-                set('FDSPECNUM', float(lenY))
-            case 3:
-                lenZ, lenY, lenX = arr.shape
-                set('FDSIZE', float(lenX))
-                set('FDSPECNUM', float(lenY))
-                set('FDF3SIZE', float(lenZ))
-            case 4:
-                lenA, lenZ, lenY, lenX = arr.shape
-                set('FDSIZE', float(lenX))
-                set('FDSPECNUM', float(lenY))
-                set('FDF3SIZE', float(lenZ))
-                set('FDF4SIZE', float(lenA))
-            case _:
-                raise UnsupportedDimension('Dimension provided in \
-                                                      header is currently unsupported!')
-        # Add values to header if noup is off
-        if (not self.ps_noup):
-            currDim = self.data.header.getcurrDim()
-            setParam = self.data.modifyParam
-            setParam('NDP0', float(self.ps_p0), currDim)
-            setParam('NDP1', float(self.ps_p1), currDim)
+        imag = array(imagList)
+        self.phase = array(realVal + 1j * imag)
+
+    def func(self, array):
+        """
+        fn func
+
+        Performs a phase shift operation on 1-D array
+        
+        Header updating operations are performed outside scope
+
+        Parameters
+        ----------
+        array : ndarray (1-D)
+            Array to perform operation on, passed from run
+        Returns
+        -------
+        array : ndarray
+            Modified 1-D array after operation
+        """
+        return (self. phase * array)
     
     def phase1D(self, size): 
         from numpy import zeros
@@ -138,6 +130,11 @@ class PhaseCorrection(Function):
     def phase4D(self, xSize, ySize, zSize, aSize): 
         pass
 
-    def updateFunctionHeader(self, size):
-        pass
+    def updateFunctionHeader(self, sizes):
+        # Add values to header if noup is off
+        if (not self.ps_noup):
+            currDim = self.data.header.getcurrDim()
+            setParam = self.data.modifyParam
+            setParam('NDP0', float(self.ps_p0), currDim)
+            setParam('NDP1', float(self.ps_p1), currDim)
         
