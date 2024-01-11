@@ -1,16 +1,16 @@
 """
 pypeMain.py: Functions similarly to nmrPipe but as a python script
 """
+import sys 
 
 def fileInput(userData, file):
     # Attempt to read the input stream
     try:
         userData.readFile(file)
     except Exception as e:
-        if hasattr(e,'message'):
-            raise type(e)(e.message + ' Exception has occured whist attempting to read data stream!')
-        else:
-            raise type(e)(' Exception has occured whist attempting to read data stream!')
+        msg = "Exception has occured whist attempting to read data stream!"
+        msg += "" if not hasattr(e, 'message') else " {0}".format(e.message)
+        raise e("{0}: {1}\n".format(type(e), msg))
 
 
 def fileOutput(userData, output, overwrite):
@@ -18,10 +18,9 @@ def fileOutput(userData, output, overwrite):
     try:
         userData.writeOut(output,overwrite)
     except Exception as e:
-        if hasattr(e,'message'):
-            raise Exception(e.message + 'An exception occured when attempting to write data!')
-        else:
-            raise Exception(' An exception occured when attempting to write data!')
+        msg = "An exception occured when attempting to write data!"
+        msg += "" if not hasattr(e, 'message') else " {0}".format(e.message)
+        raise e("{0}: {1}\n".format(type(e), msg))
 
 
 def mod(userData, param, value):
@@ -42,9 +41,9 @@ def function(userData, args):
 
 
 def main(): 
-    import sys
     from parse import parser
     from utils import NMRData
+    from . import catchError, PipeBurst
 
     try:
         userData = NMRData() # Initialize NMR Data object for handling the data
@@ -71,9 +70,7 @@ def main():
         # Output NMR data after changes made
         fileOutput(userData, args.output, args.overwrite)
     except Exception as e:
-        # Set exception message if exception doesn't have message 
-        message = "Unable to run nmrPype!"
-        message += "" if not hasattr(e, message) else " {0}".format(e.message)
+        catchError(e, PipeBurst, msg='nmrPype has encountered an error!', ePrint=True)
 
 
 if __name__ == '__main__':

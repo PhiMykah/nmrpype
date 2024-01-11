@@ -1,7 +1,7 @@
 import numpy as np
-from .header import UnknownHeaderParam, UnsupportedDimension, EmptyNMRData
-
 from nmrglue import pipe
+from . import catchError 
+from . import FileIOError, EmptyNMRData, UnknownHeaderParam, ModifyParamError, UnsupportedDimension
 import sys
 
 class NMRData:
@@ -36,39 +36,17 @@ class NMRData:
         fn getTDSize
 
         Obtain the current expected time domain size of the current
-
+            dimension
+        
         Returns
         -------
         size : int
             Time-domain size
         """
-
-        # Extract sizes from the np array axes
-        match int(self.getParam('FDDIMCOUNT')):
-            case 1:
-                lenX = self.np_data.shape[0]
-            case 2:
-                lenY, lenX = self.np_data.shape
-            case 3:
-                lenZ, lenY, lenX = self.np_data.shape
-            case 4:
-                lenA, lenZ, lenY, lenX = self.np_data.shape
-
-        # Return the correct size based on the dimension
-        match self.header.currDim:
-            case 1:
-                size = lenX
-            case 2:
-                size = lenY
-            case 3:
-                size = lenZ
-            case 4:
-                size = lenA
-            case _:
-                size = lenX
+        dim = int(-1 * self.header.currDim)
+        return self.np_data.shape[dim]
     
-        return size
-    
+
     def readFile(self, file):
         from . import Header
         """
@@ -85,8 +63,7 @@ class NMRData:
             # Attempt to read file using nmr glue
             dic,data = pipe.read(file)
         except Exception as e:
-            print(f"{e}: Unable to read file!", file=sys.stderr)
-            sys.exit(0)
+            catchError(e, new_e=FileIOError, msg="Unable to read File!")
         try:
             # Attempt to store file as bytes
             # Check if data stream is binary data
@@ -96,13 +73,31 @@ class NMRData:
                 with open(file, 'rb') as f:
                     hStream = f.read(512)
         except Exception as e:
-            print(f"{e}: Unable to read header stream!", file=sys.stderr)
-            sys.exit(0)
+            catchError(e, new_e=FileIOError, msg="Unable to read header stream!")
+
         
         # Add dictionary and bytes to header and array to data
         self.header = Header(dic, hStream)
         self.np_data = data
 
+        # Set pipe count based on the input type
+        self.setPipeCount(file)
+
+    def setPipeCount(self, stream):
+        """
+        fn initHeader
+
+        Initialize header based on whether or not the data is pipelined
+            or from file
+        """
+        if type(stream) == type(sys.stdout.buffer):
+            pipeCount = int(self.getParam('FDPIPECOUNT'))
+            self.modifyParam('FDPIPECOUNT', pipeCount+1)
+        elif type(stream) == str:
+            self.modifyParam('FDPIPECOUNT', 0)
+
+    def write(self, file, overwrite: bool = False):
+        pipe.write(file, self.header.getDict(), self.np_data, overwrite)
 
     def writeOut(self, output, overwrite: bool):
         from . import Header
@@ -120,6 +115,9 @@ class NMRData:
         overwrite : bool
             Choose whether or not to overwrite existing files for file output
         """
+        # Set pipecount based on the output type
+        self.setPipeCount(output)
+
         # Determine if output is to file or output stream
         if not hasattr(output, 'write'):
             self.writeToFile(output, overwrite)
@@ -175,7 +173,7 @@ class NMRData:
         try:
             pipe.write(outFileName, self.header.getDict(), self.np_data, overwrite)
         except Exception as e:
-            print(f"{e}: Unable to write to file!", file=sys.stderr)
+            catchError(e, new_e=FileIOError, msg="Unable to write to file!")
 
 
     def writeToBuffer(self, bufferStream, dic, data): 
@@ -226,8 +224,7 @@ class NMRData:
             bufferStream.write(data.tobytes())
             
         except Exception as e:
-            print(f"{e}: An exception occured when attempting to write data to buffer!", sys.stderr)
-            pass
+            catchError(e, new_e=FileIOError, msg="An exception occured when attempting to write data to buffer!")
 
 
     def modifyParam(self, param , value, dim = 0):
@@ -253,12 +250,9 @@ class NMRData:
             if isParamSet:
                 return True
             else:
-                raise UnknownHeaderParam("Parameter unable to be set!")
+                raise UnknownHeaderParam("Parameter does not exist!")
         except Exception as e:
-            if hasattr(e,'message'):
-                raise type(e)(e.message + ' Unable to modify parameter.')
-            else:
-                raise type(e)(' Unable to modify parameter.')
+            catchError(e, new_e=ModifyParamError, msg='Unable to modify parameter')
 
 
     def getParam(self, param, dim: int = 0):

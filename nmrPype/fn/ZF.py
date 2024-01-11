@@ -1,4 +1,5 @@
 from .function import nmrFunction as Function
+from . import catchError, FunctionError
 
 class ZeroFill(Function):
     def __init__(self, data, zf_count : int = 0, zf_pad : int = 0, zf_size : int = 0,
@@ -81,16 +82,9 @@ class ZeroFill(Function):
             self.updateFunctionHeader(sizes)
 
         # Exceptions
-        except EmptyNMRData as e:
-            # Output error to std error
-            print(f"{type(e)}: {message}", file=sys.stderr)
         except Exception as e:
-            # Set exception message if exception doesn't have message 
-            message = "Unable to run function {0}!".format(type(self).__name__)
-            message += "" if not hasattr(e, message) else f" {e.message}"
-
-            # Ouptut error to std error
-            print(f"{type(e)}: {message}", file=sys.stderr)
+            msg = "Unable to run function {0}!".format(type(self).__name__)
+            catchError(e, new_e=FunctionError, msg=msg)
 
 
     def func(self, array):
