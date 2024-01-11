@@ -1,5 +1,5 @@
 from .function import nmrFunction as Function
-from . import catchError, FunctionError
+from utils import catchError, FunctionError
 
 class ZeroFill(Function):
     def __init__(self, data, zf_count : int = 0, zf_pad : int = 0, zf_size : int = 0,

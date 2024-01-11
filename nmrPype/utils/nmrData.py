@@ -1,7 +1,7 @@
 import numpy as np
 from nmrglue import pipe
-from . import catchError 
-from . import FileIOError, EmptyNMRData, UnknownHeaderParam, ModifyParamError, UnsupportedDimension
+from utils import catchError 
+from utils import FileIOError, EmptyNMRData, UnknownHeaderParam, ModifyParamError, UnsupportedDimension
 import sys
 
 class NMRData:
@@ -63,7 +63,8 @@ class NMRData:
             # Attempt to read file using nmr glue
             dic,data = pipe.read(file)
         except Exception as e:
-            catchError(e, new_e=FileIOError, msg="Unable to read File!")
+            e.args = (" ".join(str(arg) for arg in e.args),)
+            catchError(e, new_e=FileIOError, msg="Unable to read File!", ePrint=True)
         try:
             # Attempt to store file as bytes
             # Check if data stream is binary data

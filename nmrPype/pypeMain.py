@@ -42,8 +42,7 @@ def function(userData, args):
 
 def main(): 
     from parse import parser
-    from utils import NMRData
-    from . import catchError, PipeBurst
+    from utils import NMRData, catchError, PipeBurst
 
     try:
         userData = NMRData() # Initialize NMR Data object for handling the data

@@ -1,4 +1,4 @@
-from . import catchError, FunctionError
+from utils import catchError, FunctionError
 
 class nmrFunction:
     def __init__(self,  data, params : dict = {}):
