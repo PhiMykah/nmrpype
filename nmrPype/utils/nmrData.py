@@ -321,13 +321,13 @@ class NMRData:
         """
         match func:
             case 'FT':
-                function = FT(self, **arguments)
+                function = FT(**arguments)
             case 'ZF':
-                function = ZF(self, **arguments)
+                function = ZF(**arguments)
             case 'PS':
                 function = PS(self, **arguments)
             case 'DI':
-                function = DI(self, **arguments)
+                function = DI(**arguments)
             case _:
-                function = Function(self, arguments)
-        function.run()
+                function = Function(arguments)
+        function.run(self)

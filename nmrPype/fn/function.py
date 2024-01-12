@@ -1,11 +1,10 @@
 from utils import catchError, FunctionError
 
 class nmrFunction:
-    def __init__(self,  data, params : dict = {}):
-        self.data = data # Stores the NMRData object
+    def __init__(self, params : dict = {}):
         self.params = params # Store params as a dictionary by default
 
-    def obtainSizes(self): 
+    def obtainSizes(self, data): 
         """
         fn obtainSizes
 
@@ -18,18 +17,18 @@ class nmrFunction:
         """
         # Obtain all sizes before operation
         sizes = {}
-        paramStr = self.data.header.checkParamSyntax
+        paramStr = data.header.checkParamSyntax
 
-        for dim in range(self.data.np_data.ndim): # This implementation feels inefficient, likely requires rewrite
+        for dim in range(data.np_data.ndim): # This implementation feels inefficient, likely requires rewrite
             param = paramStr('NDAPOD', dim+1)
             param2 = paramStr('NDSIZE', dim+1)
 
-            sizes[param] = int(self.data.getParam('NDAPOD', dim+1))
-            sizes[param2] = int(self.data.getParam('NDSIZE', dim+1))
+            sizes[param] = int(data.getParam('NDAPOD', dim+1))
+            sizes[param2] = int(data.getParam('NDSIZE', dim+1))
 
         return sizes
     
-    def run(self):
+    def run(self, data):
         """
         fn run 
 
@@ -45,7 +44,7 @@ class nmrFunction:
             from numpy import nditer
 
             # Ensure data is available to modify
-            array = self.data.np_data
+            array = data.np_data
             if type(array) is None:
                 raise EmptyNMRData("No data to modify!")
             
@@ -54,9 +53,8 @@ class nmrFunction:
             # Update header before processing data
             # Take parameters from dictionary and allocate to designated header locations
 
-            self.updateHeader()
-            
-            sizes = self.obtainSizes()
+            self.updateHeader(data)
+            sizes = self.obtainSizes(data)
 
             # Process data stream in a series of 1-D arrays
             with nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength) as it:
@@ -64,8 +62,8 @@ class nmrFunction:
                     x[...] = self.func(x)
                     
             # Process data 
-            self.updateHeader()
-            self.updateFunctionHeader(sizes)
+            self.updateHeader(data)
+            self.updateFunctionHeader(data, sizes)
 
         # Exceptions
         except Exception as e:
@@ -104,7 +102,7 @@ class nmrFunction:
         parser.add_argument('-overwrite', '-ov', action='store_true', dest='overwrite',
                             help='Call this argument to overwrite when sending output to file.')
         
-    def updateHeader(self):
+    def updateHeader(self, data):
         from utils import UnsupportedDimension
         """
         fn updateHeader
@@ -116,7 +114,7 @@ class nmrFunction:
 
         Parameters
         ----------
-        nmrData : NMRData
+        data : NMRData
             The data object receiving the modifications to the header
         size
             The size of the data prior to any operations performed
@@ -125,10 +123,9 @@ class nmrFunction:
             Operations dictionary provided for a called function if provided
         """
         # Variables for code simplification
-        nmrData = self.data
-        set = nmrData.modifyParam
-        np_data = nmrData.np_data
-        hdr = nmrData.header 
+        set = data.modifyParam
+        np_data = data.np_data
+        hdr = data.header 
 
         # Extract sizes from the np array axes, then
         # Updates particular params based on the dimension count
@@ -155,6 +152,6 @@ class nmrFunction:
                 raise UnsupportedDimension('Dimension provided in \
                                                       header is currently unsupported!')
 
-    def updateFunctionHeader(self, sizes = {}):
+    def updateFunctionHeader(self, data, sizes = {}):
         # Empty function for parent function class, implemented in the child classes
         pass 

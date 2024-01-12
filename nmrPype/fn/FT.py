@@ -1,13 +1,13 @@
 from .function import nmrFunction as Function
 
 class FourierTransform(Function):
-    def __init__(self, data, ft_inv: bool = False, ft_real: bool = False, ft_neg: bool = False, ft_alt: bool = False):
+    def __init__(self, ft_inv: bool = False, ft_real: bool = False, ft_neg: bool = False, ft_alt: bool = False):
         self.ft_inv = ft_inv 
         self.ft_real = ft_real
         self.ft_neg = ft_neg
         self.ft_alt = ft_alt
         params = {'ft_inv':ft_inv, 'ft_real': ft_real, 'ft_neg': ft_neg, 'ft_alt': ft_alt}
-        super().__init__(data, params) 
+        super().__init__(params) 
 
     @staticmethod
     def commands(subparser):
@@ -93,7 +93,7 @@ class FourierTransform(Function):
         return array
 
 
-    def updateFunctionHeader(self, sizes):
+    def updateFunctionHeader(self, data, sizes):
         """ 
         fn updateFunctionHeader
 
@@ -105,10 +105,9 @@ class FourierTransform(Function):
         sizes : list of ints
             Parameter sizes before function operation
         """
-        nmrData = self.data
-        get = nmrData.getParam
-        mod = nmrData.modifyParam
-        currDim = nmrData.header.getcurrDim()
+        get = data.getParam
+        mod = data.modifyParam
+        currDim = data.header.getcurrDim()
         # Flip FT flag
         if (bool(get('NDFTFLAG'))):
             mod('NDFTFLAG', float(0), currDim) 
@@ -118,17 +117,17 @@ class FourierTransform(Function):
         # Set NDAQSIGN and NDFTSIZE
         if (bool(get('NDFTFLAG'))):
             mod('NDAQSIGN', float(0), currDim)
-            mod('NDFTSIZE', nmrData.getTDSize(), currDim)
+            mod('NDFTSIZE', data.getTDSize(), currDim)
         else:
             # Implement `dataInfo->outQuadState = 2`
-            mod('NDFTSIZE', nmrData.getTDSize(), currDim) 
+            mod('NDFTSIZE', data.getTDSize(), currDim) 
 
         # Add flag for complex
         mod('FDQUADFLAG', float(0))
         mod('NDQUADFLAG', float(0), currDim)  
         
         # Check for real flag, and update based on real (divide the size by 2)
-        apod = self.data.header.checkParamSyntax('NDAPOD', currDim)
+        apod = data.header.checkParamSyntax('NDAPOD', currDim)
         currDimSize = sizes[apod]
         
         currDimSize = currDimSize/2 if self.ft_real else currDimSize

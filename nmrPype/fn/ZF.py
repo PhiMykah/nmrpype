@@ -1,8 +1,7 @@
 from .function import nmrFunction as Function
-from utils import catchError, FunctionError
 
 class ZeroFill(Function):
-    def __init__(self, data, zf_count : int = 0, zf_pad : int = 0, zf_size : int = 0,
+    def __init__(self, zf_count : int = 0, zf_pad : int = 0, zf_size : int = 0,
                             zf_auto : bool = False, zf_inv: bool = False):
         self.zf_count = zf_count
         self.zf_pad = zf_pad
@@ -10,7 +9,7 @@ class ZeroFill(Function):
         self.zf_auto = zf_auto
         self.zf_inv = zf_inv
         params = {'zf_count':zf_count, 'zf_pad':zf_pad, 'zf_size':zf_size, 'zf_auto':zf_auto, 'zf_inv':zf_inv}
-        super().__init__(data,params)
+        super().__init__(params)
 
     @staticmethod
     def commands(subparser):
@@ -48,7 +47,7 @@ class ZeroFill(Function):
     def nextPowerOf2(x : int):
         return 1 if x == 0 else 2**(x-1).bit_length()
 
-    def run(self):
+    def run(self, data):
         """
         fn run
 
@@ -56,30 +55,29 @@ class ZeroFill(Function):
 
         Parameters
         ----------
-        array : ndarray (1-D)
-            Array to perform operation on, passed from run
+        data : NMRData
+            dataset to process
         """
-        from utils import EmptyNMRData
-        import sys
+        from utils import EmptyNMRData, catchError, FunctionError
 
         try:
             # Ensure data is available to modify
-            array = self.data.np_data
+            array = data.np_data
             if type(array) is None:
                 raise EmptyNMRData("No data to modify!")
             
             # Update header before processing data
-            self.updateHeader()
+            self.updateHeader(data)
 
             # Take parameters from dictionary and allocate to designated header locations
-            sizes = self.obtainSizes()
+            sizes = self.obtainSizes(data)
 
             # Update np_data array to new modified array
-            self.data.np_data = self.func(array)
+            data.np_data = self.func(array)
 
             # Process data 
-            self.updateHeader()
-            self.updateFunctionHeader(sizes)
+            self.updateHeader(data)
+            self.updateFunctionHeader(data, sizes)
 
         # Exceptions
         except Exception as e:
@@ -160,7 +158,7 @@ class ZeroFill(Function):
 
         return new_array
     
-    def updateFunctionHeader(self, sizes):
+    def updateFunctionHeader(self, data, sizes):
         """
         fn updateFunctionHeader
 
@@ -172,11 +170,11 @@ class ZeroFill(Function):
         size : int
             Current size of time domain
         """ 
-        get = self.data.getParam
-        mod = self.data.modifyParam
-        currDim = int(self.data.header.currDim)
+        get = data.getParam
+        mod = data.modifyParam
+        currDim = int(data.header.currDim)
         try: 
-            apod = self.data.header.checkParamSyntax('NDAPOD', currDim)
+            apod = data.header.checkParamSyntax('NDAPOD', currDim)
             currDimSize = sizes[apod]
             outSize = currDimSize # Data output size
             zfSize = self.zf_size # Size of data based on zerofill

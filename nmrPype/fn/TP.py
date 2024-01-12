@@ -1,7 +1,7 @@
 from .function import nmrFunction as Function
 
 class Transpose(Function):
-    def __init__(self, data,
+    def __init__(self,
                 tp_noOrd: bool = False, tp_exch : bool = False,
                 tp_minMax: bool = True, params : dict = {}):
         
@@ -11,7 +11,7 @@ class Transpose(Function):
 
         params.update({'tp_noOrd':tp_noOrd,
                   'tp_exch':tp_exch,'tp_minMax':tp_minMax,})
-        super().__init__(data, params)
+        super().__init__(params)
     
     def run(self):
         pass

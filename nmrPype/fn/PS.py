@@ -22,8 +22,8 @@ class PhaseCorrection(Function):
         params = { 'ps_p0':ps_p0, 'ps_p1':ps_p1,
                   'ps_inv':ps_inv, 'ps_hdr':ps_hdr, 'ps_noup':ps_noup, 'ps_df':ps_df,
                   'ps_ht':ps_ht, 'ps_zf':ps_zf}
-        super().__init__(data, params)
-        self.initialize()
+        super().__init__(params)
+        self.initialize(data)
 
     @staticmethod
     def commands(subparser):    
@@ -58,7 +58,7 @@ class PhaseCorrection(Function):
         # Include universal commands proceeding function call
         Function.universalCommands(PS)
 
-    def initialize(self):
+    def initialize(self, data):
         from numpy import pi as PI
         from numpy import cos, sin, radians, array
         """
@@ -67,7 +67,7 @@ class PhaseCorrection(Function):
         Pre-allocate and initialize arrays for simpler computing
         """
         # Obtain size for phase correction from data
-        size = self.data.getTDSize()
+        size = data.getTDSize()
 
         # Convert from 
         # C code uses 3.14159265
@@ -102,39 +102,14 @@ class PhaseCorrection(Function):
         array : ndarray
             Modified 1-D array after operation
         """
-        return (self. phase * array)
-    
-    def phase1D(self, size): 
-        from numpy import zeros
-        from numpy import float32
-        arr = self.data.np_data
-        realVals = zeros(arr.shape, dtype=float32)
-        imagVals = zeros(arr.shape, dtype=float32)
-        for i in range(size):
-            realVals[i] = arr.real[i] * self.arrReal[i] \
-                        - arr.imag[i] * self.arrImag[i]
-            
-            imagVals[i] = arr.imag[i] * self.arrImag[i] \
-                        + arr.imag[i] * self.arrReal[i]
-        newArr = realVals + 1j*imagVals
-        # Return array to nmr dataset, ensuring float32 datatype
-        self.data.np_data = newArr
-        
-    
-    def phase2D(self, xSize, ySize): 
-        pass
+        return (self.phase * array)
 
-    def phase3D(self, xSize, ySize, zSize): 
-        pass
 
-    def phase4D(self, xSize, ySize, zSize, aSize): 
-        pass
-
-    def updateFunctionHeader(self, sizes):
+    def updateFunctionHeader(self, data, sizes):
         # Add values to header if noup is off
         if (not self.ps_noup):
-            currDim = self.data.header.getcurrDim()
-            setParam = self.data.modifyParam
+            currDim = data.header.getcurrDim()
+            setParam = data.modifyParam
             setParam('NDP0', float(self.ps_p0), currDim)
             setParam('NDP1', float(self.ps_p1), currDim)
         
