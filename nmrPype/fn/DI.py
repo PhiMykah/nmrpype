@@ -101,8 +101,10 @@ class DeleteImaginary(Function):
                 dimensions.append(-1*(dim+1))
 
         # Multiply indirect dimensions
-        for num in dimensions:
-            slices *= shape[num]
+        if dimensions:
+            for num in dimensions:
+                slices *= shape[num]
+        else:
+            slices = 0
 
         mod('FDSLICECOUNT', float(slices))
-        mod('FDSLICECOUNT1', float(slices))
