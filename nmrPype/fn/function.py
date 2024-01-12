@@ -132,7 +132,7 @@ class nmrFunction:
 
         # Extract sizes from the np array axes, then
         # Updates particular params based on the dimension count
-        match int(hdr.getParam('FDDIMCOUNT')):
+        match int(len(np_data.shape)):
             case 1:
                 lenX = np_data.shape[0]
                 set('FDSIZE', float(lenX))

@@ -64,7 +64,7 @@ class NMRData:
             dic,data = pipe.read(file)
         except Exception as e:
             e.args = (" ".join(str(arg) for arg in e.args),)
-            catchError(e, new_e=FileIOError, msg="Unable to read File!", ePrint=True)
+            catchError(e, new_e=FileIOError, msg="Unable to read File!", ePrint=False)
         try:
             # Attempt to store file as bytes
             # Check if data stream is binary data
@@ -81,9 +81,6 @@ class NMRData:
         self.header = Header(dic, hStream)
         self.np_data = data
 
-        # Set pipe count based on the input type
-        self.setPipeCount(file)
-
     def setPipeCount(self, stream):
         """
         fn initHeader
@@ -91,14 +88,13 @@ class NMRData:
         Initialize header based on whether or not the data is pipelined
             or from file
         """
-        if type(stream) == type(sys.stdout.buffer):
+        out = sys.stdout if not hasattr(sys.stdout, 'buffer') else sys.stdout.buffer
+        if type(stream) == type(out):
             pipeCount = int(self.getParam('FDPIPECOUNT'))
             self.modifyParam('FDPIPECOUNT', pipeCount+1)
         elif type(stream) == str:
             self.modifyParam('FDPIPECOUNT', 0)
 
-    def write(self, file, overwrite: bool = False):
-        pipe.write(file, self.header.getDict(), self.np_data, overwrite)
 
     def writeOut(self, output, overwrite: bool):
         from . import Header
@@ -118,23 +114,26 @@ class NMRData:
         """
         # Set pipecount based on the output type
         self.setPipeCount(output)
-
         # Determine if output is to file or output stream
-        if not hasattr(output, 'write'):
+        if type(output) == str:
             self.writeToFile(output, overwrite)
         else:
             # Mimic nmrglue's write to standard output buffer if output to datastream
             match self.np_data.ndim:
                 case 1:
-                    self.writeToBuffer(output, self.header.getDict(), self.np_data)
+                    self.writeHeaderToBuffer(output, self.header.getDict())
+                    self.writeDataToBuffer(output, self.np_data)
                 case 2:
-                    self.writeToBuffer(output, self.header.getDict(), self.np_data)
+                    self.writeHeaderToBuffer(output, self.header.getDict())
+                    self.writeDataToBuffer(output, self.np_data)
                 case 3:
-                    # Write each plane to buffer
+                    # Write header to buffer
+                    self.writeHeaderToBuffer(output, self.header.getDict())
+                    # Write each data plane to buffer
                     lenZ, lenY, lenX = self.np_data.shape
                     for zi in range(lenZ):
                         plane = self.np_data[zi]
-                        self.writeToBuffer(output, self.header.getDict(), plane)
+                        self.writeDataToBuffer(output, plane)
                 case 4:
                     ######################
                     # Currently untested #
@@ -169,15 +168,48 @@ class NMRData:
             Output file or stream to send the header and nmr data to
         overwrite : bool
             Bool represents whether or not to overwrite file if the file exists
-        current warning: 
         """
         try:
             pipe.write(outFileName, self.header.getDict(), self.np_data, overwrite)
         except Exception as e:
             catchError(e, new_e=FileIOError, msg="Unable to write to file!")
 
+    def writeHeaderToBuffer(self, bufferStream, dic):
+        """
+        fn writeHeaderToBuffer
 
-    def writeToBuffer(self, bufferStream, dic, data): 
+        Writes the header to the standard output as bytes
+
+        Parameters
+        ----------
+        bufferStream : sys.stdout.buffer
+            stream to send the header to
+        dic : Dict
+            Header represented as dictionary
+                to write to the buffer
+
+        Returns
+        ----------
+        Returns input header to binary output stream
+        """
+        try:
+            # create the fdata array
+            fdata = pipe.dic2fdata(dic)
+
+            """
+            Put fdata and to 2D NMRPipe.
+            """
+            # check for proper datatype
+            if fdata.dtype != 'float32':
+                    raise TypeError('fdata.dtype is not float32')
+            
+            # Write fdata to buffer
+            bufferStream.write(fdata.tobytes())
+        except Exception as e:
+            catchError(e, new_e=FileIOError, msg="An exception occured when attempting to write header to buffer!")
+        
+        
+    def writeDataToBuffer(self, bufferStream, data): 
         """
         fn writeToBuffer
 
@@ -187,13 +219,12 @@ class NMRData:
         ----------
         outFileName : str
             Output file or stream to send the header and nmr data to
-        overwrite : bool
-            Bool represents whether or not to overwrite file if the file exists
-        current warning: 
+        data : ndarray
+            Nd
 
         Returns
         ----------
-        Returns in binary output stream the header as well as data
+        Returns input data to binary output stream
         """
         try:
             """
@@ -209,19 +240,14 @@ class NMRData:
                 data = pipe.append_data(data)
             data = data.flatten()
 
-            # create the fdata array
-            fdata = pipe.dic2fdata(dic)
-
             """
-            Put fdata and data to 2D NMRPipe.
+            Put data to 2D NMRPipe.
             """
             # check for proper datatypes
             if data.dtype != 'float32':
                 raise TypeError('data.dtype is not float32')
-            if fdata.dtype != 'float32':
-                raise TypeError('fdata.dtype is not float32')
             
-            bufferStream.write(fdata.tobytes())
+            # Write data to buffer
             bufferStream.write(data.tobytes())
             
         except Exception as e:

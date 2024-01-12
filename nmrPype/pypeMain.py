@@ -2,6 +2,7 @@
 pypeMain.py: Functions similarly to nmrPipe but as a python script
 """
 import sys 
+from utils import NMRData, catchError, PipeBurst
 
 def fileInput(userData, file):
     # Attempt to read the input stream
@@ -9,8 +10,7 @@ def fileInput(userData, file):
         userData.readFile(file)
     except Exception as e:
         msg = "Exception has occured whist attempting to read data stream!"
-        msg += "" if not hasattr(e, 'message') else " {0}".format(e.message)
-        raise e("{0}: {1}\n".format(type(e), msg))
+        catchError(e, msg=msg)
 
 
 def fileOutput(userData, output, overwrite):
@@ -19,8 +19,7 @@ def fileOutput(userData, output, overwrite):
         userData.writeOut(output,overwrite)
     except Exception as e:
         msg = "An exception occured when attempting to write data!"
-        msg += "" if not hasattr(e, 'message') else " {0}".format(e.message)
-        raise e("{0}: {1}\n".format(type(e), msg))
+        catchError(e, msg=msg)
 
 
 def mod(userData, param, value):
@@ -42,7 +41,6 @@ def function(userData, args):
 
 def main(): 
     from parse import parser
-    from utils import NMRData, catchError, PipeBurst
 
     try:
         userData = NMRData() # Initialize NMR Data object for handling the data
