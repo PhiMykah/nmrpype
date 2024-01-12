@@ -61,8 +61,8 @@ def main():
             function(userData, args)
 
         # Delete imaginary element if prompted
-        if args.delete_imaginary:
-            userData.deleteImaginary()
+        if args.di:
+            userData.runFunction('DI')
 
         # Output NMR data after changes made
         fileOutput(userData, args.output, args.overwrite)

@@ -9,7 +9,7 @@ def parseArgs(input_args : list):
     parser.add_argument('-modify', '-mod', nargs=2, metavar=('Param', 'Value'))
     parser.add_argument('-function','-fn', dest='rf', action='store_true',
                         help='Read for inputted function')
-    parser.add_argument('-di', '--delete-imaginary', action='store_true', 
+    parser.add_argument('-di', '--delete-imaginary', action='store_true', dest='di',
                         help='Remove imaginary elements from dataset')
     
     # Add subparsers for each function available

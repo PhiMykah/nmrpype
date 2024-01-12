@@ -5,41 +5,26 @@ class DeleteImaginary(Function):
         params = {}
         super().__init__(data, params)
 
+    def func(self, array):
+        """
+        fn func
 
-def run(self):
-    """
-    fn run (Delete Imaginary)
-
-    Remove imaginary element from data
-        Then update the header to indicate action has been performed
-    """
-    from numpy import real
-    data = self.data
-    get = data.getParam
-    try:
-        # Delete imaginary elements
-        data.np_data = real(data.np_data)
-        dimCount = int(get('FDDIMCOUNT'))
-        # Remove imaginary elements in direct dimensions
+        Deletes imaginaries of 1-D array sent to the function
         
-        if (dimCount > 1):
-            currDim = int(data.header.currDim)
-            # Check if direct dimension and real or complex
-            isReal = True # NYI
-            if (isReal):
-                # Obtain direct dimensions and slice based on size
-                match dimCount:
-                    case 2:
-                        realIndex = int(len(data.np_data)/2)
-                        data.np_data = data.np_data[:realIndex]
+        Header updating operations are performed outside scope
 
-        # Update header properly based on deleting Imaginary values
-        self.updateHeader()
-        self.updateFunctionHeader(data.getTDSize())
-    except:
+        Parameters
+        ----------
+        array : ndarray (1-D)
+            Array to perform operation on, passed from run
+        Returns
+        -------
+        array : ndarray
+            Modified 1-D array after operation
+        """
+        return array.real
+
+    def updateFunctionHeader(self, sizes):
+        #FDQUADFLAG
+        #NDQUADFLAG
         pass
-
-def updateFunctionHeader(self, size):
-    #FDQUADFLAG
-    #NDQUADFLAG
-    pass

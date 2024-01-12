@@ -155,6 +155,6 @@ class nmrFunction:
                 raise UnsupportedDimension('Dimension provided in \
                                                       header is currently unsupported!')
 
-    def updateFunctionHeader(sizes = {}):
+    def updateFunctionHeader(self, sizes = {}):
         # Empty function for parent function class, implemented in the child classes
         pass 

@@ -303,9 +303,9 @@ class NMRData:
         """
         return(self.header.getParam(param, dim))
 
-    def runFunction(self, fn : str, arguments: dict = {}):
+    def runFunction(self, func : str, arguments: dict = {}):
         from fn import Function
-        from fn import FT, ZF, PS
+        from fn import FT, ZF, PS, DI
         """
         fn runFunction
 
@@ -314,18 +314,20 @@ class NMRData:
 
         Parameters
         ----------
-        fn : str
+        func : str
             Function code for the designated function to run
         arguments : dict
             Dictionary of arguments for the designated function
         """
-        match fn:
+        match func:
             case 'FT':
                 function = FT(self, **arguments)
             case 'ZF':
                 function = ZF(self, **arguments)
             case 'PS':
                 function = PS(self, **arguments)
+            case 'DI':
+                function = DI(self, **arguments)
             case _:
                 function = Function(self, arguments)
         function.run()
