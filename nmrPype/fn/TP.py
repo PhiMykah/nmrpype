@@ -4,11 +4,12 @@ from utils import catchError, FunctionError
 class Transpose(Function):
     def __init__(self,
                 tp_noord: bool = False, tp_exch : bool = False,
-                tp_minMax: bool = True, params : dict = {}):
+                tp_minMax: bool = True, tp_axis : int = 0, params : dict = {}):
         
         self.tp_noord = tp_noord
         self.tp_exch = tp_exch
         self.tp_minMax = tp_minMax
+        self.tp_axis = tp_axis
 
         params.update({'tp_noord':tp_noord,
                   'tp_exch':tp_exch,'tp_minMax':tp_minMax,})
@@ -79,7 +80,7 @@ class Transpose(Function):
                         dest='tp_noord', help='No Change to Header Orders')
         parser.add_argument('-minMax', action='store_true',
                         dest='tp_minMax', help='Update FDMIN and FDMAX')
-            
+    
 
     def run(self, data):
         """
@@ -94,33 +95,163 @@ class Transpose(Function):
             array = data.np_data
             if type(array) is None:
                 raise EmptyNMRData("No data to modify!")
-            
+
+            # Update header before processing data
+            # Take parameters from dictionary and allocate to designated header locations
+            self.updateHeader(data)
+            sizes = self.obtainSizes(data)
+
+            # Perform transpose operation
+            array = self.func(array, self.tp_axis)
+
+            # Process data after operation
+            self.updateHeader(data)
+            self.updateFunctionHeader(data, sizes)
 
         # Exceptions
         except Exception as e:
             msg = "Unable to run function {0}!".format(type(self).__name__)
             catchError(e, new_e=FunctionError, msg=msg)
 
+    def func(self, array, axis):
+        """
+        fn func 
+        Swaps the second and first axes
+
+        Header updating operations are performed outside scope
+
+        Parameters
+        ----------
+        array : ndarray
+            N-dimensional array to perform operation on, passed from run
+        Returns
+        -------
+        new_array : ndarray
+            Modified array of N dimensions after operation
+        """
+        if axis < 1:
+            raise Exception('Unable to resolve desired axis!')
+        if array.ndim < axis:
+            raise IndexError('Attempting to swap out of dimension bounds!')
+        return array.swapaxes(0,axis-1)
+    
+
+    def updateFunctionHeader(self, data, sizes):
+        """ 
+        fn updateFunctionHeader
+
+        Update the header after function processing
+            based on the function itself 
+
+        Parameters
+        ----------
+        sizes : list of ints
+            Parameter sizes before function operation
+        """
+        
+        get = data.getParam
+        set = data.modifyParam
+
+        # Swap dimension orders
+        dimOrder1 = get('FDDIMORDER1')
+        dimOrder2 = get(f'FDDIMORDER{str(self.tp_axis)}')
+
+        set('FDDIMORDER1', dimOrder2)
+        set(f'FDDIMORDER{str(self.tp_axis)}', dimOrder1)
+
+        # Set flag transpose to true
+        set('FDTRANSPOSED', float(1))
+
+        # Update Slicecount
+        currDim = data.getcurrDim
+        shape = data.np_data.shape
+        slices = 1
+        dimensions = []
+
+        # Find number of 1D Slices
+        # Collect dimensions that are not the current one
+        for dim in range(len(shape)):
+            if (dim+1 != currDim):
+                dimensions.append(-1*(dim+1))
+
+        # Multiply indirect dimensions
+        if dimensions:
+            for num in dimensions:
+                slices *= shape[num]
+        else:
+            slices = 0
+
+        set('FDSLICECOUNT', float(slices))
+
 
 class Transpose2D(Transpose):
-    def __init__(self, data,
+    def __init__(self,
                  tp_hyper : bool = False, tp_auto: bool = True,
                  tp_nohdr : bool = False, tp_noord: bool = False,
                  tp_exch : bool = False, tp_minMax: bool = False):
         self.tp_hyper = tp_hyper
         self.tp_auto = tp_auto
         self.tp_nohdr = tp_nohdr
-
+        tp_axis = 2 
         params = {'tp_hyper':tp_hyper,'tp_auto':tp_auto,
                   'tp_nohdr':tp_nohdr}
-        super.__init__(data, tp_noord, tp_exch, tp_minMax, params)
+        super.__init__(tp_noord, tp_exch, tp_minMax, tp_axis, params)
+
+
+    def updateFunctionHeader(self, data, sizes):
+        """ 
+        fn updateFunctionHeader
+
+        Update the header after function processing
+            based on the function itself 
+
+        Parameters
+        ----------
+        sizes : list of ints
+            Parameter sizes before function operation
+        """
+        super().updateFunctionHeader(data, sizes)
+        
 
 class Transpose3D(Transpose):
-    def __init__(self, data, tp_noord: bool = False,
+    def __init__(self, tp_noord: bool = False,
                  tp_exch : bool = False, tp_minMax: bool = False):
-        super().__init__(data, tp_noord, tp_exch, tp_minMax)
+        tp_axis = 3
+        super().__init__(tp_noord, tp_exch, tp_minMax, tp_axis)
+
+
+    def updateFunctionHeader(self, data, sizes):
+        """ 
+        fn updateFunctionHeader
+
+        Update the header after function processing
+            based on the function itself 
+
+        Parameters
+        ----------
+        sizes : list of ints
+            Parameter sizes before function operation
+        """
+        super().updateFunctionHeader(data, sizes)
+
 
 class Transpose4D(Transpose):
     def __init__(self, data, tp_noord: bool = False,
                  tp_exch : bool = False, tp_minMax: bool = False):
-        super().__init__(data, tp_noord, tp_exch, tp_minMax)
+        tp_axis = 4
+        super().__init__(data, tp_noord, tp_exch, tp_minMax, tp_axis)
+
+
+    def updateFunctionHeader(self, data, sizes):
+        """ 
+        fn updateFunctionHeader
+
+        Update the header after function processing
+            based on the function itself 
+
+        Parameters
+        ----------
+        sizes : list of ints
+            Parameter sizes before function operation
+        """
+        super().updateFunctionHeader(data, sizes)
