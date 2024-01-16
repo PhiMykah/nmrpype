@@ -129,10 +129,6 @@ class Transpose(Function):
         new_array : ndarray
             Modified array of N dimensions after operation
         """
-        if axis < 1:
-            raise Exception('Unable to resolve desired axis!')
-        if array.ndim < axis:
-            raise IndexError('Attempting to swap out of dimension bounds!')
         
         # Expanding out the imaginary to to another set of data when performing the TP is necessary
         return array.swapaxes(0,axis-1)
@@ -187,6 +183,52 @@ class Transpose2D(Transpose):
                   'tp_nohdr':tp_nohdr}
         super().__init__(tp_noord, tp_exch, tp_minMax, tp_axis, params)
 
+    def func(self, array, axis):
+        """
+        fn func 
+        Swaps the second and first axes
+
+        Header updating operations are performed outside scope
+
+        Parameters
+        ----------
+        array : ndarray
+            N-dimensional array to perform operation on, passed from run
+        Returns
+        -------
+        new_array : ndarray
+            Modified array with extrapolated dimensions
+        """    
+        
+        if axis < 1:
+            raise Exception('Unable to resolve desired axis!')
+        if array.ndim < axis:
+            raise IndexError('Attempting to swap out of dimension bounds!')
+        from numpy import zeros
+        from numpy import nditer
+        # Collect last axis shape to fill array size
+        dataLength = array.shape[-1]
+
+        new_size = 2*dataLength
+        # Obtain new array shape and then create dummy array for data transfer
+        new_shape = array.shape[:-1] + (new_size,)
+        new_array = zeros(new_shape, dtype=array.dtype)
+
+        # Ensure both arrays are matching for nditer operation based on size
+        a = array
+        b = new_array[...,:dataLength]
+        c = new_array[...,dataLength:]
+
+        # Iterate through each 1-D strip and copy over existing data
+        it = nditer([a,b,c], flags=['external_loop','buffered'],
+            op_flags=[['readonly'],['writeonly'],['writeonly']],
+            buffersize=dataLength)
+        with it:
+            for x, y, z in it:
+                y[...] = x.real
+                z[...] = x.imag
+
+        return super().func(new_array, axis)
 
     def updateFunctionHeader(self, data, sizes):
         """ 
