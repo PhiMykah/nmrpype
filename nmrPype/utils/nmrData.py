@@ -305,7 +305,7 @@ class NMRData:
 
     def runFunction(self, func : str, arguments: dict = {}):
         from fn import Function
-        from fn import FT, ZF, PS, DI
+        from fn import FT, ZF, PS, DI, YTP, ZTP, ATP
         """
         fn runFunction
 
@@ -320,14 +320,36 @@ class NMRData:
             Dictionary of arguments for the designated function
         """
         match func:
+            # Fourier Transform
             case 'FT':
                 function = FT(**arguments)
+            # Zero Fill
             case 'ZF':
                 function = ZF(**arguments)
+            # Phase Correction
             case 'PS':
                 function = PS(self, **arguments)
+            # Delete Imaginary
             case 'DI':
                 function = DI(**arguments)
+            # 2D Transpose
+            case 'YTP':
+                function = YTP(**arguments)
+            case 'TP':
+                function = YTP(**arguments)
+            case 'XY2YX':
+                function = YTP(**arguments)
+            # 3D Transpose
+            case 'ZTP':
+                function = ZTP(**arguments)
+            case 'XYZ2ZYX':
+                function = ZTP(**arguments)
+            # 4D Transpose
+            case 'ATP': 
+                function = ATP(**arguments)
+            case 'XYZA2AYZX':
+                function = ATP(**arguments)
+            # Default Case
             case _:
                 function = Function(arguments)
         function.run(self)
