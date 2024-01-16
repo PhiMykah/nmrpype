@@ -91,20 +91,8 @@ class DeleteImaginary(Function):
 
         mod('FDQUADFLAG', float(1) if isReal else float(0))
 
-        slices = 1
-        dimensions = []
-
-        # Find number of 1D Slices
-        # Collect dimensions that are not the current one
-        for dim in range(len(shape)):
-            if (dim+1 != currDim):
-                dimensions.append(-1*(dim+1))
-
-        # Multiply indirect dimensions
-        if dimensions:
-            for num in dimensions:
-                slices *= shape[num]
-        else:
-            slices = 0
+        from numpy import prod
+        # Update Slicecount
+        slices = prod(shape[:-1])
 
         mod('FDSLICECOUNT', float(slices))

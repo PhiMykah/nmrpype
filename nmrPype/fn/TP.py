@@ -102,8 +102,8 @@ class Transpose(Function):
             sizes = self.obtainSizes(data)
 
             # Perform transpose operation
-            array = self.func(array, self.tp_axis)
-
+            data.np_data = self.func(array, self.tp_axis)
+            
             # Process data after operation
             self.updateHeader(data)
             self.updateFunctionHeader(data, sizes)
@@ -133,6 +133,8 @@ class Transpose(Function):
             raise Exception('Unable to resolve desired axis!')
         if array.ndim < axis:
             raise IndexError('Attempting to swap out of dimension bounds!')
+        
+        # Expanding out the imaginary to to another set of data when performing the TP is necessary
         return array.swapaxes(0,axis-1)
     
 
@@ -162,24 +164,12 @@ class Transpose(Function):
         # Set flag transpose to true
         set('FDTRANSPOSED', float(1))
 
-        # Update Slicecount
-        currDim = data.getcurrDim
+        
         shape = data.np_data.shape
-        slices = 1
-        dimensions = []
 
-        # Find number of 1D Slices
-        # Collect dimensions that are not the current one
-        for dim in range(len(shape)):
-            if (dim+1 != currDim):
-                dimensions.append(-1*(dim+1))
-
-        # Multiply indirect dimensions
-        if dimensions:
-            for num in dimensions:
-                slices *= shape[num]
-        else:
-            slices = 0
+        from numpy import prod
+        # Update Slicecount
+        slices = prod(shape[:-1])
 
         set('FDSLICECOUNT', float(slices))
 
@@ -195,7 +185,7 @@ class Transpose2D(Transpose):
         tp_axis = 2 
         params = {'tp_hyper':tp_hyper,'tp_auto':tp_auto,
                   'tp_nohdr':tp_nohdr}
-        super.__init__(tp_noord, tp_exch, tp_minMax, tp_axis, params)
+        super().__init__(tp_noord, tp_exch, tp_minMax, tp_axis, params)
 
 
     def updateFunctionHeader(self, data, sizes):
