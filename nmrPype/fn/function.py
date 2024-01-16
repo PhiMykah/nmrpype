@@ -79,7 +79,7 @@ class nmrFunction:
         """
         fn commands (Template)
 
-        Adds function parser to the subparser, with its corresponds
+        Adds function parser to the subparser, with its corresponding default args
         Called in nmrParse.py
 
         Destinations are formatted typically by {function}_{argument}

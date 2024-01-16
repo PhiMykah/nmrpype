@@ -16,7 +16,7 @@ class ZeroFill(Function):
         """
         fn commands
 
-        Adds Zero Fill parser to the subparser, with its corresponds
+        Adds Zero Fill parser to the subparser, with its corresponding args
         Called in nmrParse.py
 
         Destinations are formatted typically by {function}_{argument},
@@ -43,6 +43,7 @@ class ZeroFill(Function):
 
         # Include universal commands proceeding function call
         Function.universalCommands(ZF)
+
 
     def nextPowerOf2(x : int):
         return 1 if x == 0 else 2**(x-1).bit_length()
