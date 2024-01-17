@@ -106,6 +106,17 @@ class PhaseCorrection(Function):
 
 
     def updateFunctionHeader(self, data, sizes):
+        """ 
+        fn updateFunctionHeader
+
+        Update the header after function processing
+            based on the function itself 
+
+        Parameters
+        ----------
+        sizes : list of ints
+            Parameter sizes before function operation
+        """
         # Add values to header if noup is off
         if (not self.ps_noup):
             currDim = data.header.getcurrDim()

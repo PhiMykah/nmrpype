@@ -2,13 +2,14 @@ from .function import nmrFunction as Function
 from utils import catchError, FunctionError
 
 class SineBell(Function):
-    def __init__(self, sp_off : float = 0.0, sp_end : float = 1.0,
+    def __init__(self, headerQ : list = [], sp_off : float = 0.0, sp_end : float = 1.0,
                  sp_pow : float = 1.0, sp_size : int = 0,
                  sp_start : int = 1, sp_c : int = 1, sp_one : bool = False,
                  sp_hdr : bool = False, sp_inv : bool = False, 
                  sp_df : float = 0.0, sp_elb : float = 0.0,
                  sp_glb : float = 0.0, sp_goff : float = 0.0):
-        
+        self.headerQ = headerQ
+
         self.sp_off = sp_off
         self.sp_end = sp_end
         self.sp_pow = sp_pow
@@ -22,7 +23,6 @@ class SineBell(Function):
         self.sp_elb = sp_elb
         self.sp_glb = sp_glb
         self.sp_goff = sp_goff
-
         params = {'sp_off':sp_off, 'sp_end':sp_end, 'sp_pow':sp_pow,
                   'sp_size':sp_size, 'sp_start':sp_start, 'sp_c':sp_c,
                   'sp_one':sp_one, 'sp_hdr':sp_hdr, 'sp_inv':sp_inv,
@@ -102,10 +102,17 @@ class SineBell(Function):
         from numpy import pi, power, arange, absolute, sin
 
         # allocate variables from parameters for simplification
-        a1 = self.sp_off
-        a2 = self.sp_end
-        a3 = self.sp_pow
-        df = self.sp_df
+        if self.sp_hdr and self.headerQ:
+            a1 = self.headerQ[0]
+            a2 = self.headerQ[1]
+            a3 = self.headerQ[2]
+            df = self.sp_df
+        else:
+            a1 = self.sp_off
+            a2 = self.sp_end
+            a3 = self.sp_pow
+            df = self.sp_df
+            
 
         # Set size to the size of array if one is not provided
         aSize = self.sp_size if self.sp_size else len(array)
@@ -137,4 +144,30 @@ class SineBell(Function):
 
 
     def updateFunctionHeader(self, data, sizes):
+        """ 
+        fn updateFunctionHeader
+
+        Update the header after function processing
+            based on the function itself 
+
+        Parameters
+        ----------
+        sizes : list of ints
+            Parameter sizes before function operation
+        """
+        
+        # Variable initialization for clarity
+        q1 = self.sp_off
+        q2 = self.sp_end
+        q3 = self.sp_pow
+
+        # Add codes to header
+        set = data.modifyParam
+        currDim = data.header.getcurrDim
+        set('NDAPODQ1', float(q1), currDim)
+        set('NDAPODQ2', float(q2), currDim)
+        set('NDAPODQ3', float(q3), currDim)
+
+        # Signal that window function occured
+        set('NDAPODCODE', float(1), currDim)
         pass

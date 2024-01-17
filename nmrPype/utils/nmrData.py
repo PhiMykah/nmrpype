@@ -336,7 +336,11 @@ class NMRData:
                 function = DI(**arguments)
             # Sine Bell Window Function
             case 'SP':
-                function = SP(**arguments)
+                currDim = self.header.getcurrDim()
+                function = SP(headerQ=[self.getParam('NDAPODQ1', currDim), 
+                                       self.getParam('NDAPODQ2', currDim), 
+                                       self.getParam('NDAPODQ3', currDim)],
+                              **arguments)
             # 2D Transpose
             case 'YTP':
                 function = YTP(**arguments)
