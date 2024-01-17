@@ -155,18 +155,27 @@ class SineBell(Function):
         sizes : list of ints
             Parameter sizes before function operation
         """
-        
+
         # Variable initialization for clarity
         q1 = self.sp_off
         q2 = self.sp_end
         q3 = self.sp_pow
 
+        lb = self.sp_elb
+        gb = self.sp_glb
+        goff = self.sp_goff
+
         # Add codes to header
         set = data.modifyParam
-        currDim = data.header.getcurrDim
+        currDim = data.header.getcurrDim()
+
         set('NDAPODQ1', float(q1), currDim)
         set('NDAPODQ2', float(q2), currDim)
         set('NDAPODQ3', float(q3), currDim)
+
+        set('NDLB', float(lb), currDim)
+        set('NDGB', float(gb), currDim)
+        set('NDGOFF', float(goff), currDim)
 
         # Signal that window function occured
         set('NDAPODCODE', float(1), currDim)
