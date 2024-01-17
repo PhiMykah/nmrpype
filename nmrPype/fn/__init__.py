@@ -8,9 +8,12 @@ from .TP import Transpose as TP
 from .TP import Transpose2D as YTP
 from .TP import Transpose3D as ZTP
 from .TP import Transpose4D as ATP
+from .SP import SineBell as SP
 
 from utils import catchError, FunctionError
 
-fn_list = [FT, ZF, PS, DI, TP]
+fn_list = [FT, ZF, PS, DI, TP, SP]
 
-__all__ = ['Function', 'FT', 'ZF', 'PS', 'DI', 'TP', 'YTP', 'ZTP', 'ATP']
+__all__ = ['Function', 'FT', 'ZF', 'PS', 'DI', 
+           'TP', 'YTP', 'ZTP', 'ATP',
+           'SP']

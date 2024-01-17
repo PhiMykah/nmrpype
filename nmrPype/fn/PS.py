@@ -30,7 +30,7 @@ class PhaseCorrection(Function):
         """
         fn commands
 
-        Adds Fourier Transform parser to the subparser, with its corresponding args
+        Adds Phase Correction parser to the subparser, with its corresponding args
         Called in nmrParse.py
 
         Destinations are formatted typically by {function}_{argument},

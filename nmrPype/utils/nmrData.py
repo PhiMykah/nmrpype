@@ -303,9 +303,10 @@ class NMRData:
         """
         return(self.header.getParam(param, dim))
 
+
     def runFunction(self, func : str, arguments: dict = {}):
         from fn import Function
-        from fn import FT, ZF, PS, DI, YTP, ZTP, ATP
+        from fn import FT, ZF, PS, DI, SP, YTP, ZTP, ATP
         """
         fn runFunction
 
@@ -319,6 +320,7 @@ class NMRData:
         arguments : dict
             Dictionary of arguments for the designated function
         """
+        # Clean this up to look nicer, could use function names in some way
         match func:
             # Fourier Transform
             case 'FT':
@@ -332,6 +334,9 @@ class NMRData:
             # Delete Imaginary
             case 'DI':
                 function = DI(**arguments)
+            # Sine Bell Window Function
+            case 'SP':
+                function = SP(**arguments)
             # 2D Transpose
             case 'YTP':
                 function = YTP(**arguments)
