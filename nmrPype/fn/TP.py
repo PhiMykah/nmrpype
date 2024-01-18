@@ -183,6 +183,10 @@ class Transpose2D(Transpose):
                   'tp_nohdr':tp_nohdr}
         super().__init__(tp_noord, tp_exch, tp_minMax, tp_axis, params)
 
+    @staticmethod
+    def commands(subparser): 
+        pass 
+
     def func(self, array, axis):
         """
         fn func 
@@ -251,6 +255,9 @@ class Transpose3D(Transpose):
         tp_axis = 3
         super().__init__(tp_noord, tp_exch, tp_minMax, tp_axis)
 
+    @staticmethod
+    def commands(subparser): 
+        pass
 
     def updateFunctionHeader(self, data, sizes):
         """ 
@@ -273,7 +280,10 @@ class Transpose4D(Transpose):
         tp_axis = 4
         super().__init__(data, tp_noord, tp_exch, tp_minMax, tp_axis)
 
-
+    @staticmethod
+    def commands(subparser): 
+        pass 
+    
     def updateFunctionHeader(self, data, sizes):
         """ 
         fn updateFunctionHeader

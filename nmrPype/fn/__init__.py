@@ -12,8 +12,6 @@ from .SP import SineBell as SP
 
 from utils import catchError, FunctionError
 
-fn_list = [FT, ZF, PS, DI, TP, SP]
-
 __all__ = ['Function', 'FT', 'ZF', 'PS', 'DI', 
            'TP', 'YTP', 'ZTP', 'ATP',
            'SP']

@@ -1,5 +1,5 @@
 def parseArgs(input_args : list):
-    from fn import fn_list
+    import fn
     from argparse import ArgumentParser
     from sys import stdin,stdout
     parser = ArgumentParser(prog='nmrPype',description='Handle NMR Data inputted through file or pipeline \
@@ -14,8 +14,13 @@ def parseArgs(input_args : list):
     
     # Add subparsers for each function available
     subparser = parser.add_subparsers(title='Function Commands', dest='fc')
-    for fn in fn_list:
-        fn.commands(subparser)
+
+    # Gather list of functions
+    fn_list = dict([(name, cls) for name, cls in fn.__dict__.items() if isinstance(cls, type)])
+
+    for fn in fn_list.values():
+        if hasattr(fn, 'commands'):
+            fn.commands(subparser)
 
     parser.add_argument('-output', '-out', nargs='?',
                         default=(stdout.buffer if hasattr(stdout,'buffer') else stdout))
