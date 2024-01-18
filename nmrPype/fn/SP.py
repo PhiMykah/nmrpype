@@ -2,13 +2,12 @@ from .function import nmrFunction as Function
 from utils import catchError, FunctionError
 
 class SineBell(Function):
-    def __init__(self, headerQ : list = [], sp_off : float = 0.0, sp_end : float = 1.0,
+    def __init__(self, data, sp_off : float = 0.0, sp_end : float = 1.0,
                  sp_pow : float = 1.0, sp_size : int = 0,
                  sp_start : int = 1, sp_c : int = 1, sp_one : bool = False,
                  sp_hdr : bool = False, sp_inv : bool = False, 
-                 sp_df : float = 0.0, sp_elb : float = 0.0,
+                 sp_df : bool = False, sp_elb : float = 0.0,
                  sp_glb : float = 0.0, sp_goff : float = 0.0):
-        self.headerQ = headerQ
 
         self.sp_off = sp_off
         self.sp_end = sp_end
@@ -23,12 +22,15 @@ class SineBell(Function):
         self.sp_elb = sp_elb
         self.sp_glb = sp_glb
         self.sp_goff = sp_goff
+        self.headerParams = {}
+
         params = {'sp_off':sp_off, 'sp_end':sp_end, 'sp_pow':sp_pow,
                   'sp_size':sp_size, 'sp_start':sp_start, 'sp_c':sp_c,
                   'sp_one':sp_one, 'sp_hdr':sp_hdr, 'sp_inv':sp_inv,
                   'sp_df':sp_df, 'sp_elb':sp_elb, 'sp_glb':sp_glb,
                   'sp_goff':sp_goff}
         super().__init__(params)
+        self.initialize(data)
 
     @staticmethod
     def commands(subparser):
@@ -65,7 +67,7 @@ class SineBell(Function):
                         dest='sp_hdr', help='Use Q/LB/GB/GOFF from Header.')
         SP.add_argument('-inv', action='store_true',
                         dest='sp_inv', help='Invert Window.')
-        SP.add_argument('-df', type=float, metavar='df', default=0.0,
+        SP.add_argument('-df', action='store_true',
                         dest='sp_df', help='Adjust -off and -goff for Digital Oversampling.')
         group = SP.add_argument_group('Composite Window Options')
         group.add_argument('-elb', type=float, metavar='elbHz [0.0]', default=0.0,
@@ -78,6 +80,17 @@ class SineBell(Function):
         # Include universal commands proceeding function call
         Function.universalCommands(SP)
 
+
+    def initialize(self, data):
+        currDim = data.header.getcurrDim()
+        self.headerParams = {
+            'Q1':data.getParam('NDAPODQ1', currDim), 
+            'Q2':data.getParam('NDAPODQ2', currDim), 
+            'Q3':data.getParam('NDAPODQ3', currDim),
+            'DF':data.getParam('FDDMXVAL', currDim),
+            'C1':data.getParam('NDC1', currDim)
+        }
+        
 
     def func(self, array):
         """
@@ -99,25 +112,28 @@ class SineBell(Function):
             return array
         if ((self.sp_off == 0.5) and (self.sp_end == 0.5)):
             return array
-        from numpy import pi, power, arange, absolute, sin
+        
+        # Imports
+        from numpy import pi, power, arange, absolute, sin, zeros, ones
 
         # allocate variables from parameters for simplification
         if self.sp_hdr and self.headerQ:
-            a1 = self.headerQ[0]
-            a2 = self.headerQ[1]
-            a3 = self.headerQ[2]
-            df = self.sp_df
+            a1 = self.headerParams['Q1']
+            a2 = self.headerParams['Q2']
+            a3 = self.headerParams['Q3']
+            firstPointScale = 1.0 + self.headerParams['C1']
         else:
             a1 = self.sp_off
             a2 = self.sp_end
             a3 = self.sp_pow
-            df = self.sp_df
-            
+            firstPointScale = self.sp_c
 
-        # Set size to the size of array if one is not provided
-        aSize = self.sp_size if self.sp_size else len(array)
-        
+        df = self.headerParams['DFVAL'] if self.sp_df else 0.0
+
         tSize = len(array)
+        # Set size to the size of array if one is not provided
+        aSize = self.sp_size if self.sp_size else tSize
+
         #mSize = aStart + aSize - 1 > tSize ? tSize - aStart + 1 : aSize;
         mSize = tSize - self.sp_start + 1 if self.sp_start + aSize - 1 > tSize else aSize
 
@@ -130,17 +146,26 @@ class SineBell(Function):
         
         q = 1 if q <= 0.0 else q
 
-        # if (t < 0.0)
-        #   a = rPow( sin( (double)(PI*a1 - PI*(a2 - a1)*t) ), (double)a3 );
-        # else
-        #   a = rPow( sin( (double)(PI*a1 + PI*(a2 - a1)*t) ), (double)a3 );
-        t = (arange(mSize) - df)/q
+        new_array = ones(tSize, dtype=array.dtype) if self.sp_one else zeros(tSize, dtype=array.dtype)
+        
+        startIndex = self.sp_start - 1
+
+        t = (arange(mSize ) - df)/q
+
         f_t = sin(pi*a1 + pi*(a2 -a1)*absolute(t))
         a = power(f_t, a3)
         in_closed_unit_interval = (0.0 <= a1 <= 1.0) and (0.0 <= a2 <= 1.0)
         a = absolute(a) if (in_closed_unit_interval) else a
+
+        # Place window function region into dummy array
+        new_array[startIndex:startIndex + mSize] = array[startIndex:startIndex + mSize] * a
         
-        return (array * a)
+        if self.sp_inv: 
+            new_array[0] /= firstPointScale
+        else:
+            new_array[0] *= firstPointScale
+
+        return (new_array)
 
 
     def updateFunctionHeader(self, data, sizes):
@@ -176,7 +201,7 @@ class SineBell(Function):
         set('NDLB', float(lb), currDim)
         set('NDGB', float(gb), currDim)
         set('NDGOFF', float(goff), currDim)
-
+        set('NDC1', float(self.headerParams['C1']), currDim)
         # Signal that window function occured
         set('NDAPODCODE', float(1), currDim)
         pass
