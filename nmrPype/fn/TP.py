@@ -102,7 +102,7 @@ class Transpose(Function):
             sizes = self.obtainSizes(data)
 
             # Perform transpose operation
-            data.np_data = self.func(array, self.tp_axis)
+            data.np_data = self.func(array)
             
             # Process data after operation
             self.updateHeader(data)
@@ -131,7 +131,7 @@ class Transpose(Function):
         """
         
         # Expanding out the imaginary to to another set of data when performing the TP is necessary
-        return array.swapaxes(0,axis-1)
+        return array.swapaxes(-1,axis-1)
     
 
     def updateFunctionHeader(self, data, sizes):
@@ -172,7 +172,7 @@ class Transpose(Function):
 
 class Transpose2D(Transpose):
     def __init__(self,
-                 tp_hyper : bool = False, tp_auto: bool = True,
+                 tp_hyper : bool = True, tp_auto: bool = True,
                  tp_nohdr : bool = False, tp_noord: bool = False,
                  tp_exch : bool = False, tp_minMax: bool = False):
         self.tp_hyper = tp_hyper
@@ -187,7 +187,7 @@ class Transpose2D(Transpose):
     def commands(subparser): 
         pass 
 
-    def func(self, array, axis):
+    def func(self, array):
         """
         fn func 
         Swaps the second and first axes
@@ -203,36 +203,58 @@ class Transpose2D(Transpose):
         new_array : ndarray
             Modified array with extrapolated dimensions
         """    
-        
-        if axis < 1:
+
+        # Ensure that the dimensions are at least 2
+        if array.ndim < 2:
             raise Exception('Unable to resolve desired axis!')
-        if array.ndim < axis:
-            raise IndexError('Attempting to swap out of dimension bounds!')
-        from numpy import zeros
-        from numpy import nditer
-        # Collect last axis shape to fill array size
-        dataLength = array.shape[-1]
+        #if array.ndim < 2: Only necessary for 3D TP
+        #    raise IndexError('Attempting to swap out of dimension bounds!')
 
-        new_size = 2*dataLength
-        # Obtain new array shape and then create dummy array for data transfer
-        new_shape = array.shape[:-1] + (new_size,)
-        new_array = zeros(new_shape, dtype=array.dtype)
+        if self.tp_hyper:
+            return self.hyperTP(array)
+        else:
+            return self.noHyperTP(array)
+    
 
-        # Ensure both arrays are matching for nditer operation based on size
-        a = array
-        b = new_array[...,:dataLength]
-        c = new_array[...,dataLength:]
+    def hyperTP(self, array):
+        """
+        fn hyperTP
 
-        # Iterate through each 1-D strip and copy over existing data
-        it = nditer([a,b,c], flags=['external_loop','buffered'],
-            op_flags=[['readonly'],['writeonly'],['writeonly']],
-            buffersize=dataLength)
-        with it:
-            for x, y, z in it:
-                y[...] = x.real
-                z[...] = x.imag
+        Performs a hypercomplex transposition
 
-        return super().func(new_array, axis)
+        Parameters
+        ----------
+        array : ndarray
+            N-dimensional array to swap first two dimensions
+        Returns
+        -------
+        new_array : ndarray
+            Transposed array
+        """
+        from numpy import zeros, swapaxes
+        # Extrapolate real and imaginary parts of the last dimension
+        realX = array.real
+        imagX = array.imag
+
+        # Interweave Y values prior to transpose
+        a = realX[...,::2,:] + 1j*realX[...,1::2,:]
+        b = imagX[...,::2,:] + 1j*imagX[...,1::2,:]
+
+        transposeShape = a.shape[:-2] + (2*a.shape[-1], a.shape[-2])
+
+        # Prepare new array to interweave real and imaginary indirect dimensions
+        new_array = zeros(transposeShape, dtype=a.dtype)
+
+        # Interweave real and imaginary values of former X dimension
+        new_array[...,::2,:] = swapaxes(a,-1,-2)
+        new_array[...,1::2,:] = swapaxes(b,-1,-2)
+
+        return new_array
+
+
+    def noHyperTP(self, array):
+        pass
+
 
     def updateFunctionHeader(self, data, sizes):
         """ 
