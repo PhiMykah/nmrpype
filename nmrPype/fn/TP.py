@@ -37,10 +37,10 @@ class Transpose(Function):
         group = YTP.add_mutually_exclusive_group()
         group.add_argument('-hyper', action='store_true',
                         dest='tp_hyper', help='Hypercomplex Transpose Mode.')
-        group.add_argument('-noauto', action='store_false',
-                dest='tp_auto', help='Choose Mode via Command Line.')
-        group.add_argument('-nohyper', action='store_false',
-                        dest='tp_hyper', help='Suppress Hypercomplex Mode.')
+        group.add_argument('-noauto', action='store_true',
+                dest='tp_noauto', help='Choose Mode via Command Line.')
+        group.add_argument('-nohyper', action='store_true',
+                        dest='tp_nohyper', help='Suppress Hypercomplex Mode.')
         group.add_argument('-auto', action='store_true',
                         dest='tp_auto', help='Chose Mode Automaticaly (Default).')
         YTP.add_argument('-nohdr', action='store_true',
@@ -172,11 +172,12 @@ class Transpose(Function):
 
 class Transpose2D(Transpose):
     def __init__(self,
-                 tp_hyper : bool = True, tp_auto: bool = True,
+                 tp_hyper : bool = True, tp_nohyper : bool = False, 
+                 tp_auto: bool = True, tp_noauto : bool = False,
                  tp_nohdr : bool = False, tp_noord: bool = False,
                  tp_exch : bool = False, tp_minMax: bool = False):
-        self.tp_hyper = tp_hyper
-        self.tp_auto = tp_auto
+        self.tp_hyper = tp_hyper or (not tp_nohyper)
+        self.tp_auto = tp_auto or (not tp_noauto)
         self.tp_nohdr = tp_nohdr
         tp_axis = 2 
         params = {'tp_hyper':tp_hyper,'tp_auto':tp_auto,
@@ -253,7 +254,7 @@ class Transpose2D(Transpose):
 
 
     def noHyperTP(self, array):
-        pass
+        return array
 
 
     def updateFunctionHeader(self, data, sizes):

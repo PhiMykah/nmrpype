@@ -1,4 +1,4 @@
-from utils import catchError, FunctionError
+from utils import catchError, FunctionError, EmptyNMRData
 
 class nmrFunction:
     def __init__(self, params : dict = {}):
@@ -127,6 +127,9 @@ class nmrFunction:
         np_data = data.np_data
         hdr = data.header 
 
+        if type(data.np_data) is None:
+            raise EmptyNMRData('Failed to update header! No NMR data Found!')
+        
         # Extract sizes from the np array axes, then
         # Updates particular params based on the dimension count
         match int(len(np_data.shape)):
