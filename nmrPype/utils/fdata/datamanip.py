@@ -10,19 +10,6 @@ import os
 from warnings import warn
 from nmrio.fileiobase import *
 
-def get_fdata(filename):
-    """
-    Get an array of length 512-bytes holding NMRPipe header.
-    """
-    if type(filename) is bytes:
-        fdata = np.frombuffer(filename, dtype=np.float32, count=512)
-    else:
-        fdata = np.fromfile(filename, 'float32', 512)
-
-    if fdata[2] - 2.345 > 1e-6:    # fdata[2] should be 2.345
-        fdata = fdata.byteswap()
-    return fdata
-
 
 def fdata2dic(fdata):
     """
@@ -95,6 +82,25 @@ def dic2fdata(dic):
     fdata[464:472] = struct.unpack(
         '8f', struct.pack('32s', dic["FDOPERNAME"].encode()))
 
+    return fdata
+
+
+#################################
+# raw reading of data from file #
+#################################
+
+
+def get_fdata(filename):
+    """
+    Get an array of length 512-bytes holding NMRPipe header.
+    """
+    if type(filename) is bytes:
+        fdata = np.frombuffer(filename, dtype=np.float32, count=512)
+    else:
+        fdata = np.fromfile(filename, 'float32', 512)
+
+    if fdata[2] - 2.345 > 1e-6:    # fdata[2] should be 2.345
+        fdata = fdata.byteswap()
     return fdata
 
 
