@@ -210,3 +210,16 @@ class DataFrame:
         except:
             return 1
         return 0
+    
+    def getCurrDim(self) -> int:
+        """
+        fn getCurrDim
+
+        Obtain current dim for Dataframe based on dim order
+        """
+        if int(self.header['FDDIMORDER'][0]) == 2:
+            return 1
+        elif int(self.header['FDDIMORDER'][0]) == 1:
+            return 2
+        else:
+            return int(self.header['FDDIMORDER'][0])

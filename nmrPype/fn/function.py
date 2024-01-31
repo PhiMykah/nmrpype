@@ -31,8 +31,7 @@ class DataFunction:
             - Update Header
             - Return information if necessary
 
-        Run may include step for initializing new array
-            depending on if the data needs to be resized
+        Overload run for function specific operations
 
         Parameters
         ----------
@@ -98,18 +97,22 @@ class DataFunction:
                             help='Call this argument to overwrite when sending output to file.')
 
     ####################
-    # Header Functions #
+    # Proc Functions #
     ####################
         
-    def initializeHeader(self):
+    def initialize(self, data):
         """
-        fn initializeHeader
+        fn initialize
 
-        Update any header values before any calculations occur that are independent
-            of the data, such as flags and parameter storage
+        Initialization follows the following steps:
+            -Handle function specific arguments
+            -Update any header values before any calculations occur
+                that are independent of the data, such as flags and parameter storage
 
         Parameters
         ----------
+        data : DataFrame
+            target data to manipulate 
         None
         """
         pass
@@ -125,4 +128,5 @@ class DataFunction:
         ----------
         None
         """
+        # Update ndsize here 
         pass
