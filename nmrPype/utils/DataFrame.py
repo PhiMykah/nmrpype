@@ -38,8 +38,10 @@ class DataFrame:
         return ""
     
 
-    def runFunc(self):
-        pass
+    def runFunc(self, targetFunction : str, arguments : dict = {}):
+        print(targetFunction, file=sys.stderr)
+        for param in arguments:
+            print("{}: {}".format(param.__name__, param))
 
 
     def updateParamSyntax(self, param, dim : int) -> str :

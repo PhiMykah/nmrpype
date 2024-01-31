@@ -18,14 +18,16 @@ w = [write, write_single, write_3D, write_4D,
      write_lowmem, write_lowmem_2D, write_lowmem_3D, write_lowmem_4D,
      write_lowmem_3Ds, write_lowmem_4Ds]
 
-base = []
-
 all = []
 all.extend(m.__name__ for m in r)
 all.extend(m.__name__ for m in w)
-all.extend(m.__name__ for m in base)
+
 
 __all__ = all
+
+######################
+# Reading Operations #
+######################
 
 def readFromFile(file : str) -> tuple[dict,np.ndarray]:
     """
@@ -87,6 +89,10 @@ def readFromBuffer(buffer) -> tuple[dict,np.ndarray]:
         catchError(e, new_e=FileNotFoundError, msg="Unable to read buffer!", ePrint=False)
     return dic, data
 
+
+######################
+# Writing Operations #
+######################
 
 def writeToFile(data, output : str, overwrite : bool) -> int:
     """
