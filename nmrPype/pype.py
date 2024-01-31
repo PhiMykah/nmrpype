@@ -12,8 +12,9 @@ def fileInput(df : DataFrame, input) -> int:
     data : DataFrame
         DataFrame object to put input data to
 
-    input : string or sys.stdin.buffer
+    input : string, sys.stdin, or sys.stdin.buffer
         string: reading file name
+        sys.stdin: read from standard input
         sys.stdin.buffer: read from standard input buffer
     
     Returns
@@ -42,7 +43,7 @@ def fileOutput(data : DataFrame, output, overwrite : bool) -> int:
     data : DataFrame
         DataFrame object reading from to send out to putput
 
-    input : string or sys.stdout.buffer
+    output : string or sys.stdout.buffer
         string: output file name
         sys.stdin.buffer: read from standard output buffer
     
@@ -50,7 +51,13 @@ def fileOutput(data : DataFrame, output, overwrite : bool) -> int:
     -------
     Integer exit code (e.g. 0 success 1 fail)
     """
-    return 0
+    from nmrio import writeToFile, writeToBuffer
+
+    # Determine whether or not writing to pipeline
+    if type(output) == str:
+        return writeToFile(data, output, overwrite)
+    else:
+        return writeToBuffer(data, output, overwrite)
 
 
 def headerModify(data : DataFrame, param : str, value : float) -> int:

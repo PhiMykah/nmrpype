@@ -36,7 +36,70 @@ class DataFrame:
 
     def __repr__(self):
         return ""
+    
 
+    def runFunc(self):
+        pass
+
+
+    def updateParamSyntax(self, param, dim : int) -> str :
+        """
+        fn updateParamSyntax
+
+        Converts header keywords from ND to proper parameter syntax if necessary
+
+        Parameters
+        ----------
+        dim : int
+            Target parameter dimension
+
+        Returns
+        -------
+        param : str
+            Parameter string with updated syntax
+        """
+        # Map the ND param to the fdfx param equivalent
+        if dim:
+            try: 
+                dim = int(dim-1)
+                if param.startswith('ND'):
+                    dimCode =  int(self.header['FDDIMORDER'][dim])
+                    param = 'FDF' + str(dimCode) + param[2:]
+            except:
+                raise UnknownHeaderParam('Unknown Param \'{0}\''.format(param))
+        else:
+            # If unspecified dimension for nd, then set dimension
+            if param.startswith('ND'):
+                dimCode =  int(self.header['FDDIMORDER'][0])
+                param = 'FDF' + str(dimCode) + param[2:]
+
+        # Check if the param ends with size and fix to match sizes
+        if param.endswith('SIZE'):
+            match param:
+                case 'FDF2SIZE':
+                    param = 'FDSIZE'
+                case 'FDF1SIZE':
+                    param = 'FDSPECNUM'
+        return param
+    
+
+    def updatePipeCount(self, reset=False) -> int:
+        """
+        fn resetPipeCount
+
+        Increment the FDPIPECOUNT parameter or reset to zero
+        """
+        if reset:
+            self.setParam('FDPIPECOUNT', 0.0)
+        else:
+            pCount = self.getParam('FDPIPECOUNT')
+            self.setParam('FDPIPECOUNT', float(pCount + 1))
+
+
+    #######################
+    # Getters and Setters #
+    #######################
+    
     def getHeader(self) -> dict:
         """
         fn setArray
@@ -145,48 +208,3 @@ class DataFrame:
         except:
             return 1
         return 0
-
- 
-    def runFunc(self):
-        pass
-
-
-    def updateParamSyntax(self, param, dim : int) -> str :
-        """
-        fn updateParamSyntax
-
-        Converts header keywords from ND to proper parameter syntax if necessary
-
-        Parameters
-        ----------
-        dim : int
-            Target parameter dimension
-
-        Returns
-        -------
-        param : str
-            Parameter string with updated syntax
-        """
-        # Map the ND param to the fdfx param equivalent
-        if dim:
-            try: 
-                dim = int(dim-1)
-                if param.startswith('ND'):
-                    dimCode =  int(self.header['FDDIMORDER'][dim])
-                    param = 'FDF' + str(dimCode) + param[2:]
-            except:
-                raise UnknownHeaderParam('Unknown Param \'{0}\''.format(param))
-        else:
-            # If unspecified dimension for nd, then set dimension
-            if param.startswith('ND'):
-                dimCode =  int(self.header['FDDIMORDER'][0])
-                param = 'FDF' + str(dimCode) + param[2:]
-
-        # Check if the param ends with size and fix to match sizes
-        if param.endswith('SIZE'):
-            match param:
-                case 'FDF2SIZE':
-                    param = 'FDSIZE'
-                case 'FDF1SIZE':
-                    param = 'FDSPECNUM'
-        return param

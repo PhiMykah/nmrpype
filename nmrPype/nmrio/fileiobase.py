@@ -418,7 +418,7 @@ def open_towrite(filename, overwrite=False, mode='wb'):
     """
     # check if file exists and overwrite if False
     if os.path.exists(filename) and (overwrite is False):
-        raise OSError("File exists, recall with overwrite=True")
+        raise OSError("File exists, recall with -overwrite/-ov flag")
 
     p, fn = os.path.split(filename)  # split into filename and path
     # create directories if needed
