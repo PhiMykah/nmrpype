@@ -11,6 +11,11 @@ class FileIOError(Exception):
     # Exception called when there is an error in reading/writing the data
     pass 
 
+class UnknownHeaderParam(Exception):
+    # Exception called when there is an error in calling for 
+    #   a nonexistent header param
+    pass
+
 class FunctionError(Exception):
     # An error occurs when attempting to run a function
     pass

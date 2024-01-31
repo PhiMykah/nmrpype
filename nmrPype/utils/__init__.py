@@ -1,7 +1,7 @@
-from .errorHandler import PipeBurst, FileIOError, FunctionError, catchError
+from .errorHandler import PipeBurst, FileIOError, UnknownHeaderParam, FunctionError, catchError
 from .DataFrame import DataFrame
 
-all = [
-    'PipeBurst', 'FileIOError',
+__all__ = [
+    'PipeBurst', 'FileIOError', 'UnknownHeaderParam',
     'FunctionError', 'catchError', 'DataFrame'
 ]
