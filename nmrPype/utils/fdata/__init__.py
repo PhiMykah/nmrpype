@@ -8,4 +8,4 @@ __all__ = ['fdata2dic','dic2fdata','get_fdata','get_fdata_data',
            'reshape_data','unshape_data','unappend_data','append_data',
            'find_shape','put_fdata','put_trace','put_data',
            'get_trace','pipe_2d','pipe_3d','pipestream_3d',
-           'pipe_4d','pipestream_4d',]
+           'pipe_4d','pipestream_4d']
