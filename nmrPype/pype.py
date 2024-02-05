@@ -80,11 +80,11 @@ def function(data : DataFrame, args) -> int:
     for opt in vars(args):
         if (opt.startswith(fn.lower())):
             fn_params[opt] = getattr(args, opt)
+        elif (opt.startswith('mp')):
+            fn_params[opt] = getattr(args, opt)
 
     # Attempt to run operation, error handling within is handled per function
-    data.runFunc(fn, fn_params)
-
-    return 0
+    return (data.runFunc(fn, fn_params))
 
 def main() -> int:
     #from rpy.parse import parser

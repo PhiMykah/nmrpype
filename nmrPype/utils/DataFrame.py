@@ -38,10 +38,15 @@ class DataFrame:
         return ""
     
 
-    def runFunc(self, targetFunction : str, arguments : dict = {}):
-        print(targetFunction, file=sys.stderr)
-        for param in arguments:
-            print("{}: {}".format(param.__name__, param))
+    def runFunc(self, targetFunction : str, arguments : dict = {}) -> int:
+        from fn import fn_list
+
+        try:
+            function = fn_list[targetFunction](**arguments)
+        except Exception as e:
+            catchError(e, FunctionError, msg='Unknown or Unimplemented function called!', ePrint=False)
+
+        return(function.run(self))
 
 
     def updateParamSyntax(self, param, dim : int) -> str :

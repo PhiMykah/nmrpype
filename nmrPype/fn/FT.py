@@ -2,8 +2,13 @@ from .function import DataFunction as Function
 import numpy as np
 from scipy import fft
 
+# Multiprocessing
+from multiprocessing import Pool, TimeoutError
+from concurrent.futures import ThreadPoolExecutor
+
 class FourierTransform(Function):
-    def __init__(self, ft_inv: bool = False, ft_real: bool = False, ft_neg: bool = False, ft_alt: bool = False):
+    def __init__(self, ft_inv: bool = False, ft_real: bool = False, ft_neg: bool = False, ft_alt: bool = False, 
+                 mp_enable = False, mp_proc = 0, mp_threads = 0):
             """
             class FourierTransform
 
@@ -13,6 +18,7 @@ class FourierTransform(Function):
             self.ft_real = ft_real
             self.ft_neg = ft_neg
             self.ft_alt = ft_alt
+            self.mp = [mp_enable, mp_proc, mp_threads]
             params = {'ft_inv':ft_inv, 'ft_real': ft_real, 'ft_neg': ft_neg, 'ft_alt': ft_alt}
             super().__init__(params) 
     
@@ -43,17 +49,70 @@ class FourierTransform(Function):
         Integer exit code (e.g. 0 success 1 fail)
         """
 
-        self.initialize()
-
+        self.initialize(data)
+        
         ndQuad = int(data.getParam('NDQUADFLAG'))
-        #for loop iterating over processes
-        #   p = mp.Process(self.process, (data, array, ndQuad))
+
+        # Perform fft without multiprocessing
+        if not self.mp[0]:
+            data.array = self.process(data.array, ndQuad)
+        else:
+            data.array = self.parallelize(data.array, ndQuad)
 
         # Update header once processing is complete
         self.updateHeader()
+
         return 0
 
-    def process(self, data, array : np.ndarray, ndQuad : int) -> np.ndarray:
+
+    def parallelize(self, array : np.ndarray, ndQuad : int) -> np.ndarray:
+        """
+        fn parallelize
+
+        Multiprocessing implementation for function to properly optimize for hardware
+
+        Parameters:
+        array : np.ndarray
+            Target data array to process with function
+
+        ndQuad : int
+            NDQUADFLAG header value
+
+        Returns:
+        new_array : np.ndarray
+            Updated array after function operation
+        """
+        # Save array shape for reshaping later
+        array_shape = array.shape
+
+        # Split array into manageable chunks
+        chunk_size = int(array_shape[0] / self.mp[1])
+        chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
+        
+        # Process each chunk in processing pool
+        args = [(chunks[i], ndQuad) for i in range(len(chunks))]
+        with Pool(processes=self.mp[1]) as pool:
+            output = pool.starmap(self.process, args, chunksize=chunk_size)
+
+        # Recombine and reshape data
+        new_array = np.concatenate(output).reshape(array_shape)
+        return new_array
+
+    def VectorFFT(self, array : np.ndarray) -> np.ndarray:
+        array = fft.fft(array)
+        array = fft.fftshift(array)
+        array = np.flip(array)
+        array = np.roll(array, 1)
+        return(array)
+        
+    def VectorIFFT(self, array : np.ndarray) -> np.ndarray:
+        array = fft.ifft(array)
+        array = fft.ifftshift(array)
+        array = np.flip(array)
+        array = np.roll(array, 1)
+        return(array)
+
+    def process(self, array : np.ndarray, ndQuad : int) -> np.ndarray:
         """
         fn process
 
@@ -82,7 +141,18 @@ class FourierTransform(Function):
             pass
 
         # Perform dfft or idfft depending on args
-        operation = fft.fft if not self.ft_inv else fft.ifft
+        operation = self.VectorFFT if not self.ft_inv else self.VectorIFFT
+
+        # Check for parallelization
+        if self.mp[0]:
+            with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
+                processed_chunk = list(executor.map(operation, array))
+                array = np.array(processed_chunk)
+        else:
+            it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=array.shape[-1])
+            with it:
+                for x in it:
+                    x[...] = operation(x)
 
         # Flag operations following operation
 
@@ -121,7 +191,7 @@ class FourierTransform(Function):
         """
         # FT subparser
         FT = subparser.add_parser('FT', help='Perform a Fourier transform (FT) on the data')
-        FT.add_argument('-inverse', '-inv', action='store_true',
+        FT.add_argument('-inv', '--inverse', action='store_true',
                         dest='ft_inv', help='Perform inverse FT')
         FT.add_argument('-real', action='store_true',
                         dest='ft_real', help='Perform a FT only on the real portion of the data')
