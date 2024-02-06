@@ -19,7 +19,25 @@ class DeleteImaginary(Function):
     ############
     # Function #
     ############
+    
+    def run(self, data) -> int:
+        exitCode = super().run(data)
+        if exitCode:
+            return 1
         
+        # Collect indices to remove indirect imaginary
+        indices_list = [[0,size,2] for size in data.array.shape]
+
+        # Keep all of the direct dimension
+        indices_list[int(-1 * data.getCurrDim())][-1] = 1
+        
+        # generate slices
+        slices = [slice(*indices) for indices in indices_list]
+
+        data.array = data.array[*slices]
+
+        return 0
+    
     ###################
     # Multiprocessing #
     ###################
