@@ -35,6 +35,8 @@ class DeleteImaginary(Function):
         slices = [slice(*indices) for indices in indices_list]
 
         data.array = data.array[*slices]
+        
+        self.updateHeader(data)
 
         return 0
     
@@ -107,7 +109,7 @@ class DeleteImaginary(Function):
 
         data.setParam('FDSLICECOUNT', float(slices))
 
-    def updateHeader(self):
+    def updateHeader(self, data):
         """
         fn updateHeader
 
@@ -118,5 +120,14 @@ class DeleteImaginary(Function):
         ----------
         None
         """
-        # Update ndsize here if needed
-        pass
+        shape = data.array.shape
+
+        # Update ndsizes
+        for dim in range(data.array.ndim):
+            index = dim + 1
+            data.setParam('NDSIZE', float(shape[-1*(index)]),index)
+
+        # Update slicecount
+        slices = np.prod(shape[:-1])
+
+        data.setParam('FDSLICECOUNT', float(slices))

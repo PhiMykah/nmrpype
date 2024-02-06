@@ -60,7 +60,7 @@ class FourierTransform(Function):
             data.array = self.parallelize(data.array, ndQuad)
 
         # Update header once processing is complete
-        self.updateHeader()
+        self.updateHeader(data)
 
         return 0
 
@@ -266,7 +266,7 @@ class FourierTransform(Function):
             data.setParam('NDTDSIZE', float(tdSize), currDim)
 
 
-    def updateHeader(self):
+    def updateHeader(self, data):
         """
         fn updateHeader
 

@@ -58,7 +58,7 @@ class DataFunction:
             data.array = self.parallelize(data.array)
 
         # Update header once processing is complete
-        self.updateHeader()
+        self.updateHeader(data)
 
         return 0
 
@@ -179,7 +179,7 @@ class DataFunction:
         """
         pass
 
-    def updateHeader(self):
+    def updateHeader(self, data):
         """
         fn updateHeader
 

@@ -398,7 +398,7 @@ class ZeroFill(Function):
         """
 
 
-    def updateHeader(self):
+    def updateHeader(self, data):
         """
         fn updateHeader
 
