@@ -109,7 +109,7 @@ def main() -> int:
 
         # Delete imaginary element if prompted
         if args.di:
-            pass
+            data.runFunc('DI', {'mp_enable':args.mp_enable,'mp_proc':args.mp_proc,'mp_threads':args.mp_threads})
 
         # Output Data as Necessary
         fileOutput(data, args.output, args.overwrite)

@@ -6,14 +6,14 @@ from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 
 class ZeroFill(Function):
+    """
+    class ZeroFill
+
+    Data Function object for performing a zero-fill on the data
+    """
     def __init__(self, zf_count : int = 0, zf_pad : int = 0, zf_size : int = 0,
                  zf_auto : bool = False, zf_inv : bool = False,
                  mp_enable = False, mp_proc = 0, mp_threads = 0):
-        """
-            class ZeroFill
-
-            Data Function object for performing a zero-fill on the data
-        """
         self.zf_count = zf_count
         self.zf_pad = zf_pad
         self.zf_size = zf_size
@@ -64,6 +64,9 @@ class ZeroFill(Function):
 
         return 0
 
+    ###################
+    # Multiprocessing #
+    ###################
 
     def parallelize(self, array : np.ndarray) -> np.ndarray:
         """
@@ -171,6 +174,10 @@ class ZeroFill(Function):
         return array
     
 
+    ######################
+    # Default Processing #
+    ######################
+
     def process(self, array : np.ndarray) -> np.ndarray:
         """
         fn process
@@ -243,6 +250,7 @@ class ZeroFill(Function):
         
         return new_array
     
+
     ##################
     # Static Methods #
     ##################

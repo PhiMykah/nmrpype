@@ -1,20 +1,27 @@
 from utils import catchError, FunctionError, DataFrame
 import numpy as np
 
+# Multiprocessing
+from multiprocessing import Pool, TimeoutError
+from concurrent.futures import ThreadPoolExecutor
+
 class DataFunction:
+    """
+    class dataFunction
+
+    Data Function is a template class for all types of functions to run on
+        the NMR data. New user functions should copy format laid out by this 
+        class.
+
+    Parameters
+    ----------
+    params : dict
+        Dictionary of parameters associated with the designated function
+    """
     def __init__(self, params : dict = {}):
-        """
-        class dataFunction
-
-        Data Function is a template class for all types of functions to run on
-            the NMR data. New user functions should copy format laid out by this 
-            class.
-
-        Parameters
-        ----------
-        params : dict
-            Dictionary of parameters associated with the designated function
-        """
+        if not params:
+            params = {'mp_enable':False,'mp_proc':0,'mp_threads':0}
+            self.mp = [params['mp_enable'], params['mp_proc'], params['mp_threads']]
         self.params = params
 
     ############
@@ -45,7 +52,7 @@ class DataFunction:
         self.initialize(data)
 
         # Perform fft without multiprocessing
-        if not self.mp[0]:
+        if not self.mp[0] or data.array.ndim == 1:
             data.array = self.process(data.array)
         else:
             data.array = self.parallelize(data.array)
@@ -54,6 +61,39 @@ class DataFunction:
         self.updateHeader()
 
         return 0
+
+
+    def parallelize(self, array) -> np.ndarray:
+        """
+        fn parallelize
+
+        General Multiprocessing implementation for function, utilizing cores and threads
+        
+        Should be overloaded if array_shape changes in processing or process requires more args
+
+        Parameters:
+        array : np.ndarray
+            Target data array to process with function
+
+        Returns:
+        new_array : np.ndarray
+            Updated array after function operation
+        """
+        # Save array shape for reshaping later
+        array_shape = array.shape
+
+        # Split array into manageable chunks
+        chunk_size = int(array_shape[0] / self.mp[1])
+        chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
+
+        # Process each chunk in processing pool
+        with Pool(processes=self.mp[1]) as pool:
+            output = pool.map(self.process, chunks, chunksize=chunk_size)
+
+        # Recombine and reshape data
+        new_array = np.concatenate(output).reshape(array_shape)
+        return new_array
+    
 
     def process(self, array : np.ndarray) -> np.ndarray:
         """

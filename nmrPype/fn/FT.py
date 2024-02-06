@@ -7,13 +7,13 @@ from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 
 class FourierTransform(Function):
+    """
+    class FourierTransform
+
+    Data Function object for performing a DFFT or IDFFT on the data.
+    """
     def __init__(self, ft_inv: bool = False, ft_real: bool = False, ft_neg: bool = False, ft_alt: bool = False, 
                  mp_enable = False, mp_proc = 0, mp_threads = 0):
-            """
-            class FourierTransform
-
-            Data Function object for performing a DFFT or IDFFT on the data.
-            """
             self.ft_inv = ft_inv 
             self.ft_real = ft_real
             self.ft_neg = ft_neg
@@ -54,7 +54,7 @@ class FourierTransform(Function):
         ndQuad = int(data.getParam('NDQUADFLAG'))
 
         # Perform fft without multiprocessing
-        if not self.mp[0]:
+        if not self.mp[0] or data.array.ndim == 1:
             data.array = self.process(data.array, ndQuad)
         else:
             data.array = self.parallelize(data.array, ndQuad)
@@ -64,6 +64,10 @@ class FourierTransform(Function):
 
         return 0
 
+
+    ###################
+    # Multiprocessing #
+    ###################
 
     def parallelize(self, array : np.ndarray, ndQuad : int) -> np.ndarray:
         """
@@ -112,6 +116,11 @@ class FourierTransform(Function):
         array = np.roll(array, 1)
         return(array)
 
+
+    ######################
+    # Default Processing #
+    ######################
+
     def process(self, array : np.ndarray, ndQuad : int) -> np.ndarray:
         """
         fn process
@@ -144,7 +153,7 @@ class FourierTransform(Function):
         operation = self.VectorFFT if not self.ft_inv else self.VectorIFFT
 
         # Check for parallelization
-        if self.mp[0]:
+        if self.mp[0] and not array.ndim == 1:
             with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
                 processed_chunk = list(executor.map(operation, array))
                 array = np.array(processed_chunk)
@@ -169,6 +178,7 @@ class FourierTransform(Function):
         
         return array
     
+
     ##################
     # Static Methods #
     ##################
