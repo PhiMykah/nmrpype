@@ -121,8 +121,8 @@ class FourierTransform(Function):
 
         Parameters
         ----------
-        array : np.ndarray (ndim = 1)
-            1-D array processed
+        array : np.ndarray
+            array to process
 
         Returns
         -------
@@ -176,9 +176,9 @@ class FourierTransform(Function):
     @staticmethod
     def clArgs(subparser):
         """
-        fn commands (Template)
+        fn clArgs (FT command-line arguments)
 
-        Adds function parser to the subparser, with its corresponding default args
+        Adds Fourier Transform parser to the subparser, with its corresponding default args
         Called in nmrParse.py
 
         Destinations are formatted typically by {function}_{argument}
@@ -205,7 +205,7 @@ class FourierTransform(Function):
 
 
     ####################
-    # Proc Functions #
+    #  Proc Functions  #
     ####################
         
     def initialize(self, data):

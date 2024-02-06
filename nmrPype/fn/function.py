@@ -42,6 +42,17 @@ class DataFunction:
         -------
         Integer exit code (e.g. 0 success 1 fail)
         """
+        self.initialize(data)
+
+        # Perform fft without multiprocessing
+        if not self.mp[0]:
+            data.array = self.process(data.array)
+        else:
+            data.array = self.parallelize(data.array)
+
+        # Update header once processing is complete
+        self.updateHeader()
+
         return 0
 
     def process(self, array : np.ndarray) -> np.ndarray:
@@ -60,7 +71,7 @@ class DataFunction:
     @staticmethod
     def clArgs(subparser):
         """
-        fn commands (Template)
+        fn clArgs (Template command-line arguments)
 
         Adds function parser to the subparser, with its corresponding default args
         Called in nmrParse.py
@@ -108,7 +119,7 @@ class DataFunction:
                             help='Call this argument to overwrite when sending output to file.')
 
     ####################
-    # Proc Functions #
+    #  Proc Functions  #
     ####################
         
     def initialize(self, data):
