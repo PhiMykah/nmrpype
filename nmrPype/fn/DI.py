@@ -21,6 +21,7 @@ class DeleteImaginary(Function):
     ############
     
     def run(self, data) -> int:
+        # See function.py
         exitCode = super().run(data)
         if exitCode:
             return 1

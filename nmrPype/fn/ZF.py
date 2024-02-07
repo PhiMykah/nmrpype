@@ -32,7 +32,7 @@ class ZeroFill(Function):
         """
         fn run
 
-        Main body of FFT code.
+        Main body of ZF code.
             - Initializes Header
             - Determine process to run using flags
             - Start Process (process data vector by vector in multiprocess)
