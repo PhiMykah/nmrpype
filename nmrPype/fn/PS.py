@@ -90,7 +90,22 @@ class PhaseCorrection(Function):
         subparser : _SubParsersAction[ArgumentParser]
             Subparser object that will receive function and its arguments
         """
-        pass
+        PS = subparser.add_parser('PS', help='Perform a Phase Correction (PS) on the data')
+        PS.add_argument('-p0', type=float, metavar='p0Deg', default=0.0,
+                        dest='ps_p0', help='Zero Order Phase, Degrees')
+        PS.add_argument('-p1', type=float, metavar='p1Deg', default=0.0,
+                        dest='ps_p1', help='First Order Phase, Degrees')
+        PS.add_argument('-inv', action='store_true',
+                        dest='ps_inv', help='Inverse Phase Correction')
+        PS.add_argument('-hdr', action='store_true',
+                        dest='ps_hdr', help='Use Phase Values in Header')
+        PS.add_argument('-noup', action='store_true',
+                        dest='ps_noup', help='Don\'t Update Values Header')
+        PS.add_argument('-df', action='store_true',
+                        dest='ps_df', help='Adjust P1 for Digital Oversampling')
+        
+        # Include universal commands proceeding function call
+        Function.clArgsTail(PS)
 
     ####################
     #  Proc Functions  #
