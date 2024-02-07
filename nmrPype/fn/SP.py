@@ -1,5 +1,3 @@
-from numpy import ndarray
-from utils import DataFrame
 from .function import DataFunction as Function
 import numpy as np
 
@@ -49,7 +47,7 @@ class SineBell(Function):
     # Function #
     ############
         
-    def run(self, data: DataFrame) -> int:
+    def run(self, data) -> int:
         # Return unmodified array to save time if computation would return self
         if (self.sp_pow == 0.0):
             return 0
