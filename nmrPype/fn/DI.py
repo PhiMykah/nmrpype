@@ -128,7 +128,24 @@ class DeleteImaginary(Function):
             index = dim + 1
             data.setParam('NDSIZE', float(shape[-1*(index)]),index)
 
+        currDim = data.getCurrDim()
+        # Set curr dimension's quad flag to real
+        data.setParam('NDQUADFLAG', float(1), currDim)
+
+        qFlags = []
+        # Get the flags for all dimensions
+        for dim in range(len(shape)):
+            qFlags.append(data.getParam('NDQUADFLAG', dim+1))
+        
+        # Check if all dimensions are real
+        isReal = all(bool(flag) for flag in qFlags)
+
+        data.setParam('FDQUADFLAG', float(1) if isReal else float(0))
+
         # Update slicecount
         slices = np.prod(shape[:-1])
 
-        data.setParam('FDSLICECOUNT', float(slices))
+        if slices != 1:
+            data.setParam('FDSLICECOUNT', float(slices))
+        else:
+            data.setParam('FDSLICECOUNT', float(0))

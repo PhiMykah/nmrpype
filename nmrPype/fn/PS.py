@@ -145,7 +145,6 @@ class PhaseCorrection(Function):
         imag = np.array(imagList)
         self.phase = np.array(realVal + 1j * imag)
         import sys
-        print(self.phase, file=sys.stderr)
         # Add values to header if noup is off
         if (not self.ps_noup):
             currDim = data.getCurrDim()
