@@ -125,8 +125,12 @@ def reshape_data(data, shape):
     try:
         return data.reshape(shape)
     except ValueError:
-        warn(str(data.shape) + "cannot be shaped into" + str(shape))
-        return data
+        try: 
+            # For 1-D case where imaginary data is zeros appended to the end of the list
+            return data[:shape].reshape(shape)
+        except ValueError:
+            warn(str(data.shape) + "cannot be shaped into" + str(shape))
+            return data
 
 
 def unshape_data(data):
