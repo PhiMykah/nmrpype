@@ -1,3 +1,4 @@
+from numpy import ndarray
 from .function import DataFunction as Function
 import numpy as np
 
@@ -98,25 +99,25 @@ class Transpose(Function):
         YTP.add_argument('-exch', action='store_true',
                 dest='tp_exch', help='Exchange Header Parameters for the Two Dimensions.')
         
-        # Include universal commands proceeding function call
+        # Include tail arguments proceeding function call
         Transpose.headerArgsTP(YTP)
-        Function.universalCommands(YTP)
+        Function.clArgsTail(YTP)
 
         # 3D Transpose subparser
         ZTP = subparser.add_parser('ZTP', aliases=['XYZ2ZYX'], help='3D Matrix Transpose.')
         ZTP.add_argument('-exch', action='store_true',
                 dest='tp_exch', help='Exchange Header Parameters for the Two Dimensions.')
         
-        # Include universal commands proceeding function call
+        # Include tail arguments proceeding function call
         Transpose.headerArgsTP(ZTP)
-        Function.universalCommands(ZTP)
+        Function.clArgsTail(ZTP)
 
         # 4D Transpose subparser
         ATP = subparser.add_parser('ATP', aliases=['XYZA2AYZX'], help='4D Matrix Transpose.')
 
-        # Include universal commands proceeding function call
+        # Include tail arguments proceeding function call
         Transpose.headerArgsTP(ATP)
-        Function.universalCommands(ATP)
+        Function.clArgsTail(ATP)
 
 
     @staticmethod
@@ -163,7 +164,7 @@ class Transpose(Function):
         data.setParam('FDTRANSPOSED', float(1))
 
         
-        shape = data.np_data.shape
+        shape = data.array.shape
 
         from numpy import prod
         # Update Slicecount
@@ -197,10 +198,12 @@ class Transpose2D(Transpose):
                  tp_hyper : bool = True, tp_nohyper : bool = False, 
                  tp_auto: bool = True, tp_noauto : bool = False,
                  tp_nohdr : bool = False, tp_noord: bool = False,
-                 tp_exch : bool = False, tp_minMax: bool = False):
+                 tp_exch : bool = False, tp_minMax: bool = False,
+                 mp_enable : bool = False, mp_proc : int = 0, mp_threads : int = 0):
         self.tp_hyper = tp_hyper or (not tp_nohyper)
         self.tp_auto = tp_auto or (not tp_noauto)
         self.tp_nohdr = tp_nohdr
+        self.mp = [mp_enable, mp_proc, mp_threads]
         tp_axis = 2 
         params = {'tp_hyper':tp_hyper,'tp_auto':tp_auto,
                   'tp_nohdr':tp_nohdr}
@@ -214,6 +217,41 @@ class Transpose2D(Transpose):
     ###################
     # Multiprocessing #
     ###################
+        
+    def parallelize(self, array) -> np.ndarray:
+        """
+        fn parallelize
+
+        General Multiprocessing implementation for function, utilizing cores and threads
+        
+        Should be overloaded if array_shape changes in processing or process requires more args
+
+        Parameters:
+        array : np.ndarray
+            Target data array to process with function
+
+        Returns:
+        new_array : np.ndarray
+            Updated array after function operation
+        """
+
+        """
+        # Save array shape for reshaping later
+        array_shape = array.shape
+
+        # Split array into manageable chunks
+        chunk_size = int(array_shape[0] / self.mp[1])
+        chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
+
+        # Process each chunk in processing pool
+        with Pool(processes=self.mp[1]) as pool:
+            output = pool.map(self.process, chunks, chunksize=chunk_size)
+
+        # Recombine and reshape data
+        new_array = np.concatenate(output).reshape(array_shape)
+        """
+        # Multiprocessing and mulithreading transpose is likely slower due to stitching
+        return(self.process(array))
         
     ######################
     # Default Processing #
@@ -293,7 +331,7 @@ class Transpose2D(Transpose):
     ##################
         
     @staticmethod
-    def commands(subparser): 
+    def clArgs(subparser): 
         pass 
 
 
@@ -340,7 +378,9 @@ class Transpose3D(Transpose):
     Data Function object for 3D transposition operations
     """
     def __init__(self, tp_noord: bool = False,
-                 tp_exch : bool = False, tp_minMax: bool = False):
+                 tp_exch : bool = False, tp_minMax: bool = False,
+                 mp_enable : bool = False, mp_proc : int = 0, mp_threads : int = 0):
+        self.mp = [mp_enable, mp_proc, mp_threads]
         tp_axis = 3
         super().__init__(tp_noord, tp_exch, tp_minMax, tp_axis)
 
@@ -361,7 +401,7 @@ class Transpose3D(Transpose):
     ##################
         
     @staticmethod
-    def commands(subparser): 
+    def clArgs(subparser): 
         pass
 
     ####################
@@ -406,7 +446,9 @@ class Transpose4D(Transpose):
     Data Function object for 4D transposition operations
     """
     def __init__(self, data, tp_noord: bool = False,
-                 tp_exch : bool = False, tp_minMax: bool = False):
+                 tp_exch : bool = False, tp_minMax: bool = False,
+                 mp_enable : bool = False, mp_proc : int = 0, mp_threads : int = 0):
+        self.mp = [mp_enable, mp_proc, mp_threads]
         tp_axis = 4
         super().__init__(data, tp_noord, tp_exch, tp_minMax, tp_axis)
 
@@ -428,7 +470,7 @@ class Transpose4D(Transpose):
     ##################
         
     @staticmethod
-    def commands(subparser): 
+    def clArgs(subparser): 
         pass
 
 

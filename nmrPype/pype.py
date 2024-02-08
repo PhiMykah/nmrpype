@@ -115,7 +115,7 @@ def main() -> int:
         fileOutput(data, args.output, args.overwrite)
 
     except Exception as e:
-        catchError(e, PipeBurst, msg='nmrPype has encountered an error!', ePrint=False)
+        catchError(e, PipeBurst, msg='nmrPype has encountered an error!', ePrint=True)
          
     return 0
 
