@@ -49,16 +49,21 @@ class DataFunction:
         -------
         Integer exit code (e.g. 0 success 1 fail)
         """
-        self.initialize(data)
+        try:
+            self.initialize(data)
 
-        # Perform fft without multiprocessing
-        if not self.mp[0] or data.array.ndim == 1:
-            data.array = self.process(data.array)
-        else:
-            data.array = self.parallelize(data.array)
+            # Perform fft without multiprocessing
+            if not self.mp[0] or data.array.ndim == 1:
+                data.array = self.process(data.array)
+            else:
+                data.array = self.parallelize(data.array)
 
-        # Update header once processing is complete
-        self.updateHeader(data)
+            # Update header once processing is complete
+            self.updateHeader(data)
+            
+        except Exception as e:
+            msg = "Unable to run function {0}!".format(type(self).__name__)
+            catchError(e, new_e=FunctionError, msg=msg)
 
         return 0
 
