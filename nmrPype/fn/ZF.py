@@ -60,7 +60,7 @@ class ZeroFill(Function):
             data.array = self.parallelize(data.array)
 
         # Update header once processing is complete
-        self.updateHeader()
+        self.updateHeader(data)
 
         return 0
 
@@ -122,6 +122,10 @@ class ZeroFill(Function):
 
         # Split array into manageable chunks
         chunk_size = int(array_shape[0] / self.mp[1])
+
+        # Assure chunk_size is nonzero
+        chunk_size = array_shape[0] if chunk_size == 0 else chunk_size
+        
         chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
         
         # Pad if size is larger and trim if size is shorter

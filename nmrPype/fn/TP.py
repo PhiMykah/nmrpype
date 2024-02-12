@@ -1,10 +1,18 @@
 from numpy import ndarray
 from .function import DataFunction as Function
 import numpy as np
+from enum import Enum
 
 # Multiprocessing
 from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
+
+class PHASE(Enum):
+    FD_MAGNITUDE = 0
+    FD_TIPPI = 1
+    FD_STATES = 2
+    FD_IMAGE = 3
+    FD_ARRAY = 4
 
 class Transpose(Function):
     """
@@ -20,6 +28,8 @@ class Transpose(Function):
         self.tp_exch = tp_exch
         self.tp_minMax = tp_minMax
         self.tp_axis = tp_axis
+        self.xDim = 2
+        self.yDim = 1
 
         params.update({'tp_noord':tp_noord,
                   'tp_exch':tp_exch,'tp_minMax':tp_minMax,})
@@ -153,16 +163,21 @@ class Transpose(Function):
         None
         """
 
-        # Swap dimension orders
-        dimOrder1 = data.getParam('FDDIMORDER1')
-        dimOrder2 = data.getParam(f'FDDIMORDER{str(self.tp_axis)}')
+        # Check if allowed to switch dimension orders
+        if (self.tp_noord == False):
+            # Swap dimension orders
+            dimOrder1 = data.getParam('FDDIMORDER1')
+            dimOrder2 = data.getParam(f'FDDIMORDER{str(self.tp_axis)}')
 
-        data.setParam('FDDIMORDER1', dimOrder2)
-        data.setParam(f'FDDIMORDER{str(self.tp_axis)}', dimOrder1)
+            data.setParam('FDDIMORDER1', dimOrder2)
+            data.setParam(f'FDDIMORDER{str(self.tp_axis)}', dimOrder1)
+
+            # Swap in dim order
+            data.header['FDDIMORDER'][0] = dimOrder2
+            data.header['FDDIMORDER'][self.tp_axis-1] = dimOrder1
 
         # Set flag transpose to true
         data.setParam('FDTRANSPOSED', float(1))
-
         
         shape = data.array.shape
 
@@ -241,6 +256,10 @@ class Transpose2D(Transpose):
 
         # Split array into manageable chunks
         chunk_size = int(array_shape[0] / self.mp[1])
+
+        # Assure chunk_size is nonzero
+        chunk_size = array_shape[0] if chunk_size == 0 else chunk_size
+        
         chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
 
         # Process each chunk in processing pool
@@ -323,7 +342,37 @@ class Transpose2D(Transpose):
     
 
     def noHyperTP(self, array):
-        return array
+        # Assume that 2nd dimension does not have any complex part
+
+        # Extrapolate real and imaginary parts of the last dimension
+        realX = array.real
+        imagX = array.imag
+
+        # Match X dim with correct dim order
+        match self.xDim:
+            case 2:
+                dim1 = 1
+            case 1:
+                dim1 = 2
+            case _:
+                dim1 = self.xDim
+
+        # Match Y dim with correct dim order
+        match self.yDim:
+            case 2:
+                dim2 = 1
+            case 1:
+                dim2 = 2
+            case _:
+                dim2 = self.yDim
+
+        realT = np.transpose(realX, axes=(-1*dim1,-1*dim2))
+        imagT = np.transpose(imagX, axes=(-1*dim1,-1*dim2))
+
+        # transpose
+        new_array = np.concatenate((realT, imagT), axis=-1)
+
+        return new_array
 
 
     ##################
@@ -353,6 +402,28 @@ class Transpose2D(Transpose):
         data : DataFrame
             target data to manipulate 
         """
+        # If both dimensions are real, ensure nohyper flag
+        xDim = data.getParam('FDDIMORDER')[0]
+        yDim = data.getParam('FDDIMORDER')[1]
+
+        self.xDim = xDim
+        self.yDim = yDim
+
+        if not data.getParam('NDQUADFLAG', xDim) and not data.getParam('NDQUADFLAG', yDim):
+            self.tp_hyper = True
+        else:
+            self.tp_hyper = False
+        
+        # If the 2Dphase parameter matches magnitude, switch the dimension complexity
+        if data.getParam('FD2DPHASE') == PHASE.FD_MAGNITUDE.value:
+        
+            xID = data.getParam('NDQUADFLAG', xDim)
+            yID = data.getParam('NDQUADFLAG', yDim)
+
+            # Swap the number type of x and y dims
+            data.setParam('NDQUADFLAG', float(yID), xDim)
+            data.setParam('NDQUADFLAG', float(xID), yDim)
+
         super().initialize(data)
         
 
@@ -422,6 +493,14 @@ class Transpose3D(Transpose):
         data : DataFrame
             target data to manipulate 
         """
+        xDim = data.getParam('FDDIMORDER')[0]
+        yDim = data.getParam('FDDIMORDER')[1]
+        zDim = data.getParam('FDDIMORDER')[2]
+
+        xQuadState = data.getParam('NDQUADFLAG', xDim)
+        yQuadState = data.getParam('NDQUADFLAG', yDim)
+        zQaudState = data.getParam('NDQUADFLAG', zDim)
+
         super().initialize(data)
 
 

@@ -156,7 +156,7 @@ class SineBell(Function):
         
         startIndex = self.sp_start - 1
 
-        t = (np.arange(mSize ) - df)/q
+        t = (np.arange(mSize) - df)/q
 
         f_t = np.sin(np.pi*a1 + np.pi*(a2 -a1)*np.absolute(t))
         a = np.power(f_t, a3)
