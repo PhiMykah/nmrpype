@@ -21,6 +21,8 @@ def parser(input_args : list):
         if hasattr(fn, 'clArgs'):
             fn.clArgs(subparser)
     
+    fn_list['DataFunction'].nullDeclare(subparser)
+    
     # Final arguments
     # Add parsers for multiprocessing
     
