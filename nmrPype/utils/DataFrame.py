@@ -40,7 +40,9 @@ class DataFrame:
 
     def runFunc(self, targetFunction : str, arguments : dict = {}) -> int:
         from fn import fn_list
-
+        if targetFunction == 'NULL':
+            return 0
+        
         try:
             function = fn_list[targetFunction](**arguments)
         except Exception as e:

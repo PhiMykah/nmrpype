@@ -11,6 +11,7 @@ from .TP import Transpose4D as ATP
 
 fn_list = {
     'function':DataFunction,
+    'NULL':DataFunction,
     'FT':FT,
     'ZF':ZF,
     'DI':DI,

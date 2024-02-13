@@ -133,7 +133,8 @@ class DataFunction:
         subparser : _SubParsersAction[ArgumentParser]
             Subparser object that will receive function and its arguments
         """
-        pass
+        NULL = subparser.add_parser('NULL', help='Null Function, does not apply any function')
+        DataFunction.clArgsTail(NULL)
 
     @staticmethod
     def clArgsTail(parser):

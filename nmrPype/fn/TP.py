@@ -44,6 +44,26 @@ class Transpose(Function):
     # Multiprocessing #
     ###################
         
+    def parallelize(self, array) -> np.ndarray:
+        """
+        fn parallelize
+
+        General Multiprocessing implementation for function, utilizing cores and threads
+        
+        Should be overloaded if array_shape changes in processing or process requires more args
+
+        Parameters:
+        array : np.ndarray
+            Target data array to process with function
+
+        Returns:
+        new_array : np.ndarray
+            Updated array after function operation
+        """
+        # Multiprocessing and mulithreading transpose is likely slower due to stitching
+        return(self.process(array))
+    
+
     ######################
     # Default Processing #
     ######################
@@ -233,45 +253,6 @@ class Transpose2D(Transpose):
     # Multiprocessing #
     ###################
         
-    def parallelize(self, array) -> np.ndarray:
-        """
-        fn parallelize
-
-        General Multiprocessing implementation for function, utilizing cores and threads
-        
-        Should be overloaded if array_shape changes in processing or process requires more args
-
-        Parameters:
-        array : np.ndarray
-            Target data array to process with function
-
-        Returns:
-        new_array : np.ndarray
-            Updated array after function operation
-        """
-
-        """
-        # Save array shape for reshaping later
-        array_shape = array.shape
-
-        # Split array into manageable chunks
-        chunk_size = int(array_shape[0] / self.mp[1])
-
-        # Assure chunk_size is nonzero
-        chunk_size = array_shape[0] if chunk_size == 0 else chunk_size
-        
-        chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
-
-        # Process each chunk in processing pool
-        with Pool(processes=self.mp[1]) as pool:
-            output = pool.map(self.process, chunks, chunksize=chunk_size)
-
-        # Recombine and reshape data
-        new_array = np.concatenate(output).reshape(array_shape)
-        """
-        # Multiprocessing and mulithreading transpose is likely slower due to stitching
-        return(self.process(array))
-        
     ######################
     # Default Processing #
     ######################
@@ -348,23 +329,8 @@ class Transpose2D(Transpose):
         realX = array.real
         imagX = array.imag
 
-        # Match X dim with correct dim order
-        match self.xDim:
-            case 2:
-                dim1 = 1
-            case 1:
-                dim1 = 2
-            case _:
-                dim1 = self.xDim
-
-        # Match Y dim with correct dim order
-        match self.yDim:
-            case 2:
-                dim2 = 1
-            case 1:
-                dim2 = 2
-            case _:
-                dim2 = self.yDim
+        dim1=self.xDim
+        dim2=self.yDim
 
         realT = np.transpose(realX, axes=(-1*dim1,-1*dim2))
         imagT = np.transpose(imagX, axes=(-1*dim1,-1*dim2))
@@ -402,13 +368,29 @@ class Transpose2D(Transpose):
         data : DataFrame
             target data to manipulate 
         """
-        # If both dimensions are real, ensure nohyper flag
-        xDim = data.getParam('FDDIMORDER')[0]
-        yDim = data.getParam('FDDIMORDER')[1]
 
+        # Match X dim with correct dim order
+        match data.getParam('FDDIMORDER')[0]:
+            case 2:
+                xDim = 1
+            case 1:
+                xDim = 2
+            case _:
+                xDim = data.getParam('FDDIMORDER')[0]
+
+        # Match Y dim with correct dim order
+        match self.yDim:
+            case 2:
+                yDim = 1
+            case 1:
+                yDim = 2
+            case _:
+                yDim = data.getParam('FDDIMORDER')[1]
+        
         self.xDim = xDim
         self.yDim = yDim
 
+        # If both dimensions are real, ensure nohyper flag
         if not data.getParam('NDQUADFLAG', xDim) and not data.getParam('NDQUADFLAG', yDim):
             self.tp_hyper = True
         else:
@@ -467,6 +449,67 @@ class Transpose3D(Transpose):
     # Default Processing #
     ######################
 
+    def process(self, array):
+        """
+        fn process
+
+        Process is called by function's run, returns modified array when completed.
+        Likely attached to multiprocessing for speed
+
+        Parameters
+        ----------
+        array : np.ndarray
+            array to process
+
+        Returns
+        -------
+        np.ndarray
+            modified array post-process
+        """
+
+        # Ensure that there are at least 3 dimensions
+        if array.ndim < 2:
+            raise IndexError('Attempting to swap out of dimension bounds!')
+
+        return self.TP3D(array)
+        
+        
+    def TP3D(self, array : np.ndarray) -> np.ndarray:
+        """
+        fn TP3D
+
+        Performs a hypercomplex transposition on 3D Data
+
+        Parameters
+        ----------
+        array : ndarray
+            N-dimensional array to swap first and third dimensions
+        Returns
+        -------
+        new_array : ndarray
+            Transposed array
+        """
+
+        # Extrapolate X real and X imag
+        realX = array.real
+        imagX = array.imag
+
+        # Prepare to interweave z axis
+        a = realX[...,::2,:,:] + 1j*realX[...,1::2,:,:]
+        b = imagX[...,::2,:,:] + 1j*imagX[...,1::2,:,:]
+
+        transposeShape = a.shape[:-3] + (2*a.shape[-1], a.shape[-2],a.shape[-3])
+
+        # Prepare new array to interweave real and imaginary indirect dimensions
+        new_array = np.zeros(transposeShape, dtype=a.dtype)
+
+        # Interweave real and imaginary values of former X dimension
+        new_array[...,::2,:,:] = np.swapaxes(a,-1,-3)
+        new_array[...,1::2,:,:] = np.swapaxes(b,-1,-3)
+        
+        return new_array
+    
+
     ##################
     # Static Methods #
     ##################
@@ -493,13 +536,44 @@ class Transpose3D(Transpose):
         data : DataFrame
             target data to manipulate 
         """
-        xDim = data.getParam('FDDIMORDER')[0]
-        yDim = data.getParam('FDDIMORDER')[1]
-        zDim = data.getParam('FDDIMORDER')[2]
+        # Designate proper dimensions based on dim order
+        match data.getParam('FDDIMORDER')[0]:
+            case 2:
+                xDim = 1
+            case 1:
+                xDim = 2
+            case _:
+                xDim = data.getParam('FDDIMORDER')[0]
+        
+        match data.getParam('FDDIMORDER')[1]:
+            case 2:
+                yDim = 1
+            case 1:
+                yDim = 2
+            case _:
+                yDim = data.getParam('FDDIMORDER')[1]
+
+        match data.getParam('FDDIMORDER')[2]:
+            case 2:
+                zDim = 1
+            case 1:
+                zDim = 2
+            case _:
+                zDim = data.getParam('FDDIMORDER')[2]
 
         xQuadState = data.getParam('NDQUADFLAG', xDim)
         yQuadState = data.getParam('NDQUADFLAG', yDim)
         zQaudState = data.getParam('NDQUADFLAG', zDim)
+
+        # If the 2Dphase parameter matches magnitude, switch the dimension complexity
+        if data.getParam('FD2DPHASE') == PHASE.FD_MAGNITUDE.value:
+        
+            xID = data.getParam('NDQUADFLAG', xDim)
+            zID = data.getParam('NDQUADFLAG', zDim)
+
+            # Swap the number type of x and y dims
+            data.setParam('NDQUADFLAG', float(zID), xDim)
+            data.setParam('NDQUADFLAG', float(xID), zDim)
 
         super().initialize(data)
 
@@ -517,6 +591,7 @@ class Transpose3D(Transpose):
         """
         # Update ndsize here  
         pass
+
 
 class Transpose4D(Transpose):
     """
