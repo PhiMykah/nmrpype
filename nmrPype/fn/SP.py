@@ -59,6 +59,32 @@ class SineBell(Function):
     ###################
     # Multiprocessing #
     ###################
+
+    def parallelize(self, array) -> np.ndarray:
+        # Set length of each vector
+        dataLength = array.shape[-1]
+
+        # Allocate variables from parameters for code simplification
+        if self.sp_hdr and self.headerParams:
+            a1 = self.headerParams['Q1']
+            a2 = self.headerParams['Q2']
+            a3 = self.headerParams['Q3']
+            firstPointScale = 1.0 + self.headerParams['C1']
+        else:
+            a1 = self.sp_off
+            a2 = self.sp_end
+            a3 = self.sp_pow
+            firstPointScale = self.sp_c
+
+        df = self.headerParams['DFVAL'] if self.sp_df else 0.0
+
+        # Set arguments for function
+        args = ((array[i], a1, a2, a3, firstPointScale, df) for i in range(len(array)))
+        with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
+            processed_chunk = list(executor.map(lambda p: self.applyFunc(*p), args))
+            array = np.array(processed_chunk)
+
+        return array
     
     ######################
     # Default Processing #
@@ -97,18 +123,10 @@ class SineBell(Function):
 
         df = self.headerParams['DFVAL'] if self.sp_df else 0.0
 
-        # Check for parallelization
-        if self.mp[0]:
-            # Set arguments for function
-            args = ((array[i], a1, a2, a3, firstPointScale, df) for i in range(len(array)))
-            with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
-                processed_chunk = list(executor.map(lambda p: self.applyFunc(*p), args))
-                array = np.array(processed_chunk)
-        else:
-            it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength)
-            with it:
-                for x in it:
-                    x[...] = self.applyFunc(x, a1, a2, a3, firstPointScale, df)
+        it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength)
+        with it:
+            for x in it:
+                x[...] = self.applyFunc(x, a1, a2, a3, firstPointScale, df)
 
         return array
 
@@ -136,7 +154,11 @@ class SineBell(Function):
         df : float
             digital filter value
         """
-        tSize = len(array)
+        if array.ndim == 1:
+            tSize = len(array)
+        else:
+            tSize = array.shape[-1]
+
         # Set size to the size of array if one is not provided
         aSize = self.sp_size if self.sp_size else tSize
 
@@ -152,7 +174,8 @@ class SineBell(Function):
         
         q = 1 if q <= 0.0 else q
 
-        new_array = np.ones(tSize, dtype=array.dtype) if self.sp_one else np.zeros(tSize, dtype=array.dtype)
+        new_shape = array.shape[:-1] + (tSize,)
+        new_array = np.ones(new_shape, dtype=array.dtype) if self.sp_one else np.zeros(new_shape, dtype=array.dtype)
         
         startIndex = self.sp_start - 1
 
@@ -164,7 +187,7 @@ class SineBell(Function):
         a = np.absolute(a) if (in_closed_unit_interval) else a
 
         # Place window function region into dummy array
-        new_array[startIndex:startIndex + mSize] = array[startIndex:startIndex + mSize] * a
+        new_array[...,startIndex:startIndex + mSize] = array[startIndex:startIndex + mSize] * a
         
         if self.sp_inv: 
             new_array[0] /= fps

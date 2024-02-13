@@ -42,6 +42,16 @@ class PhaseCorrection(Function):
     # Multiprocessing #
     ###################
     
+    def parallelize(self, array: np.ndarray) -> np.ndarray:
+        import operator
+        # Set arguments for function
+        args = [(a, self.phase) for a in array]
+        with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
+            processed_chunk = list(executor.map(lambda p: operator.mul(*p), args))
+        array = np.array(processed_chunk)
+        return array
+    
+
     ######################
     # Default Processing #
     ######################
@@ -54,19 +64,12 @@ class PhaseCorrection(Function):
         Likely attached to multiprocessing for speed
         """
         # Check for parallelization
-        if self.mp[0]:
-            import operator
-            # Set arguments for function
-            args = [(a, self.phase) for a in array]
-            with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
-                processed_chunk = list(executor.map(lambda p: operator.mul(*p), args))
-                array = np.array(processed_chunk)
-        else:
-            dataLength = array.shape[-1]
-            it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength)
-            with it:
-                for x in it:
-                    x[...] = self.phase * x
+
+        dataLength = array.shape[-1]
+        it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength)
+        with it:
+            for x in it:
+                x[...] = self.phase * x
 
         return array
     
@@ -143,7 +146,7 @@ class PhaseCorrection(Function):
             imagList.append(float(imagVal))
 
         imag = np.array(imagList)
-        self.phase = np.array(realVal + 1j * imag)
+        self.phase = np.array(realVal + 1j * imag, dtype='complex64')
         import sys
         # Add values to header if noup is off
         if (not self.ps_noup):

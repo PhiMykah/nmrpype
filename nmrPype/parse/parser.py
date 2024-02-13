@@ -22,6 +22,16 @@ def parser(input_args : list):
             fn.clArgs(subparser)
     
     # Final arguments
+    # Add parsers for multiprocessing
+    
+    parser.add_argument('-mpd', '--disable', action='store_false', dest='mp_enable',
+                                help='Disable Multiprocessing')
+    parser.add_argument('-proc', '--processors', nargs='?', metavar='Number of Processors', type=int, 
+                            default=os.cpu_count(), dest='mp_proc')
+    parser.add_argument('-t', '--threads', nargs='?', metavar='Number of Threads', type=int,
+                            default=min(os.cpu_count(),4), dest='mp_threads')
+    
+    # Add file output params
     parser.add_argument('-di', '--delete-imaginary', action='store_true', dest='di',
                         help='Remove imaginary elements from dataset')
     parser.add_argument('-out', '--output', nargs='?',

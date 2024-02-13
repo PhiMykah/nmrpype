@@ -132,10 +132,15 @@ class ZeroFill(Function):
         if new_size > dataLength:
             padding = new_size - dataLength
             operation = np.pad
-            # Pass the chunk, the padding, and the padding function
-            args = [(chunks[i], (0,padding), operation) for i in range(len(chunks))]
+
+            # Only pad the last dimension by unchanging other dimension
+            pad_width = [[0,0] for i in range(chunks[0].ndim-1)]
+            pad_width[-1][-1] = padding
+
+            # Pass the chunk, the pad width, and the padding function
+            args = [(chunks[i], pad_width, operation) for i in range(len(chunks))]
         else:
-            operation = lambda a, size : a[:size]
+            operation = lambda a, size : a[...,:size]
             # Pass the chunk, the new array size, and the trimming function
             args = [(chunks[i], new_size, operation) for i in range(len(chunks))]
             

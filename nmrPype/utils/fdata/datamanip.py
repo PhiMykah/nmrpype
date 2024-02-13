@@ -239,9 +239,10 @@ def put_data(filename, fdata, data, overwrite=False):
     Put fdata and data to 2D NMRPipe.
     """
     if data.dtype != 'float32':
-        # print(data.dtype)
+        print(f"Data type: {data.dtype}", file=sys.stderr)
         raise TypeError('data.dtype is not float32')
     if fdata.dtype != 'float32':
+        print(f"Data type: {fdata.dtype}", file=sys.stderr)
         raise TypeError('fdata.dtype is not float32')
 
     # write the file

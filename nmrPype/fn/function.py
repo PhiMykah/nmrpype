@@ -154,7 +154,7 @@ class DataFunction:
     
         parser.add_argument('-mpd', '--disable', action='store_false', dest='mp_enable',
                                     help='Disable Multiprocessing')
-        parser.add_argument('-p', '--processors', nargs='?', metavar='Number of Processors', type=int, 
+        parser.add_argument('-proc', '--processors', nargs='?', metavar='Number of Processors', type=int, 
                                 default=os.cpu_count(), dest='mp_proc')
         parser.add_argument('-t', '--threads', nargs='?', metavar='Number of Threads', type=int,
                                 default=min(os.cpu_count(),4), dest='mp_threads')
