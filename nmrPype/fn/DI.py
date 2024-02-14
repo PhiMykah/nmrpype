@@ -47,7 +47,7 @@ class DeleteImaginary(Function):
         indices_list = [[0,size,2] for size in data.array.shape]
 
         # Keep all of the direct dimension
-        indices_list[int(-1 * data.getCurrDim())][-1] = 1
+        indices_list[int(-1 * data.getDimOrder(1))][-1] = 1
         
         # generate slices
         slices = [slice(*indices) for indices in indices_list]

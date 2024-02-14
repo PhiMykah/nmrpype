@@ -1,5 +1,6 @@
 from .function import DataFunction as Function
 import numpy as np
+import operator
 
 # Multiprocessing
 from multiprocessing import Pool, TimeoutError
@@ -43,7 +44,42 @@ class PhaseCorrection(Function):
     ###################
     
     def parallelize(self, array: np.ndarray) -> np.ndarray:
-        import operator
+        """
+        fn parallelize
+
+        Multiprocessing implementation for function to properly optimize for hardware
+
+        Parameters:
+        array : np.ndarray
+            Target data array to process with function
+
+        ndQuad : int
+            NDQUADFLAG header value
+
+        Returns:
+        new_array : np.ndarray
+            Updated array after function operation
+        """
+        # Save array shape for reshaping later
+        array_shape = array.shape
+
+        # Split array into manageable chunks
+        chunk_size = int(array_shape[0] / self.mp[1])
+        
+        # Assure chunk_size is nonzero
+        chunk_size = array_shape[0] if chunk_size == 0 else chunk_size
+        
+        chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
+        
+        # Process each chunk in processing pool
+        with Pool(processes=self.mp[1]) as pool:
+            output = pool.map(self.phaseCorrect, chunks, chunksize=chunk_size)
+
+        # Recombine and reshape data
+        new_array = np.concatenate(output).reshape(array_shape)
+        return new_array
+
+    def phaseCorrect(self, array: np.ndarray) -> np.ndarray:
         # Set arguments for function
         args = [(a, self.phase) for a in array]
         with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
@@ -130,7 +166,7 @@ class PhaseCorrection(Function):
         None
         """
         # Obtain size for phase correction from data
-        size = data.array.shape[-1*data.getCurrDim()]
+        size = data.array.shape[-1*data.getDimOrder(1)]
 
         # Convert from degrees to radians
         # C code uses 3.14159265
