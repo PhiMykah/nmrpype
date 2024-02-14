@@ -247,7 +247,10 @@ class FourierTransform(Function):
         # Set FT flag
         data.setParam('NDFTFLAG', float(ftFlag), currDim)
 
-        size = data.array.shape[-1*currDim]
+        if data.getDimOrder(1) == 1:
+            size = data.getParam('NDSIZE', currDim)
+        else:
+            size = data.getParam('NDTDSIZE', currDim)
 
         # Update FT flag based parameters if necessary
         if ftFlag:

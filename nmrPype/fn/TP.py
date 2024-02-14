@@ -196,8 +196,10 @@ class Transpose(Function):
             data.header['FDDIMORDER'][0] = dimOrder2
             data.header['FDDIMORDER'][self.tp_axis-1] = dimOrder1
 
-        # Set flag transpose to true
-        data.setParam('FDTRANSPOSED', float(1))
+        # Toggle Transpose flag
+        isTransposed = data.getParam('FDTRANSPOSED')
+        isTransposed = 0 if isTransposed else 1
+        data.setParam('FDTRANSPOSED', isTransposed)
         
         shape = data.array.shape
 

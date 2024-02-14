@@ -224,9 +224,23 @@ class DataFrame:
 
         Obtain current dim for Dataframe based on dim order
         """
-        if int(self.header['FDDIMORDER'][0]) == 2:
+        return 0 # Bandaid fix self.getDimOrder(1)
+        
+    def getDimOrder(self, dim : int) -> int:
+        """
+        fn getDimOrder
+
+        Convert order number into correct dimension index
+        
+        1 = Direct
+        2 = First Indirect
+        3 = Second Indirect
+        4 = Third Indirect
+        ...
+        """
+        if int(self.header['FDDIMORDER'][dim-1]) == 2:
             return 1
-        elif int(self.header['FDDIMORDER'][0]) == 1:
+        elif int(self.header['FDDIMORDER'][dim-1]) == 1:
             return 2
         else:
-            return int(self.header['FDDIMORDER'][0])
+            return int(self.header['FDDIMORDER'][dim-1])

@@ -26,6 +26,23 @@ class DeleteImaginary(Function):
         if exitCode:
             return 1
         
+        # Collect indices to remove indirect imaginary in second dimension
+        indices_list = [[0,size,1] for size in data.array.shape]
+
+        # change from second dimension if exists
+        if data.array.ndim >= 2:
+            indices_list[int(-1 * data.getDimOrder(2))][-1] = 2
+
+        # generate slices
+        slices = [slice(*indices) for indices in indices_list]
+
+        data.array = data.array[*slices]
+        
+        self.updateHeader(data)
+
+        """
+        depreciated code for halfing all the indirect dimensions
+
         # Collect indices to remove indirect imaginary
         indices_list = [[0,size,2] for size in data.array.shape]
 
@@ -38,7 +55,7 @@ class DeleteImaginary(Function):
         data.array = data.array[*slices]
         
         self.updateHeader(data)
-
+        """
         return 0
     
     ###################
