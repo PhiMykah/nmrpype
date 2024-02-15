@@ -4,7 +4,6 @@ setup(name='nmrPype',
     version='0.5.0',
     packages=find_packages(), 
     install_requires=[
-        'nmrglue',
         'numpy',
         'scipy'
     ],
