@@ -11,22 +11,9 @@ class FileIOError(Exception):
     # Exception called when there is an error in reading/writing the data
     pass 
 
-class ModifyParamError(Exception):
-    # Exception occured when modifying a parameter
-    pass 
-
-class EmptyNMRData(Exception):
-    # Exception called when trying to access or modify data 
-    #   before a designated input stream existws
-    pass
-
-class UnsupportedDimension(Exception):
-    # Exception called when trying to output data for an unsupported 
-    #    array dimension
-    pass
-
 class UnknownHeaderParam(Exception):
-    # Exception called when trying to access an unknown header parameter
+    # Exception called when there is an error in calling for 
+    #   a nonexistent header param
     pass
 
 class FunctionError(Exception):

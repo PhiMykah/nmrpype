@@ -1,24 +1,202 @@
-from .function import nmrFunction as Function
+from .function import DataFunction as Function
+import numpy as np
+from scipy import fft
+
+# Multiprocessing
+from multiprocessing import Pool, TimeoutError
+from concurrent.futures import ThreadPoolExecutor
 
 class FourierTransform(Function):
-    def __init__(self, ft_inv: bool = False, ft_real: bool = False, ft_neg: bool = False, ft_alt: bool = False):
-        self.ft_inv = ft_inv 
-        self.ft_real = ft_real
-        self.ft_neg = ft_neg
-        self.ft_alt = ft_alt
-        params = {'ft_inv':ft_inv, 'ft_real': ft_real, 'ft_neg': ft_neg, 'ft_alt': ft_alt}
-        super().__init__(params) 
+    """
+    class FourierTransform
 
-    @staticmethod
-    def commands(subparser):
+    Data Function object for performing a DFFT or IDFFT on the data.
+    """
+    def __init__(self, ft_inv: bool = False, ft_real: bool = False, ft_neg: bool = False, ft_alt: bool = False, 
+                 mp_enable = False, mp_proc = 0, mp_threads = 0):
+            self.ft_inv = ft_inv 
+            self.ft_real = ft_real
+            self.ft_neg = ft_neg
+            self.ft_alt = ft_alt
+            self.mp = [mp_enable, mp_proc, mp_threads]
+            params = {'ft_inv':ft_inv, 'ft_real': ft_real, 'ft_neg': ft_neg, 'ft_alt': ft_alt}
+            super().__init__(params) 
+    
+    ############
+    # Function #
+    ############
+            
+    def run(self, data) -> int:
         """
-        fn commands
+        fn run
 
-        Adds Fourier Transform parser to the subparser, with its corresponding args
+        Main body of FFT code.
+            - Initializes Header
+            - Determine process to run using flags
+            - Start Process (process data vector by vector in multiprocess)
+            - Update Header
+            - Return information if necessary
+
+        Overload run for function specific operations
+
+        Parameters
+        ----------
+        data : DataFrame
+            Target data to to run function on
+
+        Returns
+        -------
+        Integer exit code (e.g. 0 success 1 fail)
+        """
+
+        self.initialize(data)
+        
+        ndQuad = int(data.getParam('NDQUADFLAG'))
+
+        # Perform fft without multiprocessing
+        if not self.mp[0] or data.array.ndim == 1:
+            data.array = self.process(data.array, ndQuad)
+        else:
+            data.array = self.parallelize(data.array, ndQuad)
+
+        # Update header once processing is complete
+        self.updateHeader(data)
+
+        return 0
+
+
+    ###################
+    # Multiprocessing #
+    ###################
+
+    def parallelize(self, array : np.ndarray, ndQuad : int) -> np.ndarray:
+        """
+        fn parallelize
+
+        Multiprocessing implementation for function to properly optimize for hardware
+
+        Parameters:
+        array : np.ndarray
+            Target data array to process with function
+
+        ndQuad : int
+            NDQUADFLAG header value
+
+        Returns:
+        new_array : np.ndarray
+            Updated array after function operation
+        """
+        # Save array shape for reshaping later
+        array_shape = array.shape
+
+        # Split array into manageable chunks
+        chunk_size = int(array_shape[0] / self.mp[1])
+        
+        # Assure chunk_size is nonzero
+        chunk_size = array_shape[0] if chunk_size == 0 else chunk_size
+        
+        chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
+        
+        # Process each chunk in processing pool
+        args = [(chunks[i], ndQuad) for i in range(len(chunks))]
+        with Pool(processes=self.mp[1]) as pool:
+            output = pool.starmap(self.process, args, chunksize=chunk_size)
+
+        # Recombine and reshape data
+        new_array = np.concatenate(output).reshape(array_shape)
+        return new_array
+
+    def VectorFFT(self, array : np.ndarray) -> np.ndarray:
+        array = fft.fft(array)
+        array = fft.fftshift(array)
+        array = np.flip(array)
+        array = np.roll(array, 1)
+        return(array)
+        
+    def VectorIFFT(self, array : np.ndarray) -> np.ndarray:
+        array = fft.ifft(array)
+        array = fft.ifftshift(array)
+        array = np.flip(array)
+        array = np.roll(array, 1)
+        return(array)
+
+
+    ######################
+    # Default Processing #
+    ######################
+
+    def process(self, array : np.ndarray, ndQuad : int) -> np.ndarray:
+        """
+        fn process
+
+        Process is called by function's run, returns modified array when completed.
+        Likely attached to multiprocessing for speed
+
+        Parameters
+        ----------
+        array : np.ndarray
+            array to process
+
+        Returns
+        -------
+        np.ndarray
+            modified array post-process
+        """
+        # Change operation based on parameters
+        if (self.ft_alt and not self.ft_inv):
+            # Alternate real and imaginary prior to transform
+            pass
+        if (self.ft_neg and not self.ft_inv):
+            # Negate all imaginary values prior to transform
+            pass
+        if (self.ft_real and ndQuad != 1):
+            # Set all imaginary values to 0
+            pass
+
+        # Perform dfft or idfft depending on args
+        operation = self.VectorFFT if not self.ft_inv else self.VectorIFFT
+
+        # Check for parallelization
+        if self.mp[0] and not array.ndim == 1:
+            with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
+                processed_chunk = list(executor.map(operation, array))
+                array = np.array(processed_chunk)
+        else:
+            it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=array.shape[-1])
+            with it:
+                for x in it:
+                    x[...] = operation(x)
+
+        # Flag operations following operation
+
+        if (self.ft_real):
+            pass
+    
+        if (self.ft_alt and self.ft_inv):
+            # Alternate after ifft if necessary
+            pass
+
+        if (self.ft_neg and self.ft_inv):
+            # Negate all imaginary values after ifft if necessary
+            pass
+        
+        return array
+    
+
+    ##################
+    # Static Methods #
+    ##################
+        
+    @staticmethod
+    def clArgs(subparser):
+        """
+        fn clArgs (FT command-line arguments)
+
+        Adds Fourier Transform parser to the subparser, with its corresponding default args
         Called in nmrParse.py
 
-        Destinations are formatted typically by {function}_{argument},
-            e.g. the ft_inv destination stores the inv bool argument for the ft function
+        Destinations are formatted typically by {function}_{argument}
+            e.g. the zf_pad destination stores the pad argument for the zf function
 
         Parameters
         ----------
@@ -27,7 +205,7 @@ class FourierTransform(Function):
         """
         # FT subparser
         FT = subparser.add_parser('FT', help='Perform a Fourier transform (FT) on the data')
-        FT.add_argument('-inverse', '-inv', action='store_true',
+        FT.add_argument('-inv', '--inverse', action='store_true',
                         dest='ft_inv', help='Perform inverse FT')
         FT.add_argument('-real', action='store_true',
                         dest='ft_real', help='Perform a FT only on the real portion of the data')
@@ -36,100 +214,75 @@ class FourierTransform(Function):
         FT.add_argument('-alt', action='store_true',
                         dest='ft_alt', help='Use sign alternation when performing FT')
         
-        # Include universal commands proceeding function call
-        Function.universalCommands(FT)
+        # Include tail arguments proceeding function call
+        Function.clArgsTail(FT)
 
-    def func(self, array):
-        from scipy import fft
-        from numpy import flip, roll
-        """
-        fn func
 
-        Performs a fast fourier transform operation on 1-D array
+    ####################
+    #  Proc Functions  #
+    ####################
         
-        Header updating operations are performed outside scope
+    def initialize(self, data):
+        """
+        fn initialize
+
+        Initialization follows the following steps:
+            -Handle function specific arguments
+            -Update any header values before any calculations occur
+                that are independent of the data, such as flags and parameter storage
 
         Parameters
         ----------
-        array : ndarray (1-D)
-            Array to perform operation on, passed from run
-        Returns
-        -------
-        array : ndarray
-            Modified 1-D array after operation
+        data : DataFrame
+            target data to manipulate 
+        None
         """
-        # Operations to perform on the data, transform then shift
-        ft = fft.fft
-        shift = fft.fftshift
+        currDim = data.getCurrDim()
 
-        # Change operations based on the parameters
-        if (self.ft_inv):
-            # Perform an inverse fft
-            ft = fft.ifft
-            shift = fft.ifftshift
-            
-        elif (self.ft_real):
-            # Perform a real fft
-            ft = fft.rfft
+        ftFlag = int(data.getParam('NDFTFLAG', currDim))
 
-        elif (self.ft_neg):
-            # Negate imaginaries when performing FT
-            pass 
+        # Flip value of ft flag
+        ftFlag = 0 if ftFlag else 1
 
-        elif (self.ft_alt):
-            # Use sign alternation when performing FT
-            pass
+        # Set FT flag
+        data.setParam('NDFTFLAG', float(ftFlag), currDim)
+
+        if data.getDimOrder(1) == 1:
+            size = data.getParam('NDSIZE', currDim)
+        else:
+            size = data.getParam('NDTDSIZE', currDim)
+
+        # Update FT flag based parameters if necessary
+        if ftFlag:
+            data.setParam('NDAQSIGN', float(0), currDim)
+            data.setParam('NDFTSIZE', float(size), currDim)
+
+        # Set Quad flags
+        data.setParam('FDQUADFLAG', float(0), currDim)
+        data.setParam('NDQUADFLAG', float(0), currDim)
         
-        # Perform operation
-        array = ft(array)
-        
-        # Shift the data 
-        array = shift(array)
+        #outQuadState = 2
 
-        # Flip data, then move the data over by 1 (correction based on previous operations)
-        array = flip(array)
-        array = roll(array, 1)
+        # If real update real parameters
+        if self.ft_real:
+            tdSize = data.getParam()
+            outSize = size/2
+            tdSize /= 2
 
-        return array
+            data.setParam('NDSIZE', float(outSize), currDim)
+            data.setParam('NDTDSIZE', float(tdSize), currDim)
 
 
-    def updateFunctionHeader(self, data, sizes):
-        """ 
-        fn updateFunctionHeader
+    def updateHeader(self, data):
+        """
+        fn updateHeader
 
-        Update the header after function processing
-            based on the function itself 
+        Update the header following the main function's calculations.
+            Typically this includes header fields that relate to data size.
 
         Parameters
         ----------
-        sizes : list of ints
-            Parameter sizes before function operation
+        None
         """
-        get = data.getParam
-        mod = data.modifyParam
-        currDim = data.header.getcurrDim()
-        # Flip FT flag
-        if (bool(get('NDFTFLAG'))):
-            mod('NDFTFLAG', float(0), currDim) 
-        else:
-            mod('NDFTFLAG', float(1), currDim) 
-
-        # Set NDAQSIGN and NDFTSIZE
-        if (bool(get('NDFTFLAG'))):
-            mod('NDAQSIGN', float(0), currDim)
-            mod('NDFTSIZE', data.getTDSize(), currDim)
-        else:
-            # Implement `dataInfo->outQuadState = 2`
-            mod('NDFTSIZE', data.getTDSize(), currDim) 
-
-        # Add flag for complex
-        mod('FDQUADFLAG', float(0))
-        mod('NDQUADFLAG', float(0), currDim)  
-        
-        # Check for real flag, and update based on real (divide the size by 2)
-        apod = data.header.checkParamSyntax('NDAPOD', currDim)
-        currDimSize = sizes[apod]
-        
-        currDimSize = currDimSize/2 if self.ft_real else currDimSize
-        mod('NDAPOD', float(currDimSize), currDim)  
-        
+        # Update ndsize here  
+        pass

@@ -1,83 +1,126 @@
-from utils import catchError, FunctionError, EmptyNMRData
+from utils import catchError, FunctionError, DataFrame
+import numpy as np
 
-class nmrFunction:
+# Multiprocessing
+from multiprocessing import Pool, TimeoutError
+from concurrent.futures import ThreadPoolExecutor
+
+class DataFunction:
+    """
+    class dataFunction
+
+    Data Function is a template class for all types of functions to run on
+        the NMR data. New user functions should copy format laid out by this 
+        class.
+
+    Parameters
+    ----------
+    params : dict
+        Dictionary of parameters associated with the designated function
+    """
     def __init__(self, params : dict = {}):
-        self.params = params # Store params as a dictionary by default
+        if not params:
+            params = {'mp_enable':False,'mp_proc':0,'mp_threads':0}
+            self.mp = [params['mp_enable'], params['mp_proc'], params['mp_threads']]
+        self.params = params
 
-    def obtainSizes(self, data): 
+    ############
+    # Function #
+    ############
+        
+    def run(self, data : DataFrame) -> int:
         """
-        fn obtainSizes
+        fn run
 
-        Returns dictionary of current dimension sizes from the header
+        Main body of function code.
+            - Initializes Header
+            - Start Process (process data vector by vector in multiprocess)
+            - Update Header
+            - Return information if necessary
 
-        Return
-        ------
-        sizes : dict
-            Dictionary of dataset's header sizes
+        Overload run for function specific operations
+
+        Parameters
+        ----------
+        data : DataFrame
+            Target data to to run function on
+
+        Returns
+        -------
+        Integer exit code (e.g. 0 success 1 fail)
         """
-        # Obtain all sizes before operation
-        sizes = {}
-        paramStr = data.header.checkParamSyntax
-
-        for dim in range(data.np_data.ndim): # This implementation feels inefficient, likely requires rewrite
-            param = paramStr('NDAPOD', dim+1)
-            param2 = paramStr('NDSIZE', dim+1)
-
-            sizes[param] = int(data.getParam('NDAPOD', dim+1))
-            sizes[param2] = int(data.getParam('NDSIZE', dim+1))
-
-        return sizes
-    
-    def run(self, data):
-        """
-        fn run 
-
-        Runs the designated operation in 1-D slices for parallel processing
-
-        Run is overwriten in some cases
-
-        func is defined in child classes, with exceptions
-        """
-        from utils import EmptyNMRData
-
         try:
-            from numpy import nditer
+            self.initialize(data)
 
-            # Ensure data is available to modify
-            array = data.np_data
-            if type(array) is None:
-                raise EmptyNMRData("No data to modify!")
+            # Perform fft without multiprocessing
+            if not self.mp[0] or data.array.ndim == 1:
+                data.array = self.process(data.array)
+            else:
+                data.array = self.parallelize(data.array)
+
+            # Update header once processing is complete
+            self.updateHeader(data)
             
-            dataLength = array.shape[-1]
-
-            # Update header before processing data
-            # Take parameters from dictionary and allocate to designated header locations
-
-            self.updateHeader(data)
-            sizes = self.obtainSizes(data)
-
-            # Process data stream in a series of 1-D arrays
-            with nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength) as it:
-                for x in it:
-                    x[...] = self.func(x)
-                    
-            # Process data 
-            self.updateHeader(data)
-            self.updateFunctionHeader(data, sizes)
-
-        # Exceptions
         except Exception as e:
             msg = "Unable to run function {0}!".format(type(self).__name__)
             catchError(e, new_e=FunctionError, msg=msg)
 
-    
-    def func(self, array):
-        pass 
+        return 0
 
-    @staticmethod
-    def commands(subparser):
+
+    def parallelize(self, array) -> np.ndarray:
         """
-        fn commands (Template)
+        fn parallelize
+
+        General Multiprocessing implementation for function, utilizing cores and threads
+        
+        Should be overloaded if array_shape changes in processing or process requires more args
+
+        Parameters:
+        array : np.ndarray
+            Target data array to process with function
+
+        Returns:
+        new_array : np.ndarray
+            Updated array after function operation
+        """
+        # Save array shape for reshaping later
+        array_shape = array.shape
+
+        # Split array into manageable chunks
+        chunk_size = int(array_shape[0] / self.mp[1])
+
+        # Assure chunk_size is nonzero
+        chunk_size = array_shape[0] if chunk_size == 0 else chunk_size
+        
+        chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
+
+        # Process each chunk in processing pool
+        with Pool(processes=self.mp[1]) as pool:
+            output = pool.map(self.process, chunks, chunksize=chunk_size)
+
+        # Recombine and reshape data
+        new_array = np.concatenate(output).reshape(array_shape)
+        return new_array
+    
+
+    def process(self, array : np.ndarray) -> np.ndarray:
+        """
+        fn process
+
+        Process is called by function's run, returns modified array when completed.
+        Likely attached to multiprocessing for speed
+        """
+        return array
+    
+    ##################
+    # Static Methods #
+    ##################
+        
+    @staticmethod
+    def clArgs(subparser):
+        """
+        fn clArgs (Template command-line arguments)
 
         Adds function parser to the subparser, with its corresponding default args
         Called in nmrParse.py
@@ -90,71 +133,78 @@ class nmrFunction:
         subparser : _SubParsersAction[ArgumentParser]
             Subparser object that will receive function and its arguments
         """
-        pass 
-    
+        pass
+
+
     @staticmethod
-    def universalCommands(parser):
+    def nullDeclare(subparser):
+        NULL = subparser.add_parser('NULL', help='Null Function, does not apply any function')
+        DataFunction.clArgsTail(NULL)
+
+
+    @staticmethod
+    def clArgsTail(parser):
+        """
+        fn clArgsTail (tail-end command-line arguments)
+
+        Command-line arguments for the parser that are added to the end of each function.
+            Do not overload
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
         from sys import stdout
+        import os
+        # Add parsers for multiprocessing
+    
+        parser.add_argument('-mpd', '--disable', action='store_false', dest='mp_enable',
+                                    help='Disable Multiprocessing')
+        parser.add_argument('-proc', '--processors', nargs='?', metavar='Number of Processors', type=int, 
+                                default=os.cpu_count(), dest='mp_proc')
+        parser.add_argument('-t', '--threads', nargs='?', metavar='Number of Threads', type=int,
+                                default=min(os.cpu_count(),4), dest='mp_threads')
+        
+        # Output settings
         parser.add_argument('-di', '--delete-imaginary', action='store_true', dest = 'di',
                             help='Remove imaginary elements from dataset')
-        parser.add_argument('-output', '-out', nargs='?', dest='output',
+        parser.add_argument('-out', '--output', nargs='?', dest='output',
                             default=(stdout.buffer if hasattr(stdout,'buffer') else stdout))
-        parser.add_argument('-overwrite', '-ov', action='store_true', dest='overwrite',
+        parser.add_argument('-ov', '--overwrite', action='store_true', dest='overwrite',
                             help='Call this argument to overwrite when sending output to file.')
-        
-    def updateHeader(self, data):
-        from utils import UnsupportedDimension
-        """
-        fn updateHeader
 
-        Function that handles the updating of the header
-            - Updates parameters based on the dimension count
-            - Updates function parameters
-            - Updates any miscellaneous fields
+    ####################
+    #  Proc Functions  #
+    ####################
+        
+    def initialize(self, data):
+        """
+        fn initialize
+
+        Initialization follows the following steps:
+            -Handle function specific arguments
+            -Update any header values before any calculations occur
+                that are independent of the data, such as flags and parameter storage
 
         Parameters
         ----------
-        data : NMRData
-            The data object receiving the modifications to the header
-        size
-            The size of the data prior to any operations performed
-                used for header storage
-        fn_params : dict
-            Operations dictionary provided for a called function if provided
+        data : DataFrame
+            target data to manipulate 
+        None
         """
-        # Variables for code simplification
-        set = data.modifyParam
-        np_data = data.np_data
-        hdr = data.header 
+        pass
 
-        if type(data.np_data) is None:
-            raise EmptyNMRData('Failed to update header! No NMR data Found!')
-        
-        # Extract sizes from the np array axes, then
-        # Updates particular params based on the dimension count
-        match int(len(np_data.shape)):
-            case 1:
-                lenX = np_data.shape[0]
-                set('FDSIZE', float(lenX))
-            case 2:
-                lenY, lenX = np_data.shape
-                set('FDSIZE', float(lenX))
-                set('FDSPECNUM', float(lenY))
-            case 3:
-                lenZ, lenY, lenX = np_data.shape
-                set('FDSIZE', float(lenX))
-                set('FDSPECNUM', float(lenY))
-                set('FDF3SIZE', float(lenZ))
-            case 4:
-                lenA, lenZ, lenY, lenX = np_data.shape
-                set('FDSIZE', float(lenX))
-                set('FDSPECNUM', float(lenY))
-                set('FDF3SIZE', float(lenZ))
-                set('FDF4SIZE', float(lenA))
-            case _:
-                raise UnsupportedDimension('Dimension provided in \
-                                                      header is currently unsupported!')
+    def updateHeader(self, data):
+        """
+        fn updateHeader
 
-    def updateFunctionHeader(self, data, sizes = {}):
-        # Empty function for parent function class, implemented in the child classes
-        pass 
+        Update the header following the main function's calculations.
+            Typically this includes header fields that relate to data size.
+
+        Parameters
+        ----------
+        None
+        """
+        # Update ndsize here 
+        pass

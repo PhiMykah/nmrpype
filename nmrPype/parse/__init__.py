@@ -1,3 +1,3 @@
-from .nmrParse import parseArgs as parser
+from .parser import parser
 
 __all__ = ['parser']

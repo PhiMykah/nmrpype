@@ -1,98 +1,168 @@
-from .function import nmrFunction as Function
+from .function import DataFunction as Function
+import numpy as np
+
+# Multiprocessing
+from multiprocessing import Pool, TimeoutError
+from concurrent.futures import ThreadPoolExecutor
 
 class DeleteImaginary(Function):
-    def __init__(self):
+    """
+        class ZeroFill
+
+        Data Function object for performing a zero-fill on the data
+    """
+    def __init__(self, mp_enable = False, mp_proc = 0, mp_threads = 0):
+        self.mp = [mp_enable, mp_proc, mp_threads]
         params = {}
         super().__init__(params)
 
-    def run(self, data):
-        """
-        fn run
-
-        Zerofill has a unique run operation due to modifying ndarrays
-
-        Parameters
-        ----------
-        data : NMRData
-            dataset to process
-        """
-        from utils import EmptyNMRData, catchError, FunctionError
-
-        try:
-            from numpy import nditer
-
-            # Ensure data is available to modify
-            array = data.np_data
-            if type(array) is None:
-                raise EmptyNMRData("No data to modify!")
-            
-            dataLength = array.shape[-1]
-
-            # Update header before processing data
-            self.updateHeader(data)
-
-            # Take parameters from dictionary and allocate to designated header locations
-            sizes = self.obtainSizes(data)
-
-            # Process data stream in a series of 1-D arrays
-            with nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength) as it:
-                for x in it:
-                    x[...] = self.func(x)
-
-            # Cut the 2nd dimension in half if it exists
-            if len(data.np_data.shape) >= 2:
-                lenY = data.np_data.shape[-2]
-                data.np_data = data.np_data[...,:int(lenY/2),:]
-
-            self.updateHeader(data)
-            self.updateFunctionHeader(data, sizes)
-
-        # Exceptions
-        except Exception as e:
-            msg = "Unable to run function {0}!".format(type(self).__name__)
-            catchError(e, new_e=FunctionError, msg=msg)
-
-    def func(self, array):
-        """
-        fn func
-
-        Deletes imaginaries of 1-D array sent to the function
+    ############
+    # Function #
+    ############
+    
+    def run(self, data) -> int:
+        # See function.py
+        exitCode = super().run(data)
+        if exitCode:
+            return 1
         
-        Header updating operations are performed outside scope
+        # Collect indices to remove indirect imaginary in second dimension
+        indices_list = [[0,size,1] for size in data.array.shape]
+
+        # change from second dimension if exists
+        if data.array.ndim >= 2:
+            indices_list[int(-1 * data.getDimOrder(2))][-1] = 2
+
+        # generate slices
+        slices = [slice(*indices) for indices in indices_list]
+
+        data.array = data.array[*slices]
+        
+        self.updateHeader(data)
+
+        """
+        depreciated code for halfing all the indirect dimensions
+
+        # Collect indices to remove indirect imaginary
+        indices_list = [[0,size,2] for size in data.array.shape]
+
+        # Keep all of the direct dimension
+        indices_list[int(-1 * data.getDimOrder(1))][-1] = 1
+        
+        # generate slices
+        slices = [slice(*indices) for indices in indices_list]
+
+        data.array = data.array[*slices]
+        
+        self.updateHeader(data)
+        """
+        return 0
+    
+    ###################
+    # Multiprocessing #
+    ###################
+
+    ######################
+    # Default Processing #
+    ######################
+    
+    def process(self, array: np.ndarray) -> np.ndarray:
+        """
+        fn process
+
+        Process is called by function's run, returns modified array when completed.
+        Likely attached to multiprocessing for speed
 
         Parameters
         ----------
-        array : ndarray (1-D)
-            Array to perform operation on, passed from run
+        array : np.ndarray
+            array to process
+
         Returns
         -------
-        array : ndarray
-            Modified 1-D array after operation
+        np.ndarray
+            modified array post-process
         """
-        return array.real
+        dataLength = array.shape[-1]
 
-    def updateFunctionHeader(self, data, sizes):
-        # Variables for code simplification
-        get = data.getParam
-        mod = data.modifyParam
-        currDim = data.header.getcurrDim()
-        shape = data.np_data.shape 
+        # Operation strips imaginary component of array
+        operation = lambda a : a.real
+
+        # Check for parallelization
+        if self.mp[0]:
+            with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
+                processed_chunk = list(executor.map(operation, array))
+                array = np.array(processed_chunk)
+        else:
+            it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength)
+            with it:
+                for x in it:
+                    x[...] = operation(x)
+
+        return array
+        
+    ####################
+    #  Proc Functions  #
+    ####################
+        
+    def initialize(self, data):
+        currDim = data.getCurrDim()
+        shape = data.array.shape 
 
         # Set curr dimension's quad flag to real
-        mod('NDQUADFLAG', float(1), currDim)
+        data.setParam('NDQUADFLAG', float(1), currDim)
 
         qFlags = []
         # Get the flags for all dimensions
         for dim in range(len(shape)):
-            qFlags.append(get('NDQUADFLAG', dim+1))
+            qFlags.append(data.getParam('NDQUADFLAG', dim+1))
         
         # Check if all dimensions are real
         isReal = all(bool(flag) for flag in qFlags)
 
-        mod('FDQUADFLAG', float(1) if isReal else float(0))
+        data.setParam('FDQUADFLAG', float(1) if isReal else float(0))
 
-        from numpy import prod
         # Update Slicecount
-        slices = prod(shape[:-1])
+        slices = np.prod(shape[:-1])
 
-        mod('FDSLICECOUNT', float(slices))
+        data.setParam('FDSLICECOUNT', float(slices))
+
+    def updateHeader(self, data):
+        """
+        fn updateHeader
+
+        Update the header following the main function's calculations.
+            Typically this includes header fields that relate to data size.
+
+        Parameters
+        ----------
+        None
+        """
+        shape = data.array.shape
+
+        # Update ndsizes
+        for dim in range(data.array.ndim):
+            index = dim + 1
+            data.setParam('NDSIZE', float(shape[-1*(index)]),index)
+
+        currDim = data.getCurrDim()
+        # Set curr dimension's quad flag to real
+        data.setParam('NDQUADFLAG', float(1), currDim)
+
+        qFlags = []
+        # Get the flags for all dimensions
+        for dim in range(len(shape)):
+            qFlags.append(data.getParam('NDQUADFLAG', dim+1))
+        
+        # Check if all dimensions are real
+        isReal = all(bool(flag) for flag in qFlags)
+
+        data.setParam('FDQUADFLAG', float(1) if isReal else float(0))
+
+        # Update slicecount
+        slices = np.prod(shape[:-1])
+
+        if slices != 1:
+            data.setParam('FDSLICECOUNT', float(slices))
+        else:
+            data.setParam('FDSLICECOUNT', float(0))

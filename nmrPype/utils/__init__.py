@@ -1,17 +1,7 @@
-# Import all of utils necessary when calling utils
-from .errorHandler import catchError, PipeBurst, FileIOError, ModifyParamError, \
-                            EmptyNMRData, UnsupportedDimension, UnknownHeaderParam, FunctionError
-from .header import Header
-from .nmrData import NMRData
+from .errorHandler import PipeBurst, FileIOError, UnknownHeaderParam, FunctionError, catchError
+from .DataFrame import DataFrame
 
-
-__all__ = ['Header',
-'NMRData',
-'catchError',
-'PipeBurst',
-'FileIOError',
-'ModifyParamError',
-'EmptyNMRData',
-'UnsupportedDimension',
-'UnknownHeaderParam',
-'FunctionError']
+__all__ = [
+    'PipeBurst', 'FileIOError', 'UnknownHeaderParam',
+    'FunctionError', 'catchError', 'DataFrame'
+]
