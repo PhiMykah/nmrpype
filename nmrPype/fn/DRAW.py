@@ -66,7 +66,7 @@ class Draw(Function):
 
         if self.plot.lower() == 'line':
             return self.graphLine(data)
-        if self.plot.lower() == 'contour':
+        if self.plot.lower() == 'contour' and data.array.ndim > 1:
             return self.graphContour(data)
         if data.array.ndim == 1:
             return self.graphLine(data)
@@ -95,61 +95,52 @@ class Draw(Function):
         shape = data.array.shape
 
         # Obtain title function, number of total slices, and slice per plane
-        title, slice_num, slices = self.graphSyntax(data.array.ndim, shape)
+        title, slice_num, slices = self.graphLineSyntax(data.array.ndim, shape)
 
         # Set the limit to be whichever value is smallest
         limit = min(slice_num, self.slice)
 
         # Generate figure and axes based on amount of slices
-        fig, ax = plt.subplots(limit, 2, squeeze=False, figsize=(20,9*limit))
+        fig, axs = plt.subplots(limit, 2, squeeze=False, figsize=(20,9*limit))
 
         # Create xlabel with NDLABEL and the direct dimension's index
         xLabel = "{} pts {}".format(data.getParam('NDLABEL'), chr(87+data.getDimOrder(1)))
 
-        return self.drawLineToFile(data.array, title, fig, ax, limit, slices, xLabel, **kwargs)
+        return self.drawLineToFile(data.array, title, fig, axs, limit, slices, xLabel, **kwargs)
 
 
-    def graphContour(self, array, limit, cmap="", **kwargs):
-        pass
-        """
-        import seaborn as sns
+    def graphContour(self, data, cmap="", **kwargs) -> int:
 
-        cmap = cmap if cmap else plt.get_cmap('RdBu')
+        shape = data.array.shape
 
-        aReal = array.real
-        aImag = array.imag
-        
-        from numpy import nditer
-        it = nditer(array, flags=['multi_index'])
-        with it:
-            slice_num = 1
-            while not it.finished:
-                indices = it.multi_index
-                slice_indices = tuple(indices[:-2])
-                # Obtain 2D slice from current axes
-                slice_2d = it.operands[0][slice_indices]
+        # Obtain title function, number of total slices, and slice per cube
+        title, slice_num, slices = self.graphContourSyntax(data.array.ndim, shape)
 
-                f, ax = plt.subplots() 
-                f.suptitle("Plot Number {0}".format(slice_num))
-                #sns.heatmap(slice_2d, cmap=cmap, vmin=vmin, vmax=vmax, ax = ax, **kwargs)
+        # Set the limit to be whichever value is the smallest
+        limit = min(slice_num, self.slice)
 
-                # Skip over duplicate iterations by moving to the next non 2D array
-                bound2D = tuple(x - 1 for x in it.shape[-2:])
-                it.multi_index = indices[:-2] + bound2D
-                
-                slice_num += 1
-                it.iternext()
+        # Generate figure and axes based on amount of slices
+        fig, axs = plt.subplots(limit, 2, squeeze=False, figsize=(20,9*limit))
 
-                if slice_num > limit:
-                        break
-        """
+        # Create xLabel with NDLABEL and the direct dimension's index
+        xLabel = "{} pts {}".format(data.getParam('NDLABEL'), chr(87+data.getDimOrder(1)))
+
+        # Create yLabel with NDLABEL and the first indirect dimension's index
+        yLabel = "{} pts {}".format(data.getParam('NDLABEL', data.getDimOrder(2)), chr(87+data.getDimOrder(2)))
+
+        # Configure color map
+        cmap = cmap if cmap != "" else plt.get_cmap('RdBu')
+        cmap = plt.get_cmap(cmap) if type(cmap) == str else cmap
+ 
+        return self.drawContourToFile(data.array, cmap, title, fig, axs, limit, slices, xLabel, yLabel, **kwargs)
+
 
     ####################
     # Helper Functions #
     ####################
     
     def drawLineToFile(self, array : np.ndarray, title,
-                       fig, ax, limit : int, slices : int, xLabel, **kwargs) -> int:
+                       fig, axs, limit : int, slices : int, xLabel : str, **kwargs) -> int:
         """
         fn drawLineToFile
 
@@ -161,12 +152,12 @@ class Draw(Function):
             ndarray to plot
 
         title : function
-            Title lambda function for outputting the title (see graphSyntax)
+            Title lambda function for outputting the title (see graphLineSyntax)
 
         fig : pyplot.Figure
             Figure used to plot 
 
-        ax : np.ndarray[pyplot.Axes]
+        axs : np.ndarray[pyplot.Axes]
             ndarray of axes objects to plot 1D vectors onto
 
         limit : int
@@ -191,11 +182,20 @@ class Draw(Function):
         # Datalength for buffer is based on number of points in vector
         dataLength = array.shape[-1]
 
+        
+        gridspec = axs[0, 0].get_subplotspec().get_gridspec()
+
+        for ax in axs.flat:
+            ax.remove()
+
         # Iterate over each vector and plot with proper formatting
         with np.nditer(array, flags=['external_loop','buffered'], op_flags=['readonly'], buffersize=dataLength) as it:
             graph_num = 1
             
             for vector in it:
+                subfig = fig.add_subfigure(gridspec[graph_num-1, :])
+                ax = subfig.subplots(1,2, squeeze=False)
+
                 # Make sure index 0 is the amount of 1D slices per plane
                 x = slices if (graph_num % slices == 0) else graph_num % slices
                 
@@ -204,32 +204,135 @@ class Draw(Function):
                 z = int(np.floor(graph_num / slices**2) + 1)
 
                 # Generate title
-                fig.suptitle(title(x,y,z, graph_num), fontsize='xx-large')
+                subfig.suptitle(title(x,y,z, graph_num), fontsize='xx-large')
 
                 # Plot real and imaginary axes and label
-                ax[graph_num - 1,0].plot(vector.real, 'r', **kwargs)
-                ax[graph_num - 1,0].set_title("Real", fontsize='x-large')
-                ax[graph_num - 1,0].set_xlabel(xLabel, fontsize='x-large')
+                #subfig.colorbar(pc, shrink=0.6, ax=axsLeft, location='bottom')
+                ax[0,0].plot(vector.real, 'r', **kwargs)
+                ax[0,0].set_title("Real", fontsize='x-large')
+                ax[0,0].set_xlabel(xLabel, fontsize='x-large')
                 
-                ax[graph_num - 1,1].plot(vector.imag, 'b', **kwargs)
-                ax[graph_num - 1,1].set_title("Imaginary", fontsize='x-large')
-                ax[graph_num - 1,1].set_xlabel(xLabel, fontsize='x-large')
+                ax[0,1].plot(vector.imag, 'b', **kwargs)
+                ax[0,1].set_title("Imaginary", fontsize='x-large')
+                ax[0,1].set_xlabel(xLabel, fontsize='x-large')
                 
                 graph_num += 1
                 # Ensure limit has not been reached
                 if limit:
                     if graph_num > limit:
-                        break
+                        break       
 
-            # Generate out file for saving
-            outfile = os.path.join(self.dir, "{0}.{1}".format(self.file.split('.')[0], self.fmt))
-            fpath = os.path.abspath(outfile)
-            fig.savefig(fpath, format=self.fmt)
+        # Generate out file for saving
+        outfile = os.path.join(self.dir, "{0}.{1}".format(self.file.split('.')[0], self.fmt))
+        fpath = os.path.abspath(outfile)
+        fig.savefig(fpath, format=self.fmt)
 
 
-    def graphSyntax(self, ndim, shape):
+    def drawContourToFile(self, array : np.ndarray, cmap, title,
+                       fig, axs, limit : int, slices : int, xLabel, yLabel : str, **kwargs) -> int:
         """
-        fn graphSyntax
+        fn drawLineToFile
+
+        Takes parameters processed in graphLine and plots using matplotlib
+
+        Parameters
+        ----------
+        array : np.ndarray
+            ndarray to plot
+
+        title : function
+            Title lambda function for outputting the title (see graphContourSyntax)
+
+        fig : pyplot.Figure
+            Figure used to plot 
+
+        axs : np.ndarray[pyplot.Axes]
+            ndarray of axes objects to plot 1D vectors onto
+
+        limit : int
+            Maximum number of plots to output
+
+        slices : int
+            Number of 1D vectors in a plane
+
+        xLabel : str
+            x-axis label (eg. H1 pts X)
+
+        yLabel : str
+            y-axis label (eg. N pts Y)
+
+        **kwargs
+            Plotting arguments, *** CURRENTLY UNUSED ***
+
+        Returns
+        -------
+        Integer exit code (e.g. 0 success 1 fail)
+        """
+        # Avoid division by 0 through assertion
+        assert slices != 0
+
+        gridspec = axs[0, 0].get_subplotspec().get_gridspec()
+
+        for ax in axs.flat:
+            ax.remove()
+
+        # Iterate over each vector and plot with proper formatting
+        it = np.nditer(array, flags=['multi_index'])
+        with it:
+            graph_num = 1
+            while not it.finished:
+                indices = it.multi_index
+                slice_indices = tuple(indices[:-2])
+                # Obtain 2D slice from current axes
+                slice_2d = it.operands[0][slice_indices]
+            
+                subfig = fig.add_subfigure(gridspec[graph_num-1, :])
+                ax = subfig.subplots(1,2, squeeze=False)
+
+                # Make sure index 0 is the amount of 1D slices per plane
+                x = slices if (graph_num % slices == 0) else graph_num % slices
+                
+                # Number of planes and cubes essentially in base(slices)
+                y = int(np.floor(graph_num / slices) + 1)
+
+                # Generate title
+                subfig.suptitle(title(x,y, graph_num), fontsize='xx-large')
+                
+                # Find min and max
+                vmin = min(np.min(slice_2d.real), np.min(slice_2d.imag))
+                vmax = max(np.max(slice_2d.real), np.max(slice_2d.imag))
+                
+                # Plot real and imaginary axes and label
+                plots = (slice_2d.real, slice_2d.imag)
+                plot_type = ('Real', 'Imaginary')
+                for i in range(len(plots)):
+                    ax[0,i].pcolormesh(plots[i], cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
+                    ax[0,i].set_title(plot_type[i], fontsize='x-large')
+                    ax[0,i].set_xlabel(xLabel, fontsize='x-large')
+                    ax[0,i].set_ylabel(yLabel, fontsize='x-large')
+
+                
+                # Skip over duplicate iterations by moving to the next non 2-D array
+                bound2D = tuple(x - 1 for x in it.shape[-2:])
+                it.multi_index = indices[:-2] + bound2D
+                
+                graph_num += 1
+                it.iternext()
+
+                # Ensure limit has not been reached
+                if limit:
+                    if graph_num > limit:
+                        break    
+
+        # Generate out file for saving
+        outfile = os.path.join(self.dir, "{0}.{1}".format(self.file.split('.')[0], self.fmt))
+        fpath = os.path.abspath(outfile)
+        fig.savefig(fpath, format=self.fmt)
+
+
+    def graphLineSyntax(self, ndim, shape):
+        """
+        fn graphLineSyntax
 
         Obtain number of slices given shape and dimension
             then create title lambda function to output information for plotting
@@ -272,6 +375,49 @@ class Draw(Function):
                 lenY = shape[-2]
                 slice_num = np.prod(shape)
         return title, slice_num, lenY
+    
+
+    def graphContourSyntax(self, ndim, shape):
+        """
+        fn graphContourSyntax
+
+        Obtain number of slices given shape and dimension
+            then create title lambda function to output information for plotting
+
+        Parameters
+        ----------
+        ndim : int
+            Number of dimensions in array
+        shape : tuple(int)
+            Shape of array being plotted
+
+        Returns
+        -------
+            title : function
+                Information output lambda function
+            slice_num : int 
+                Total number of 1D vectors
+            lenY : int
+                Number of 1D vectors per plane
+        """
+        lenZ = 1
+        slice_num = 1
+        match ndim:
+            case 2:
+                title = lambda x,y,a : f"2D Contour Plot"
+            case 3:
+                title = lambda x,y,a : f"2D Contour Plot Number {x}"
+                lenZ = shape[-3]
+                slice_num = lenZ
+            case 4:
+                title = lambda x,y,a : f"3D Cube Number {y} | 2D Contour Plot Number {x}"
+                lenA, lenZ = shape[:-2]
+                slice_num = lenA * lenZ
+            case _:
+                title = lambda x,y,a : f"Slice Number {a}"
+                lenZ = shape[-3]
+                slice_num = np.prod(shape)
+        return title, slice_num, lenZ
     
 
     ##################
