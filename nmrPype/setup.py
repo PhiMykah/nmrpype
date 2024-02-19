@@ -5,7 +5,8 @@ setup(name='nmrPype',
     packages=find_packages(), 
     install_requires=[
         'numpy',
-        'scipy'
+        'scipy',
+        'gemmi'
     ],
     entry_points={
         'console_scripts': [

@@ -2,6 +2,7 @@ import numpy as np
 from .read import *
 from .write import *
 from .fileiobase import *
+from .ccp4 import load_ccp4_map
 
 """
 nmrio
@@ -12,7 +13,7 @@ Handles all of the input and output functions regarding
 
 r = [read, read_1D, read_2D, read_3D, read_4D, read_stream,
      read_lowmem, read_lowmem_2D,read_lowmem_3D, read_lowmem_4D,
-     read_lowmem_stream]
+     read_lowmem_stream, load_ccp4_map]
 w = [write, write_single, write_3D, write_4D,
      write_lowmem, write_lowmem_2D, write_lowmem_3D, write_lowmem_4D,
      write_lowmem_3Ds, write_lowmem_4Ds]

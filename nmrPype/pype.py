@@ -2,7 +2,6 @@ import sys
 from utils import DataFrame, catchError, PipeBurst
 from parse import parser
 
-
 def fileInput(df : DataFrame, input) -> int:
     """
     fn fileInput
@@ -21,11 +20,14 @@ def fileInput(df : DataFrame, input) -> int:
     -------
     Integer exit code (e.g. 0 success 1 fail)
     """
-    from nmrio import readFromFile, readFromBuffer
+    from nmrio import readFromFile, readFromBuffer, load_ccp4_map
 
     # Determine whether or not reading from the pipeline
     if type(input) == str:
-        dic, data = readFromFile(input)
+        if input.endswith('.map'):
+            dic, data = load_ccp4_map(input)
+        else:
+            dic, data = readFromFile(input)
     else:
         dic, data = readFromBuffer(input)
         
@@ -96,6 +98,10 @@ def main() -> int:
 
         fileInput(data, args.input) # Determine whether reading from pipeline or not
 
+        if type(args.input) == str:
+            if args.input.endswith('.map'):
+                return 0
+            
         if hasattr(args.input, 'close'): # Close file/datastream if necessary
             args.input.close()
 
