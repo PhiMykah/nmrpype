@@ -2,7 +2,7 @@ import numpy as np
 from .read import *
 from .write import *
 from .fileiobase import *
-from .ccp4 import load_ccp4_map
+from .ccp4.ccp4 import load_ccp4_map
 
 """
 nmrio

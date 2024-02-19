@@ -97,10 +97,6 @@ def main() -> int:
         args = parser(sys.argv[1:]) # Parse user command line arguments
 
         fileInput(data, args.input) # Determine whether reading from pipeline or not
-
-        if type(args.input) == str:
-            if args.input.endswith('.map'):
-                return 0
             
         if hasattr(args.input, 'close'): # Close file/datastream if necessary
             args.input.close()

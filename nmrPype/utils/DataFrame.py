@@ -51,7 +51,7 @@ class DataFrame:
         return(function.run(self))
 
 
-    def updateParamSyntax(self, param, dim : int) -> str :
+    def updateParamSyntax(self, param : str, dim : int) -> str :
         """
         fn updateParamSyntax
 
@@ -59,6 +59,9 @@ class DataFrame:
 
         Parameters
         ----------
+        param : str
+            Starter parameter string before modification
+
         dim : int
             Target parameter dimension
 
