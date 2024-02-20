@@ -36,7 +36,7 @@ class DeleteImaginary(Function):
         # generate slices
         slices = [slice(*indices) for indices in indices_list]
 
-        data.array = data.array[*slices]
+        data.array = data.array[tuple(slices)]
         
         self.updateHeader(data)
 
