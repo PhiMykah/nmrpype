@@ -106,8 +106,12 @@ def main() -> int:
             headerModify(data, args.modify[0], args.modify[1])
 
         # Process function from command line if provided
+        processLater = False
         if args.fc:
-            function(data, args)
+            if args.fc == 'DRAW':
+                processLater = True
+            else:
+                function(data, args)
 
         # Delete imaginary element if prompted
         if args.di:
@@ -115,6 +119,10 @@ def main() -> int:
 
         # Output Data as Necessary
         fileOutput(data, args.output, args.overwrite)
+
+        # Process function after passing data
+        if processLater:
+            function(data,args)
 
     except Exception as e:
         catchError(e, PipeBurst, msg='nmrPype has encountered an error!', ePrint=False)

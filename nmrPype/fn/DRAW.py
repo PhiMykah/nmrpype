@@ -54,8 +54,7 @@ class Draw(Function):
         -------
         Integer exit code (e.g. 0 success 1 fail)
         """
-        import sys
-
+        
         # Check if format is provided, and set it manually if needed
         if not self.fmt:
             # If not given a file extension, use default
@@ -444,7 +443,7 @@ class Draw(Function):
         DRAW = subparser.add_parser('DRAW', help='Draw the current state of the data out to a file')
         DRAW.add_argument('-file', type=str, metavar='PATH/NAME.FMT', required=True,
                           dest='draw_file', help='Destination file to output')
-        DRAW.add_argument('-fmt', type=str, metavar='File Format', default='pself',
+        DRAW.add_argument('-fmt', type=str, metavar='File Format', default='',
                           dest='draw_fmt', help='File Save format')
         DRAW.add_argument('-plot', type=str.lower, choices=['line', 'contour'], default='line',
                           dest='draw_plot', help='Plotting method (line or contour)')
