@@ -36,7 +36,7 @@ def fileInput(df : DataFrame, input) -> int:
     return 0
     
 
-def fileOutput(data : DataFrame, output, overwrite : bool) -> int:
+def fileOutput(data : DataFrame, args) -> int:
     """
     fn fileOutput
 
@@ -53,8 +53,17 @@ def fileOutput(data : DataFrame, output, overwrite : bool) -> int:
     -------
     Integer exit code (e.g. 0 success 1 fail)
     """
+    output = args.output
+    overwrite = args.overwrite
+
     from nmrio import writeToFile, writeToBuffer
 
+    # Use alternate output if provided
+    if args.output_alt:
+        output = args.output_alt
+    if args.overwrite_alt:
+        overwrite = args.overwrite_alt
+    
     # Determine whether or not writing to pipeline
     if type(output) == str:
         return writeToFile(data, output, overwrite)
@@ -83,7 +92,17 @@ def function(data : DataFrame, args) -> int:
         if (opt.startswith(fn.lower())):
             fn_params[opt] = getattr(args, opt)
         elif (opt.startswith('mp')):
-            fn_params[opt] = getattr(args, opt)
+            # Allows for cl args to call regardless of location
+            if opt.endswith('alt'):
+                if getattr(args,opt) != None:
+                    new_opt = opt.rstrip('_alt')
+                    fn_params[new_opt] = getattr(args, opt)
+            elif opt.endswith('2'):
+                if getattr(args,opt) != getattr(args,opt.rstrip('2')):
+                    new_opt = opt.rstrip('2')
+                    fn_params[new_opt] = getattr(args, opt)
+            else:
+                fn_params[opt] = getattr(args, opt)
 
     # Attempt to run operation, error handling within is handled per function
     return (data.runFunc(fn, fn_params))
@@ -114,11 +133,11 @@ def main() -> int:
                 function(data, args)
 
         # Delete imaginary element if prompted
-        if args.di:
+        if args.di or args.di_alt:
             data.runFunc('DI', {'mp_enable':args.mp_enable,'mp_proc':args.mp_proc,'mp_threads':args.mp_threads})
 
         # Output Data as Necessary
-        fileOutput(data, args.output, args.overwrite)
+        fileOutput(data, args)
 
         # Process function after passing data
         if processLater:

@@ -159,19 +159,19 @@ class DataFunction:
         import os
         # Add parsers for multiprocessing
     
-        parser.add_argument('-mpd', '--disable', action='store_false', dest='mp_enable',
+        parser.add_argument('-mpd', '--disable', action='store_false', dest='mp_enable2',
                                     help='Disable Multiprocessing')
         parser.add_argument('-proc', '--processors', nargs='?', metavar='Number of Processors', type=int, 
-                                default=os.cpu_count(), dest='mp_proc')
+                                default=None, dest='mp_proc_alt')
         parser.add_argument('-t', '--threads', nargs='?', metavar='Number of Threads', type=int,
-                                default=min(os.cpu_count(),4), dest='mp_threads')
+                                default=None, dest='mp_threads_alt')
         
         # Output settings
-        parser.add_argument('-di', '--delete-imaginary', action='store_true', dest = 'di',
+        parser.add_argument('-di', '--delete-imaginary', action='store_true', dest = 'di_alt',
                             help='Remove imaginary elements from dataset')
-        parser.add_argument('-out', '--output', nargs='?', dest='output',
-                            default=(stdout.buffer if hasattr(stdout,'buffer') else stdout))
-        parser.add_argument('-ov', '--overwrite', action='store_true', dest='overwrite',
+        parser.add_argument('-out', '--output', nargs='?', dest='output_alt',
+                            default=None)
+        parser.add_argument('-ov', '--overwrite', action='store_true', dest='overwrite_alt',
                             help='Call this argument to overwrite when sending output to file.')
 
     ####################
