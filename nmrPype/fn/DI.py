@@ -24,13 +24,14 @@ class DeleteImaginary(Function):
         # check if direct dimension is already real
         currDim = data.getCurrDim()
         quadFlag = data.getParam('NDQUADFLAG', currDim)
-        if not quadFlag:
-            # See function.py
-            exitCode = super().run(data)
-            if exitCode:
-                return exitCode
-        
-        self.updateHeader(data)
+        if quadFlag:
+            self.updateHeader(data)
+            return 0
+        # See function.py
+        exitCode = super().run(data)
+        if exitCode:
+            return exitCode
+        data.array = data.array.real
 
         """
         # depreciated code for halfing all the indirect dimensions
@@ -139,15 +140,33 @@ class DeleteImaginary(Function):
         None
         """
         shape = data.array.shape
-
-        # Update ndsizes
-        for dim in range(len(shape)):
-            data.setParam('NDSIZE', float(shape[-1*(dim+1)]), data.getDimOrder(dim+1))
-
-        # Update slicecount
-        slices = np.prod(shape[:-1])
-
-        if slices != 1:
-            data.setParam('FDSLICECOUNT', float(slices))
-        else:
+        # Check if 1D or ND data
+        if len(shape) == 1:
+            # Update ndsize
+            size = float(shape[-1])
+            data.setParam('NDSIZE', size, data.getDimOrder(1))
+            # Update slicecount
             data.setParam('FDSLICECOUNT', float(0))
+            return
+        
+        for dim in range(len(shape)):
+            size = float(shape[-1*(dim+1)])
+            # when the direct dim is singular and the indirect
+            # dim is complex FDSPECNUM is half of the correct value
+            if dim == 1:
+                if data.getParam("NDQUADFLAG", data.getDimOrder(2)) == 0 \
+                and data.getParam("NDQUADFLAG", data.getDimOrder(1)) == 1:
+                    size /= 2
+            data.setParam('NDSIZE', size, data.getDimOrder(dim+1))
+        
+        slices = 1
+        # Update slicecount
+        for dim in range(1, len(shape)):
+            slice = shape[-1*(dim+1)]
+            if dim == 1:
+                if data.getParam("NDQUADFLAG", data.getDimOrder(2)) == 0 \
+                and data.getParam("NDQUADFLAG", data.getDimOrder(1)) == 1:
+                    slice /= 2
+            slices *= slice
+
+        data.setParam('FDSLICECOUNT', float(slices))

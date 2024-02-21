@@ -30,6 +30,8 @@ class Transpose(Function):
         self.tp_axis = tp_axis
         self.xDim = 1
         self.yDim = 2
+        self.zDim = 3
+        self.aDim = 4
 
         params.update({'tp_noord':tp_noord,
                   'tp_exch':tp_exch,'tp_minMax':tp_minMax,})
@@ -39,7 +41,7 @@ class Transpose(Function):
     ############
     # Function #
     ############
-
+    
     ###################
     # Multiprocessing #
     ###################
@@ -91,7 +93,10 @@ class Transpose(Function):
         # this code is placeholder
         return array.swapaxes(-1,self.tp_axis-1)
     
-
+    def matrixTP(self, array, dim1, dim2):
+        transpose = np.swapaxes(array.real, -1*dim1,-1*dim2)
+        return transpose
+    
     ##################
     # Static Methods #
     ##################
@@ -311,7 +316,6 @@ class Transpose2D(Transpose):
 
         isComplex = np.all(imagX)
 
-        import sys
         # Interweave Y values prior to transpose
         a = realX[...,::2,:] + 1j*realX[...,1::2,:]
         if isComplex:
@@ -320,7 +324,6 @@ class Transpose2D(Transpose):
         transposeShape = a.shape[:-2] + (2*a.shape[-1], a.shape[-2]) if isComplex else \
                          a.shape[:-2] + (a.shape[-1], a.shape[-2])
         
-        print(transposeShape, file=sys.stderr)
         # Prepare new array to interweave real and imaginary indirect dimensions
         new_array = np.zeros(transposeShape, dtype=a.dtype)
 
@@ -332,11 +335,6 @@ class Transpose2D(Transpose):
             new_array = self.matrixTP(a, self.xDim, self.yDim)
 
         return new_array
-    
-
-    def matrixTP(self, array, dim1, dim2):
-        transpose = np.swapaxes(array.real, -1*dim1,-1*dim2)
-        return transpose
 
 
     ##################
@@ -472,19 +470,27 @@ class Transpose3D(Transpose):
         realX = array.real
         imagX = array.imag
 
+        isComplex = np.all(imagX)
+
+
         # Prepare to interweave z axis
         a = realX[...,::2,:,:] + 1j*realX[...,1::2,:,:]
-        b = imagX[...,::2,:,:] + 1j*imagX[...,1::2,:,:]
+        if isComplex:
+            b = imagX[...,::2,:,:] + 1j*imagX[...,1::2,:,:]
 
-        transposeShape = a.shape[:-3] + (2*a.shape[-1], a.shape[-2],a.shape[-3])
+        transposeShape = a.shape[:-3] + (2*a.shape[-1], a.shape[-2],a.shape[-3]) if isComplex else \
+                         a.shape[:-3] + (a.shape[-1], a.shape[-2],a.shape[-3])
 
         # Prepare new array to interweave real and imaginary indirect dimensions
         new_array = np.zeros(transposeShape, dtype=a.dtype)
 
-        # Interweave real and imaginary values of former X dimension
-        new_array[...,::2,:,:] = np.swapaxes(a,-1,-3)
-        new_array[...,1::2,:,:] = np.swapaxes(b,-1,-3)
-        
+        if isComplex:
+            # Interweave real and imaginary values of former X dimension
+            new_array[...,::2,:,:] = self.matrixTP(a,self.xDim, self.zDim)
+            new_array[...,1::2,:,:] = self.matrixTP(b,self.xDim, self.zDim)
+        else:
+            new_array = self.matrixTP(a,self.xDim,self.zDim)
+
         return new_array
     
 
