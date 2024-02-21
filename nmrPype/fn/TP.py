@@ -338,7 +338,10 @@ class Transpose2D(Transpose):
         imagT = np.transpose(imagX, axes=(-1*dim1,-1*dim2))
 
         # transpose
-        new_array = np.concatenate((realT, imagT), axis=-1)
+        if np.all(imagT):
+            new_array = np.concatenate((realT, imagT), axis=-1)
+        else:
+            new_array = realT
 
         return new_array
 
