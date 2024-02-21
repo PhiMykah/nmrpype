@@ -21,40 +21,39 @@ class DeleteImaginary(Function):
     ############
     
     def run(self, data) -> int:
-        # See function.py
-        exitCode = super().run(data)
-        if exitCode:
-            return 1
+        # check if direct dimension is already real
+        currDim = data.getCurrDim()
+        quadFlag = data.getParam('NDQUADFLAG', currDim)
+        if not quadFlag:
+            # See function.py
+            exitCode = super().run(data)
+            if exitCode:
+                return exitCode
+        
+        self.updateHeader(data)
+
+        """
+        # depreciated code for halfing all the indirect dimensions
+
+        # Nice code but not necessary
+        # Exit normally if only one dimensional
+        if data.array.ndim < 2:
+            self.updateHeader(data)
+            return 0
         
         # Collect indices to remove indirect imaginary in second dimension
         indices_list = [[0,size,1] for size in data.array.shape]
 
-        # change from second dimension if exists
-        if data.array.ndim >= 2:
-            indices_list[int(-1 * data.getDimOrder(2))][-1] = 2
+        # Delete from indirect dimensions only if not real
+        for dim in range(2, data.array.ndim + 1):
+            quadFlag = data.getParam('NDQUADFLAG', dim)
+            if not quadFlag:
+                indices_list[int(-1 * dim)][-1] = 2
 
         # generate slices
         slices = [slice(*indices) for indices in indices_list]
 
         data.array = data.array[tuple(slices)]
-        
-        self.updateHeader(data)
-
-        """
-        depreciated code for halfing all the indirect dimensions
-
-        # Collect indices to remove indirect imaginary
-        indices_list = [[0,size,2] for size in data.array.shape]
-
-        # Keep all of the direct dimension
-        indices_list[int(-1 * data.getDimOrder(1))][-1] = 1
-        
-        # generate slices
-        slices = [slice(*indices) for indices in indices_list]
-
-        data.array = data.array[*slices]
-        
-        self.updateHeader(data)
         """
         return 0
     
@@ -127,6 +126,7 @@ class DeleteImaginary(Function):
 
         data.setParam('FDSLICECOUNT', float(slices))
 
+
     def updateHeader(self, data):
         """
         fn updateHeader
@@ -141,23 +141,8 @@ class DeleteImaginary(Function):
         shape = data.array.shape
 
         # Update ndsizes
-        for dim in range(data.array.ndim):
-            index = dim + 1
-            data.setParam('NDSIZE', float(shape[-1*(index)]),index)
-
-        currDim = data.getCurrDim()
-        # Set curr dimension's quad flag to real
-        data.setParam('NDQUADFLAG', float(1), currDim)
-
-        qFlags = []
-        # Get the flags for all dimensions
         for dim in range(len(shape)):
-            qFlags.append(data.getParam('NDQUADFLAG', dim+1))
-        
-        # Check if all dimensions are real
-        isReal = all(bool(flag) for flag in qFlags)
-
-        data.setParam('FDQUADFLAG', float(1) if isReal else float(0))
+            data.setParam('NDSIZE', float(shape[-1*(dim+1)]), data.getDimOrder(dim+1))
 
         # Update slicecount
         slices = np.prod(shape[:-1])

@@ -28,8 +28,8 @@ class Transpose(Function):
         self.tp_exch = tp_exch
         self.tp_minMax = tp_minMax
         self.tp_axis = tp_axis
-        self.xDim = 2
-        self.yDim = 1
+        self.xDim = 1
+        self.yDim = 2
 
         params.update({'tp_noord':tp_noord,
                   'tp_exch':tp_exch,'tp_minMax':tp_minMax,})
@@ -200,14 +200,6 @@ class Transpose(Function):
         isTransposed = data.getParam('FDTRANSPOSED')
         isTransposed = 0 if isTransposed else 1
         data.setParam('FDTRANSPOSED', isTransposed)
-        
-        shape = data.array.shape
-
-        from numpy import prod
-        # Update Slicecount
-        slices = prod(shape[:-1])
-
-        data.setParam('FDSLICECOUNT', float(slices))
 
 
     def updateHeader(self, data):
@@ -222,6 +214,15 @@ class Transpose(Function):
         None
         """
         # Update ndsize here  
+        shape = data.array.shape
+
+        for dim in range(len(shape)):
+            data.setParam('NDSIZE', float(shape[-1*(dim+1)]), data.getDimOrder(dim+1))
+            
+        # Update Slicecount
+        slices = np.prod(shape[:-1])
+
+        data.setParam('FDSLICECOUNT', float(slices))
         pass
 
 
@@ -286,7 +287,7 @@ class Transpose2D(Transpose):
         if self.tp_hyper:
             return self.hyperTP(array)
         else:
-            return self.noHyperTP(array)
+            return self.matrixTP(array, self.xDim, self.yDim)
     
 
     def hyperTP(self, array):
@@ -308,42 +309,34 @@ class Transpose2D(Transpose):
         realX = array.real
         imagX = array.imag
 
+        isComplex = np.all(imagX)
+
+        import sys
         # Interweave Y values prior to transpose
         a = realX[...,::2,:] + 1j*realX[...,1::2,:]
-        b = imagX[...,::2,:] + 1j*imagX[...,1::2,:]
+        if isComplex:
+            b = imagX[...,::2,:] + 1j*imagX[...,1::2,:]
 
-        transposeShape = a.shape[:-2] + (2*a.shape[-1], a.shape[-2])
-
+        transposeShape = a.shape[:-2] + (2*a.shape[-1], a.shape[-2]) if isComplex else \
+                         a.shape[:-2] + (a.shape[-1], a.shape[-2])
+        
+        print(transposeShape, file=sys.stderr)
         # Prepare new array to interweave real and imaginary indirect dimensions
         new_array = np.zeros(transposeShape, dtype=a.dtype)
 
-        # Interweave real and imaginary values of former X dimension
-        new_array[...,::2,:] = np.swapaxes(a,-1,-2)
-        new_array[...,1::2,:] = np.swapaxes(b,-1,-2)
+        if isComplex:
+            # Interweave real and imaginary values of former X dimension
+            new_array[...,::2,:] = self.matrixTP(a, self.xDim, self.yDim)
+            new_array[...,1::2,:] = self.matrixTP(b, self.xDim, self.yDim)
+        else:
+            new_array = self.matrixTP(a, self.xDim, self.yDim)
 
         return new_array
     
 
-    def noHyperTP(self, array):
-        # Assume that 2nd dimension does not have any complex part
-
-        # Extrapolate real and imaginary parts of the last dimension
-        realX = array.real
-        imagX = array.imag
-
-        dim1=self.xDim
-        dim2=self.yDim
-
-        realT = np.transpose(realX, axes=(-1*dim1,-1*dim2))
-        imagT = np.transpose(imagX, axes=(-1*dim1,-1*dim2))
-
-        # transpose
-        if np.all(imagT):
-            new_array = np.concatenate((realT, imagT), axis=-1)
-        else:
-            new_array = realT
-
-        return new_array
+    def matrixTP(self, array, dim1, dim2):
+        transpose = np.swapaxes(array.real, -1*dim1,-1*dim2)
+        return transpose
 
 
     ##################
@@ -373,30 +366,11 @@ class Transpose2D(Transpose):
         data : DataFrame
             target data to manipulate 
         """
+        xDim = 1
+        yDim = 2
 
-        # Match X dim with correct dim order
-        match data.getParam('FDDIMORDER')[0]:
-            case 2:
-                xDim = 1
-            case 1:
-                xDim = 2
-            case _:
-                xDim = data.getParam('FDDIMORDER')[0]
-
-        # Match Y dim with correct dim order
-        match self.yDim:
-            case 2:
-                yDim = 1
-            case 1:
-                yDim = 2
-            case _:
-                yDim = data.getParam('FDDIMORDER')[1]
-        
-        self.xDim = xDim
-        self.yDim = yDim
-
-        # If both dimensions are real, ensure nohyper flag
-        if not data.getParam('NDQUADFLAG', xDim) and not data.getParam('NDQUADFLAG', yDim):
+        # If both dimensions are real, ensure nohyper flag, If either dimension is complex do hyper 
+        if not data.getParam('NDQUADFLAG', xDim) or not data.getParam('NDQUADFLAG', yDim):
             self.tp_hyper = True
         else:
             self.tp_hyper = False
@@ -425,8 +399,7 @@ class Transpose2D(Transpose):
         ----------
         None
         """
-        # Update ndsize here  
-        pass
+        super().updateHeader(data)
 
 
 class Transpose3D(Transpose):
@@ -542,29 +515,9 @@ class Transpose3D(Transpose):
             target data to manipulate 
         """
         # Designate proper dimensions based on dim order
-        match data.getParam('FDDIMORDER')[0]:
-            case 2:
-                xDim = 1
-            case 1:
-                xDim = 2
-            case _:
-                xDim = data.getParam('FDDIMORDER')[0]
-        
-        match data.getParam('FDDIMORDER')[1]:
-            case 2:
-                yDim = 1
-            case 1:
-                yDim = 2
-            case _:
-                yDim = data.getParam('FDDIMORDER')[1]
-
-        match data.getParam('FDDIMORDER')[2]:
-            case 2:
-                zDim = 1
-            case 1:
-                zDim = 2
-            case _:
-                zDim = data.getParam('FDDIMORDER')[2]
+        xDim = 1
+        yDim = 2
+        zDim = 3
 
         xQuadState = data.getParam('NDQUADFLAG', xDim)
         yQuadState = data.getParam('NDQUADFLAG', yDim)
