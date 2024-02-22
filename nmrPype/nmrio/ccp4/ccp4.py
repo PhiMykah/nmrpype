@@ -60,6 +60,7 @@ def init_ccp4_header(ccp4_map : gemmi.Ccp4Map, array : np.ndarray) -> dict:
         size_param = paramSyntax('NDSIZE', dim)
         apod_param = paramSyntax('NDAPOD', dim)
         sw_param = paramSyntax('NDSW', dim)
+        ft_flag = paramSyntax('NDFTFLAG', dim)
 
         # Set parameters in the dictionary
         dic[size_param] = size
@@ -67,6 +68,9 @@ def init_ccp4_header(ccp4_map : gemmi.Ccp4Map, array : np.ndarray) -> dict:
         if dim == 1:
             dic['FDREALSIZE'] = size
         dic[sw_param] = size
+
+        # Consider the data in frequency domain, 1 for frequency
+        dic[ft_flag] = 1 
 
     # Miscellaneous parameters
     slices = np.prod(array.shape[:-1])
@@ -137,7 +141,7 @@ HEADER_TEMPLATE = {"FDMAGIC": 0.0,
 "FDREALSIZE": 0.0,
 "FDSPECNUM": 1.0,
 "FDQUADFLAG": 1.0,
-"FD2DPHASE": 0.0,
+"FD2DPHASE": 3.0,
 "FDTRANSPOSED": 0.0,
 "FDDIMCOUNT": 1.0,
 "FDDIMORDER": [2.0, 1.0, 3.0, 4.0],
@@ -200,7 +204,7 @@ HEADER_TEMPLATE = {"FDMAGIC": 0.0,
 "FDOPERNAME": "",
 "FDTITLE": "",
 "FDCOMMENT": "",
-"FDF2LABEL": "H1",
+"FDF2LABEL": "X",
 "FDF2APOD": 0.0,
 "FDF2SW": 0.0,
 "FDF2OBS": 1.0,
