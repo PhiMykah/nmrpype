@@ -465,33 +465,32 @@ class Transpose3D(Transpose):
         new_array : ndarray
             Transposed array
         """
+        # Check if directly detected dimension is real
+        if array.dtype == 'float32':
+            realZ = array[...,::2,:,:]
+            imagZ = array[...,1::2,:,:]
+            return self.matrixTP(realZ, self.xDim, self.zDim) \
+                 + 1j * self.matrixTP(imagZ, self.xDim, self.zDim)
 
         # Extrapolate X real and X imag
         realX = array.real
         imagX = array.imag
 
-        isComplex = np.all(imagX)
-
-
         # Prepare to interweave z axis
         a = realX[...,::2,:,:] + 1j*realX[...,1::2,:,:]
-        if isComplex:
-            b = imagX[...,::2,:,:] + 1j*imagX[...,1::2,:,:]
+        b = imagX[...,::2,:,:] + 1j*imagX[...,1::2,:,:]
 
-        transposeShape = a.shape[:-3] + (2*a.shape[-1], a.shape[-2],a.shape[-3]) if isComplex else \
-                         a.shape[:-3] + (a.shape[-1], a.shape[-2],a.shape[-3])
+        transposeShape = a.shape[:-3] + (2*a.shape[-1], a.shape[-2],a.shape[-3])
 
         # Prepare new array to interweave real and imaginary indirect dimensions
         new_array = np.zeros(transposeShape, dtype=a.dtype)
 
-        if isComplex:
-            # Interweave real and imaginary values of former X dimension
-            new_array[...,::2,:,:] = self.matrixTP(a,self.xDim, self.zDim)
-            new_array[...,1::2,:,:] = self.matrixTP(b,self.xDim, self.zDim)
-        else:
-            new_array = self.matrixTP(a,self.xDim,self.zDim)
+        # Interweave real and imaginary values of former X dimension
+        new_array[...,::2,:,:] = self.matrixTP(a,self.xDim, self.zDim)
+        new_array[...,1::2,:,:] = self.matrixTP(b,self.xDim, self.zDim)
 
         return new_array
+    
     
 
     ##################
