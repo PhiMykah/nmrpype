@@ -58,11 +58,12 @@ def fileOutput(data : DataFrame, args) -> int:
 
     from nmrio import writeToFile, writeToBuffer
 
-    # Use alternate output if provided
-    if args.output_alt:
-        output = args.output_alt
-    if args.overwrite_alt:
-        overwrite = args.overwrite_alt
+    if args.fc:
+        # Use alternate output if provided
+        if args.output_alt:
+            output = args.output_alt
+        if args.overwrite_alt:
+            overwrite = args.overwrite_alt
     
     # Determine whether or not writing to pipeline
     if type(output) == str:
@@ -131,9 +132,11 @@ def main() -> int:
                 processLater = True
             else:
                 function(data, args)
-
+        
+        # Obtain delete imaginary parameter only if no function is called
+        runDI = args.di if not args.fc else (args.di or args.di_alt)
         # Delete imaginary element if prompted
-        if args.di or args.di_alt:
+        if runDI:
             data.runFunc('DI', {'mp_enable':args.mp_enable,'mp_proc':args.mp_proc,'mp_threads':args.mp_threads})
 
         # Output Data as Necessary
@@ -144,7 +147,7 @@ def main() -> int:
             function(data,args)
 
     except Exception as e:
-        catchError(e, PipeBurst, msg='nmrPype has encountered an error!', ePrint=False)
+        catchError(e, PipeBurst, msg='nmrPype has encountered an error!', ePrint=True)
          
     return 0
 
