@@ -18,6 +18,9 @@ class FourierTransform(Function):
             self.ft_real = ft_real
             self.ft_neg = ft_neg
             self.ft_alt = ft_alt
+
+            # Negation lambda function
+            self.negate = lambda a : -1 * a
             self.mp = [mp_enable, mp_proc, mp_threads]
             params = {'ft_inv':ft_inv, 'ft_real': ft_real, 'ft_neg': ft_neg, 'ft_alt': ft_alt}
             super().__init__(params) 
@@ -51,7 +54,7 @@ class FourierTransform(Function):
 
         self.initialize(data)
         
-        ndQuad = int(data.getParam('NDQUADFLAG'))
+        ndQuad = 1 if not np.all(data.array.imag) else 2
 
         # Perform fft without multiprocessing
         if not self.mp[0] or data.array.ndim == 1:
@@ -145,13 +148,16 @@ class FourierTransform(Function):
         # Change operation based on parameters
         if (self.ft_alt and not self.ft_inv):
             # Alternate real and imaginary prior to transform
-            pass
+            array.real = self.alternate(array.real)
+            array.imag = self.alternate(array.imag)
+            
         if (self.ft_neg and not self.ft_inv):
             # Negate all imaginary values prior to transform
-            pass
+            array.imag = self.negate(array.imag)
+
         if (self.ft_real and ndQuad != 1):
             # Set all imaginary values to 0
-            pass
+            array.imag = np.zeros_like(array.imag)
 
         # Perform dfft or idfft depending on args
         operation = self.VectorFFT if not self.ft_inv else self.VectorIFFT
@@ -170,15 +176,20 @@ class FourierTransform(Function):
         # Flag operations following operation
 
         if (self.ft_real):
-            pass
+            # Python implementation of vvCopy64 in vutil.h/vutil.c of nmrpipe
+            outSize = len(array)
+            size = outSize/2
+            array.real[...,:outSize] = array.real[...,size/2:outSize]
+            array.real[...,:outSize] = array.real[...,size/2:outSize]
     
         if (self.ft_alt and self.ft_inv):
             # Alternate after ifft if necessary
-            pass
+            array.real = self.alternate(array.real)
+            array.imag = self.alternate(array.imag)
 
         if (self.ft_neg and self.ft_inv):
             # Negate all imaginary values after ifft if necessary
-            pass
+            array.imag = self.negate(array.imag)
         
         return array
     
@@ -217,6 +228,36 @@ class FourierTransform(Function):
         # Include tail arguments proceeding function call
         Function.clArgsTail(FT)
 
+    @staticmethod
+    def alternate(array : np.ndarray, positiveStart : bool = True):
+        """
+        fn alternate
+
+        Return inputted array with alternating signs from postitive to negative
+
+        Parameters
+        ----------
+        array : np.ndarray
+            Target array to sign alternate, assumed to be non-complex
+
+        positiveStart : bool
+            Set whether the values start as negative or positive
+
+        Returns
+        -------
+        np.ndarray
+            Sign alternating array
+        """
+        # Make an array of ones similar to the array
+        signs = np.ones_like(array)
+
+        # Half of the ones are set to negative, the other half positive 
+        negative = -1*signs[...,1::2]
+        positive = np.absolute(signs[...,::2])
+        signs[...,1::2] = negative if positiveStart else positive
+        signs[...,::2] = positive if positiveStart else negative
+        return np.absolute(array) * signs
+
 
     ####################
     #  Proc Functions  #
@@ -238,6 +279,9 @@ class FourierTransform(Function):
         None
         """
         currDim = data.getCurrDim()
+
+        # Automatically set real flag if data is real (possibly)
+    
 
         ftFlag = int(data.getParam('NDFTFLAG', currDim))
 

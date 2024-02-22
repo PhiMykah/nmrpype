@@ -94,7 +94,7 @@ class Transpose(Function):
         return array.swapaxes(-1,self.tp_axis-1)
     
     def matrixTP(self, array, dim1, dim2):
-        transpose = np.swapaxes(array.real, -1*dim1,-1*dim2)
+        transpose = np.swapaxes(array, -1*dim1,-1*dim2)
         return transpose
     
     ##################
@@ -310,29 +310,29 @@ class Transpose2D(Transpose):
         new_array : ndarray
             Transposed array
         """
+        # Check if directly detected dimension is real
+        if array.dtype == 'float32':
+            realY = array[...,::2,:]
+            imagY = array[...,1::2,:]
+            return self.matrixTP(realY, self.xDim, self.yDim) \
+                 + 1j * self.matrixTP(imagY, self.xDim, self.yDim)
+
         # Extrapolate real and imaginary parts of the last dimension
         realX = array.real
         imagX = array.imag
 
-        isComplex = np.all(imagX)
-
         # Interweave Y values prior to transpose
         a = realX[...,::2,:] + 1j*realX[...,1::2,:]
-        if isComplex:
-            b = imagX[...,::2,:] + 1j*imagX[...,1::2,:]
+        b = imagX[...,::2,:] + 1j*imagX[...,1::2,:]
 
-        transposeShape = a.shape[:-2] + (2*a.shape[-1], a.shape[-2]) if isComplex else \
-                         a.shape[:-2] + (a.shape[-1], a.shape[-2])
+        transposeShape = a.shape[:-2] + (2*a.shape[-1], a.shape[-2])
         
         # Prepare new array to interweave real and imaginary indirect dimensions
         new_array = np.zeros(transposeShape, dtype=a.dtype)
 
-        if isComplex:
-            # Interweave real and imaginary values of former X dimension
-            new_array[...,::2,:] = self.matrixTP(a, self.xDim, self.yDim)
-            new_array[...,1::2,:] = self.matrixTP(b, self.xDim, self.yDim)
-        else:
-            new_array = self.matrixTP(a, self.xDim, self.yDim)
+        # Interweave real and imaginary values of former X dimension
+        new_array[...,::2,:] = self.matrixTP(a, self.xDim, self.yDim)
+        new_array[...,1::2,:] = self.matrixTP(b, self.xDim, self.yDim)
 
         return new_array
 
