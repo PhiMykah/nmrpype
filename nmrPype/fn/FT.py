@@ -6,6 +6,9 @@ from scipy import fft
 from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 
+def negate(array : np.ndarray) -> np.ndarray:
+    return -1 * array
+
 class FourierTransform(Function):
     """
     class FourierTransform
@@ -18,9 +21,7 @@ class FourierTransform(Function):
             self.ft_real = ft_real
             self.ft_neg = ft_neg
             self.ft_alt = ft_alt
-
-            # Negation lambda function
-            self.negate = lambda a : -1 * a
+           
             self.mp = [mp_enable, mp_proc, mp_threads]
             params = {'ft_inv':ft_inv, 'ft_real': ft_real, 'ft_neg': ft_neg, 'ft_alt': ft_alt}
             super().__init__(params) 
@@ -153,7 +154,7 @@ class FourierTransform(Function):
             
         if (self.ft_neg and not self.ft_inv):
             # Negate all imaginary values prior to transform
-            array.imag = self.negate(array.imag)
+            array.imag = negate(array.imag)
 
         if (self.ft_real and ndQuad != 1):
             # Set all imaginary values to 0
@@ -189,7 +190,7 @@ class FourierTransform(Function):
 
         if (self.ft_neg and self.ft_inv):
             # Negate all imaginary values after ifft if necessary
-            array.imag = self.negate(array.imag)
+            array.imag = negate(array.imag)
         
         return array
     
