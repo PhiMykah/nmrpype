@@ -20,14 +20,11 @@ def fileInput(df : DataFrame, input) -> int:
     -------
     Integer exit code (e.g. 0 success 1 fail)
     """
-    from nmrio import readFromFile, readFromBuffer, load_ccp4_map
+    from nmrio import readFromFile, readFromBuffer
 
     # Determine whether or not reading from the pipeline
     if type(input) == str:
-        if input.endswith('.map'):
-            dic, data = load_ccp4_map(input)
-        else:
-            dic, data = readFromFile(input)
+        dic, data = readFromFile(input)
     else:
         dic, data = readFromBuffer(input)
         
