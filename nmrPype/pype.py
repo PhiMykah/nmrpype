@@ -2,7 +2,6 @@ import sys
 from utils import DataFrame, catchError, PipeBurst
 from parse import parser
 
-
 def fileInput(df : DataFrame, input) -> int:
     """
     fn fileInput
@@ -21,11 +20,14 @@ def fileInput(df : DataFrame, input) -> int:
     -------
     Integer exit code (e.g. 0 success 1 fail)
     """
-    from nmrio import readFromFile, readFromBuffer
+    from nmrio import readFromFile, readFromBuffer, load_ccp4_map
 
     # Determine whether or not reading from the pipeline
     if type(input) == str:
-        dic, data = readFromFile(input)
+        if input.endswith('.map'):
+            dic, data = load_ccp4_map(input)
+        else:
+            dic, data = readFromFile(input)
     else:
         dic, data = readFromBuffer(input)
         
@@ -56,11 +58,12 @@ def fileOutput(data : DataFrame, args) -> int:
 
     from nmrio import writeToFile, writeToBuffer
 
-    # Use alternate output if provided
-    if args.output_alt:
-        output = args.output_alt
-    if args.overwrite_alt:
-        overwrite = args.overwrite_alt
+    if args.fc:
+        # Use alternate output if provided
+        if args.output_alt:
+            output = args.output_alt
+        if args.overwrite_alt:
+            overwrite = args.overwrite_alt
     
     # Determine whether or not writing to pipeline
     if type(output) == str:
@@ -114,7 +117,7 @@ def main() -> int:
         args = parser(sys.argv[1:]) # Parse user command line arguments
 
         fileInput(data, args.input) # Determine whether reading from pipeline or not
-
+            
         if hasattr(args.input, 'close'): # Close file/datastream if necessary
             args.input.close()
 
@@ -123,18 +126,28 @@ def main() -> int:
             headerModify(data, args.modify[0], args.modify[1])
 
         # Process function from command line if provided
+        processLater = False
         if args.fc:
-            function(data, args)
-
+            if args.fc == 'DRAW':
+                processLater = True
+            else:
+                function(data, args)
+        
+        # Obtain delete imaginary parameter only if no function is called
+        runDI = args.di if not args.fc else (args.di or args.di_alt)
         # Delete imaginary element if prompted
-        if args.di or args.di_alt:
+        if runDI:
             data.runFunc('DI', {'mp_enable':args.mp_enable,'mp_proc':args.mp_proc,'mp_threads':args.mp_threads})
 
         # Output Data as Necessary
         fileOutput(data, args)
 
+        # Process function after passing data
+        if processLater:
+            function(data,args)
+
     except Exception as e:
-        catchError(e, PipeBurst, msg='nmrPype has encountered an error!', ePrint=False)
+        catchError(e, PipeBurst, msg='nmrPype has encountered an error!', ePrint=True)
          
     return 0
 
