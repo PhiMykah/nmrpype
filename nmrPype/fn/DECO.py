@@ -108,7 +108,11 @@ class Decomposition(Function):
             if self.generateCoeffFile(beta.T.real) != 0:
                 raise CoeffWriteError
 
-            return approx
+            # Only return complex data if data has complex elements
+            if not np.all(approx.imag):
+                return approx.real
+            else:
+                return approx
 
         except la.LinAlgError as e:
             catchError(e, new_e = Exception, 
@@ -235,10 +239,26 @@ class Decomposition(Function):
         # Include universal commands proceeding function call
         Function.clArgsTail(DECO)
 
+        ####################
+        #  Proc Functions  #
+        ####################
+        def updateHeader(self, data):
+            """
+            fn updateHeader
 
-####################
-#  Proc Functions  #
-####################
+            Update the header following the main function's calculations.
+                Typically this includes header fields that relate to data size.
+
+            Parameters
+            ----------
+            None
+            """
+            # Update ndsize here 
+            pass
+
+######################
+#  Helper Functions  #
+######################
 
 def paramSyntax(param : str, dim : int) -> str :
     """
