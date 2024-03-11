@@ -13,7 +13,7 @@ class SineBell(Function):
     """
     def __init__(self, sp_off : float = 0.0, sp_end : float = 1.0,
                  sp_pow : float = 1.0, sp_size : int = 0, sp_start : int = 1,
-                 sp_c : int = 1, sp_one : bool = False, sp_hdr : bool = False,
+                 sp_c : float = 1, sp_one : bool = False, sp_hdr : bool = False,
                  sp_inv : bool = False, sp_df : bool = False, sp_elb : float = 0.0,
                  sp_glb : float = 0.0, sp_goff : float = 0.0,
                  mp_enable : bool = False, mp_proc : int = 0, mp_threads : int = 0):
@@ -229,8 +229,8 @@ class SineBell(Function):
                         dest='sp_size', help='Apodize Length.')
         SP.add_argument('-start', type=int, metavar='aStart [1]', default=1,
                         dest='sp_start', help='Apodize Start.')
-        SP.add_argument('-c', type=int, metavar='fScale [1]', default=1,
-                        dest='sp_c', help='Point 1 Scale.')
+        SP.add_argument('-c', type=float, metavar='fScale [1]', default=1,
+                        dest='sp_c', help='Scaling Value for the First Point.')
         SP.add_argument('-one', action='store_true',
                         dest='sp_one', help='Outside = 1.')
         SP.add_argument('-hdr', action='store_true',

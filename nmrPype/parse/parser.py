@@ -5,6 +5,7 @@ def parser(input_args : list):
     import os
     parser = ArgumentParser(prog='nmrPype',description='Handle NMR Data inputted through file or pipeline \
                                     and perform desired operations for output.')
+    parser.add_argument('-help', action='help')
     parser.add_argument('-in', '--input', nargs='?', metavar='File Path', 
                         default=stdin.buffer)
     parser.add_argument('-mod', '--modify', nargs=2, metavar=('Param', 'Value'))
