@@ -12,13 +12,14 @@ class Decomposition(Function):
     Data Function object for decomposing processed file into coefficients and synthetic
         data set
     """
-    def __init__(self, deco_bases : list[str], deco_cfile : str,
+    def __init__(self, deco_bases : list[str], deco_cfile : str, deco_error : 1e-8,
                  mp_enable : bool = False, mp_proc : int = 0,
                  mp_threads : int = 0):
         
         self.deco_bases = deco_bases
         self.deco_cfile = deco_cfile
         self.mp = [mp_enable, mp_proc, mp_threads]
+        self.SIG_ERROR = deco_error
 
         params = {'deco_bases':deco_bases}
         super().__init__(params)
@@ -50,8 +51,8 @@ class Decomposition(Function):
                 if not Decomposition.isValidFile(file):
                     raise OSError("One or more files were not properly found!")
                 
-            if data.array.ndim != 1:
-                raise Exception("Dimensionality higher than 1 currently unsupported!")
+            if data.array.ndim >= 2:
+                raise Exception("Dimensionality higher than 2 currently unsupported!")
             
             data.array = self.process(data.array)
         except Exception as e:
@@ -82,6 +83,31 @@ class Decomposition(Function):
         np.ndarray
             modified array post-process
         """
+        match array.ndim:
+            case 1:
+                return self.decomposition1D(array)
+            case 2:
+                return self.decomposition2D(array)
+            case _:
+                return array
+            
+
+    def decomposition1D(self, array) -> np.ndarray:
+        """
+        fn decomposition1D
+
+        Perform a 1D Decomposition with provided basis set and target data
+
+        Parameters
+        ----------
+        array : np.ndarray
+            input array to compare to
+
+        Returns
+        -------
+        np.ndarray
+            modified array post-process
+        """
         try:
             bases = []
             # Format matrix multiplication as A @ beta = b
@@ -93,7 +119,7 @@ class Decomposition(Function):
             # b is the target len(array) x 1 vector to approximate
             b = array[:, np.newaxis]
             # beta is the coefficient vector of length len(bases) approximating result
-            beta = la.lstsq(A,b, rcond=None)[0]
+            beta, residuals, rank, singular_values = la.lstsq(A,b, rcond=self.SIG_ERROR*np.max(A))
             # approx represents data approximation from beta and bases
             approx = A @ beta
 
@@ -126,6 +152,87 @@ class Decomposition(Function):
                        ePrint = True)
             return approx
         
+
+    def decomposition2D(self, array) -> np.ndarray:
+        """
+        fn decomposition2D
+
+        Perform a 2D Decomposition with provided basis set and target data
+
+        Parameters
+        ----------
+        array : np.ndarray
+            input array to compare to
+
+        Returns
+        -------
+        np.ndarray
+            modified array post-process
+        """
+        try:
+            bases = []
+            # Format matrix multiplication as A @ beta = b
+            for basis in sorted(self.deco_bases):
+                bases.append(DataFrame(basis).getArray())
+            # Check if bases are 1D or 2D
+            if bases[0].ndim != 1:
+                return self.decomposition2D2D
+            
+            # A represents the len(array) x len(bases) array
+            A = np.array(bases).T
+            # b is the target number of data points x number of vectors to approximate
+            b = array.T
+            # beta is the coefficient vector of length len(bases) approximating result
+            # Output rank if necessary
+            beta, residuals, rank, singular_values = la.lstsq(A,b, rcond=self.SIG_ERROR*np.max(A))
+            # approx represents data approximation from beta and bases
+            approx = A @ beta
+
+            # Identify directory for saving file
+            directory = os.path.split(self.deco_cfile)[0]
+
+            # Make the missing directories if there are any
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+
+            # Save the coefficients to the file given by user
+            if self.generateCoeffFile(beta.T) != 0:
+                raise CoeffWriteError
+            
+
+        except la.LinAlgError as e:
+            catchError(e, new_e = Exception, 
+                       msg="Computation does not converge! Cannot find coefficients!", 
+                       ePrint = True)
+            return array
+        
+
+        except CoeffWriteError as e:
+            catchError(e, new_e = Exception, 
+                       msg="Failed to create coefficient file, passing synthetic data", 
+                       ePrint = True)
+            return approx
+
+
+    def decomposition2D2D(self, array) -> np.ndarray:
+        """
+        fn decomposition2D2D
+
+        Perform a 2D Decomposition with provided 2D basis set and target data
+
+        Parameters
+        ----------
+        array : np.ndarray
+            input array to compare to
+
+        Returns
+        -------
+        np.ndarray
+            modified array post-process
+        """
+        # Currently unimplemented
+        return array
+
 
     def generateCoeffFile(self, beta : np.ndarray, fmt : str = 'nmr') -> int:
         """
