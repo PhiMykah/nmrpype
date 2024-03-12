@@ -18,10 +18,10 @@ class Decomposition(Function):
         
         self.deco_bases = deco_bases
         self.deco_cfile = deco_cfile
-        self.mp = [mp_enable, mp_proc, mp_threads]
         self.SIG_ERROR = deco_error
+        self.mp = [mp_enable, mp_proc, mp_threads]
 
-        params = {'deco_bases':deco_bases}
+        params = {'deco_bases':deco_bases, 'deco_cfile':deco_cfile, 'deco_error':deco_error}
         super().__init__(params)
 
     ############
@@ -51,7 +51,7 @@ class Decomposition(Function):
                 if not Decomposition.isValidFile(file):
                     raise OSError("One or more files were not properly found!")
                 
-            if data.array.ndim >= 2:
+            if data.array.ndim > 2:
                 raise Exception("Dimensionality higher than 2 currently unsupported!")
             
             data.array = self.process(data.array)
@@ -119,6 +119,7 @@ class Decomposition(Function):
             # b is the target len(array) x 1 vector to approximate
             b = array[:, np.newaxis]
             # beta is the coefficient vector of length len(bases) approximating result
+            # Output rank if necessary
             beta, residuals, rank, singular_values = la.lstsq(A,b, rcond=self.SIG_ERROR*np.max(A))
             # approx represents data approximation from beta and bases
             approx = A @ beta
@@ -199,6 +200,8 @@ class Decomposition(Function):
             if self.generateCoeffFile(beta.T) != 0:
                 raise CoeffWriteError
             
+            return approx
+
 
         except la.LinAlgError as e:
             catchError(e, new_e = Exception, 
@@ -261,31 +264,29 @@ class Decomposition(Function):
             # Initialize header from template
             dic = HEADER_TEMPLATE
 
-            # Since beta is vector, first dimension is used
-            dim = 1 
+            for dim in range(1, beta.ndim + 1):
+                # NOTE: This code is almost identical to ccp4 header formation
+                #   Consider extrapolating to general function
+                size = float(beta.shape[-1*dim])
 
-            # NOTE: This code is almost identical to ccp4 header formation
-            #   Consider extrapolating to general function
-            size = float(beta.shape[-1*dim])
+                # set NDSIZE, APOD, SW to SIZE
+                # OBS is default 1
+                # CAR is 0
+                # ORIG is 0
+                size_param = paramSyntax('NDSIZE', dim)
+                apod_param = paramSyntax('NDAPOD', dim)
+                sw_param = paramSyntax('NDSW', dim)
+                ft_flag = paramSyntax('NDFTFLAG', dim)
 
-            # set NDSIZE, APOD, SW to SIZE
-            # OBS is default 1
-            # CAR is 0
-            # ORIG is 0
-            size_param = paramSyntax('NDSIZE', dim)
-            apod_param = paramSyntax('NDAPOD', dim)
-            sw_param = paramSyntax('NDSW', dim)
-            ft_flag = paramSyntax('NDFTFLAG', dim)
+                # Set parameters in the dictionary
+                dic[size_param] = size
+                dic[apod_param] = size
+                if dim == 1:
+                    dic['FDREALSIZE'] = size
+                dic[sw_param] = size
 
-            # Set parameters in the dictionary
-            dic[size_param] = size
-            dic[apod_param] = size
-            if dim == 1:
-                dic['FDREALSIZE'] = size
-            dic[sw_param] = size
-
-            # Consider the data in frequency domain, 1 for frequency
-            dic[ft_flag] = 1
+                # Consider the data in frequency domain, 1 for frequency
+                dic[ft_flag] = 1
 
             coeffDF = DataFrame(header=dic, array=beta)
 
@@ -343,6 +344,8 @@ class Decomposition(Function):
                           dest='deco_bases', help='List of basis files to use separated by spaces')
         DECO.add_argument('-cfile', type=str, metavar='COEFFICIENT OUTPUT', required=True,
                           dest='deco_cfile', help='Outpit file path for coefficients (WILL OVERWRITE FILE)')
+        DECO.add_argument('-err', type=float, metavar='SIG ERROR', default=1e-8,
+                          dest='deco_error', help='Rank Calculation Significant Error (Determining Dependence)')
         # Include universal commands proceeding function call
         Function.clArgsTail(DECO)
 
