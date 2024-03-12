@@ -154,8 +154,10 @@ class DeleteImaginary(Function):
             # when the direct dim is singular and the indirect
             # dim is complex FDSPECNUM is half of the correct value
             if dim == 1:
-                if data.getParam("NDQUADFLAG", data.getDimOrder(2)) == 0 \
-                and data.getParam("NDQUADFLAG", data.getDimOrder(1)) == 1:
+                # Check if first indirect (2) dimension is complex
+                # Check if direct dimension (1) is real
+                if data.getParam("NDQUADFLAG", 2) == 0 \
+                and data.getParam("NDQUADFLAG", 1) == 1: 
                     size /= 2
             data.setParam('NDSIZE', size, data.getDimOrder(dim+1))
         
@@ -164,8 +166,10 @@ class DeleteImaginary(Function):
         for dim in range(1, len(shape)):
             slice = shape[-1*(dim+1)]
             if dim == 1:
-                if data.getParam("NDQUADFLAG", data.getDimOrder(2)) == 0 \
-                and data.getParam("NDQUADFLAG", data.getDimOrder(1)) == 1:
+                # Check if first indirect (2) dimension is complex
+                # Check if direct dimension (1) is real
+                if data.getParam("NDQUADFLAG", 2) == 0 \
+                and data.getParam("NDQUADFLAG", 1) == 1:
                     slice /= 2
             slices *= slice
 

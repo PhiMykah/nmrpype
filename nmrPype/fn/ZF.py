@@ -115,7 +115,7 @@ class ZeroFill(Function):
                 new_size = self.zf_size 
             if self.zf_auto:
                 # Reach next power of 2 with auto
-                new_size = self.nextPowerOf2(dataLength)
+                new_size = ZeroFill.nextPowerOf2(dataLength)
         
         # Obtain new array shape and then create dummy array for data transfer
         new_shape = array.shape[:-1] + (new_size,)
@@ -237,7 +237,7 @@ class ZeroFill(Function):
                 new_size = self.zf_size 
             if self.zf_auto:
                 # Reach next power of 2 with auto
-                new_size = self.nextPowerOf2(dataLength)
+                new_size = ZeroFill.nextPowerOf2(dataLength)
 
         # Obtain new array shape and then create dummy array for data transfer
         new_shape = array.shape[:-1] + (new_size,)
@@ -303,6 +303,7 @@ class ZeroFill(Function):
     #  Proc Functions  #
     ####################
         
+    @staticmethod
     def nextPowerOf2(x : int):
         return 1 if x == 0 else 2**(x-1).bit_length()
     
@@ -354,7 +355,7 @@ class ZeroFill(Function):
                     outSize *= 2
                 zfSize = outSize
             if (self.zf_auto):
-                zfSize = self.nextPowerOf2(int(zfSize))
+                zfSize = ZeroFill.nextPowerOf2(int(zfSize))
                 outSize = zfSize
 
         #zfSize = outSize * 2
