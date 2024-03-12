@@ -54,7 +54,7 @@ class Decomposition(Function):
             if data.array.ndim > 2:
                 raise Exception("Dimensionality higher than 2 currently unsupported!")
             
-            data.array = self.process(data.array)
+            data.array = self.process(data.header, data.array)
         except Exception as e:
             msg = "Unable to run function {0}!".format(type(self).__name__)
             catchError(e, new_e=FunctionError, msg=msg)
@@ -66,7 +66,7 @@ class Decomposition(Function):
     # Processing #
     ##############
 
-    def process(self, array) -> np.ndarray:
+    def process(self, dic, array) -> np.ndarray:
         """
         fn process
 
@@ -87,7 +87,7 @@ class Decomposition(Function):
             case 1:
                 return self.decomposition1D(array)
             case 2:
-                return self.decomposition2D(array)
+                return self.decomposition2D(dic, array)
             case _:
                 return array
             
@@ -154,7 +154,7 @@ class Decomposition(Function):
             return approx
         
 
-    def decomposition2D(self, array) -> np.ndarray:
+    def decomposition2D(self, dic, array) -> np.ndarray:
         """
         fn decomposition2D
 
@@ -197,7 +197,7 @@ class Decomposition(Function):
                 os.makedirs(directory)
 
             # Save the coefficients to the file given by user
-            if self.generateCoeffFile(beta.T) != 0:
+            if self.generateCoeffFile(beta.T, data_dic=dic) != 0:
                 raise CoeffWriteError
             
             return approx.T
@@ -237,7 +237,7 @@ class Decomposition(Function):
         return array
 
 
-    def generateCoeffFile(self, beta : np.ndarray, fmt : str = 'nmr') -> int:
+    def generateCoeffFile(self, beta : np.ndarray, fmt : str = 'nmr', data_dic : dict = {}) -> int:
         """
         fn generateCoeffFile
 
@@ -263,30 +263,35 @@ class Decomposition(Function):
         try:
             # Initialize header from template
             dic = HEADER_TEMPLATE
+            if beta.ndim >= 2:
+                # Use the dict from the target array
+                dic = data_dic
+                
+            dim = 1
+            # NOTE: This code is almost identical to ccp4 header formation
+            #   Consider extrapolating to general function
+            size = float(beta.shape[-1*dim])
 
-            for dim in range(1, beta.ndim + 1):
-                # NOTE: This code is almost identical to ccp4 header formation
-                #   Consider extrapolating to general function
-                size = float(beta.shape[-1*dim])
+            # set NDSIZE, APOD, SW to SIZE
+            # OBS is default 1
+            # CAR is 0
+            # ORIG is 0
+            size_param = paramSyntax('NDSIZE', dim)
+            apod_param = paramSyntax('NDAPOD', dim)
+            sw_param = paramSyntax('NDSW', dim)
+            ft_flag = paramSyntax('NDFTFLAG', dim)
+            label = paramSyntax('NDLABEL', dim)
 
-                # set NDSIZE, APOD, SW to SIZE
-                # OBS is default 1
-                # CAR is 0
-                # ORIG is 0
-                size_param = paramSyntax('NDSIZE', dim)
-                apod_param = paramSyntax('NDAPOD', dim)
-                sw_param = paramSyntax('NDSW', dim)
-                ft_flag = paramSyntax('NDFTFLAG', dim)
+            # Set parameters in the dictionary
+            dic[size_param] = size
+            dic[apod_param] = size
+            if dim == 1:
+                dic['FDREALSIZE'] = size
+            dic[sw_param] = size
+            dic[label] = 'COEFF'
 
-                # Set parameters in the dictionary
-                dic[size_param] = size
-                dic[apod_param] = size
-                if dim == 1:
-                    dic['FDREALSIZE'] = size
-                dic[sw_param] = size
-
-                # Consider the data in frequency domain, 1 for frequency
-                dic[ft_flag] = 1
+            # Consider the data in frequency domain, 1 for frequency
+            dic[ft_flag] = 1
 
             coeffDF = DataFrame(header=dic, array=beta)
 
@@ -349,6 +354,7 @@ class Decomposition(Function):
         # Include universal commands proceeding function call
         Function.clArgsTail(DECO)
 
+
         ####################
         #  Proc Functions  #
         ####################
@@ -365,6 +371,7 @@ class Decomposition(Function):
             """
             # Update ndsize here 
             pass
+
 
 ######################
 #  Helper Functions  #
