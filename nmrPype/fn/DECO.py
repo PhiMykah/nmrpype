@@ -200,7 +200,7 @@ class Decomposition(Function):
             if self.generateCoeffFile(beta.T) != 0:
                 raise CoeffWriteError
             
-            return approx
+            return approx.T
 
 
         except la.LinAlgError as e:
@@ -214,7 +214,7 @@ class Decomposition(Function):
             catchError(e, new_e = Exception, 
                        msg="Failed to create coefficient file, passing synthetic data", 
                        ePrint = True)
-            return approx
+            return approx.T
 
 
     def decomposition2D2D(self, array) -> np.ndarray:
