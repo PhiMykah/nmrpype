@@ -265,7 +265,7 @@ class Decomposition(Function):
             dic = HEADER_TEMPLATE
             if beta.ndim >= 2:
                 # Use the dict from the target array
-                dic = data_dic
+                dic = {key: value for key, value in data_dic.items()}
                 
             dim = 1
             # NOTE: This code is almost identical to ccp4 header formation
