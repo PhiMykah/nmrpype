@@ -70,60 +70,53 @@ class Decomposition(Function):
         """
         fn process
 
-        Process is called by function's run, returns modified array when completed.
-        Likely attached to multiprocessing for speed
+        Perform a decomposition with a basis set and target data
 
         Parameters
         ----------
+        dic : dict
+            Copy of current data frame's header for coefficient output
+
         array : np.ndarray
             input array to compare to
 
         Returns
         -------
-        np.ndarray
-            modified array post-process
-        """
-        match array.ndim:
-            case 1:
-                return self.decomposition1D(array)
-            case 2:
-                return self.decomposition2D(dic, array)
-            case _:
-                return array
-            
-
-    def decomposition1D(self, array) -> np.ndarray:
-        """
-        fn decomposition1D
-
-        Perform a 1D Decomposition with provided basis set and target data
-
-        Parameters
-        ----------
-        array : np.ndarray
-            input array to compare to
-
-        Returns
-        -------
-        np.ndarray
+        np.ndaray
             modified array post-process
         """
         try:
+            # Obtain basis and the basis shape
             bases = []
+            basis_shape = None
             # Format matrix multiplication as A @ beta = b
             for basis in sorted(self.deco_bases):
-                bases.append(DataFrame(basis).getArray())
+                basis_array = DataFrame(basis).getArray()
+                
+                # Get the shape from the basis once
+                if not basis_shape:
+                    basis_shape = basis_array.shape
 
-            # A represents the len(array) x len(bases) array
+                # add flattened array to list since dimensions are not significant to calculation
+                bases.append(basis_array.flatten())
+            
+            # A represents the (data length, number of bases) array
             A = np.array(bases).T
-            # b is the target len(array) x 1 vector to approximate
-            b = array[:, np.newaxis]
-            # beta is the coefficient vector of length len(bases) approximating result
+
+            sample_shape = array.shape
+            # b is the vector to approximate
+            b = array.flatten()[:, np.newaxis]
+            # beta is the coefficient vector multiplied by the A to approximate the result
             # Output rank if necessary
-            beta, residuals, rank, singular_values = la.lstsq(A,b, rcond=self.SIG_ERROR*np.max(A))
-            # approx represents data approximation from beta and bases
+            beta, residuals, rank, singular_values = la.lstsq(A,b, 
+                                                              rcond=self.SIG_ERROR*np.max(A))
+            # approx is the test approximation to be made
             approx = A @ beta
 
+            # Reshape back to target data
+            # index 0 is used since the data is technically 2D
+            synthetic_data = approx.T[0].reshape(sample_shape)
+            
             # Identify directory for saving file
             directory = os.path.split(self.deco_cfile)[0]
 
@@ -132,15 +125,11 @@ class Decomposition(Function):
                 os.makedirs(directory)
 
             # Save the coefficients to the file given by user
-            if self.generateCoeffFile(beta.T.real) != 0:
+            if self.generateCoeffFile(beta.T.real, data_dic=dic) != 0:
                 raise CoeffWriteError
-
-            # Only return complex data if data has complex elements
-            if not np.all(approx.imag):
-                return approx.real
-            else:
-                return approx
-
+            
+            return synthetic_data
+        
         except la.LinAlgError as e:
             catchError(e, new_e = Exception, 
                        msg="Computation does not converge! Cannot find coefficients!", 
@@ -151,90 +140,7 @@ class Decomposition(Function):
             catchError(e, new_e = Exception, 
                        msg="Failed to create coefficient file, passing synthetic data", 
                        ePrint = True)
-            return approx
-        
-
-    def decomposition2D(self, dic, array) -> np.ndarray:
-        """
-        fn decomposition2D
-
-        Perform a 2D Decomposition with provided basis set and target data
-
-        Parameters
-        ----------
-        array : np.ndarray
-            input array to compare to
-
-        Returns
-        -------
-        np.ndarray
-            modified array post-process
-        """
-        try:
-            bases = []
-            # Format matrix multiplication as A @ beta = b
-            for basis in sorted(self.deco_bases):
-                bases.append(DataFrame(basis).getArray())
-            # Check if bases are 1D or 2D
-            if bases[0].ndim != 1:
-                return self.decomposition2D2D
-            
-            # A represents the len(array) x len(bases) array
-            A = np.array(bases).T
-            # b is the target number of data points x number of vectors to approximate
-            b = array.T
-            # beta is the coefficient vector of length len(bases) approximating result
-            # Output rank if necessary
-            beta, residuals, rank, singular_values = la.lstsq(A,b, rcond=self.SIG_ERROR*np.max(A))
-            # approx represents data approximation from beta and bases
-            approx = A @ beta
-
-            # Identify directory for saving file
-            directory = os.path.split(self.deco_cfile)[0]
-
-            # Make the missing directories if there are any
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-
-            # Save the coefficients to the file given by user
-            if self.generateCoeffFile(beta.T, data_dic=dic) != 0:
-                raise CoeffWriteError
-            
-            return approx.T
-
-
-        except la.LinAlgError as e:
-            catchError(e, new_e = Exception, 
-                       msg="Computation does not converge! Cannot find coefficients!", 
-                       ePrint = True)
-            return array
-        
-
-        except CoeffWriteError as e:
-            catchError(e, new_e = Exception, 
-                       msg="Failed to create coefficient file, passing synthetic data", 
-                       ePrint = True)
-            return approx.T
-
-
-    def decomposition2D2D(self, array) -> np.ndarray:
-        """
-        fn decomposition2D2D
-
-        Perform a 2D Decomposition with provided 2D basis set and target data
-
-        Parameters
-        ----------
-        array : np.ndarray
-            input array to compare to
-
-        Returns
-        -------
-        np.ndarray
-            modified array post-process
-        """
-        # Currently unimplemented
-        return array
+            return synthetic_data
 
 
     def generateCoeffFile(self, beta : np.ndarray, fmt : str = 'nmr', data_dic : dict = {}) -> int:
