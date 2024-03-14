@@ -100,23 +100,17 @@ class Decomposition(Function):
                 # add flattened array to list since dimensions are not significant to calculation
                 bases.append(basis_array.flatten())
             
-            # A represents the (data length, number of bases) array
-            A = np.array(bases).T
-
             sample_shape = array.shape
-            # b is the vector to approximate
-            b = array.flatten()[:, np.newaxis]
-            # beta is the coefficient vector multiplied by the A to approximate the result
-            # Output rank if necessary
-            beta, residuals, rank, singular_values = la.lstsq(A,b, 
-                                                              rcond=self.SIG_ERROR*np.max(A))
-            # approx is the test approximation to be made
-            approx = A @ beta
 
-            # Reshape back to target data
-            # index 0 is used since the data is technically 2D
-            synthetic_data = approx.T[0].reshape(sample_shape)
-            
+            if len(sample_shape) == 2 and len(basis_shape) == 1:
+                approx, beta = self.decomposition2D(array, bases)
+                synthetic_data = approx.T
+            else:
+                approx, beta = self.decomposition(array, bases)
+                # Reshape back to target data
+                # index 0 is used since the data is technically 2D
+                synthetic_data = approx.T[0].reshape(sample_shape)
+
             # Identify directory for saving file
             directory = os.path.split(self.deco_cfile)[0]
 
@@ -142,6 +136,61 @@ class Decomposition(Function):
                        ePrint = True)
             return synthetic_data
 
+    def decomposition(self, array, bases) -> tuple[np.ndarray, np.ndarray] :
+        """
+        fn decomposition
+
+        Use A and b to solve for the x that minimizes Ax-b = 0
+
+        Parameters
+        ----------
+        array : np.ndarray
+            input dataframe array
+        bases : list
+            List of bases
+        """
+        # A represents the (data length, number of bases) array
+        A = np.array(bases).T
+
+        # b is the vector to approximate
+        b = array.flatten()[:, np.newaxis]
+        # beta is the coefficient vector multiplied by the A to approximate the result
+        # Output rank if necessary
+        beta, residuals, rank, singular_values = la.lstsq(A,b, 
+                                                            rcond=self.SIG_ERROR*np.max(A))
+        # approx is the test approximation to be made
+        approx = A @ beta
+
+        return (approx, beta)
+
+    def decomposition2D(self, array, bases) -> tuple[np.ndarray, np.ndarray]:
+        """
+        fn decomposition2D
+
+        Perform a Decomposition with 1D Basis and 2D data
+
+        Parameters
+        ----------
+        array : np.ndarray
+            input array to compare to
+
+        Returns
+        -------
+        np.ndarray
+            modified array post-process
+        """
+        # A represents the len(array) x len(bases) array
+        A = np.array(bases).T
+        # b is the target number of data points x number of vectors to approximate
+        b = array.T
+        # beta is the coefficient vector of length len(bases) approximating result
+        # Output rank if necessary
+        beta, residuals, rank, singular_values = la.lstsq(A,b, rcond=self.SIG_ERROR*np.max(A))
+        # approx represents data approximation from beta and bases
+        approx = A @ beta
+
+        return(approx, beta)
+        
 
     def generateCoeffFile(self, beta : np.ndarray, fmt : str = 'nmr', data_dic : dict = {}) -> int:
         """
