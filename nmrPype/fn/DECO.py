@@ -121,13 +121,7 @@ class Decomposition(Function):
             # Save the coefficients to the file given by user
             if self.generateCoeffFile(beta.T.real, data_dic=dic) != 0:
                 raise CoeffWriteError
-            
-            # Ensure only real is outputted in first dimension if imaginary is empty
-            if synthetic_data.shape == 1:
-                if not np.all(synthetic_data.imag):
-                    synthetic_data = synthetic_data.real
-                else:
-                    synthetic_data
+        
 
             return synthetic_data
         
@@ -161,6 +155,10 @@ class Decomposition(Function):
         # A represents the (data length, number of bases) array
         A = np.array(bases).T
 
+        # Ensure only real is outputted in first dimension if imaginary is empty
+        if not np.all(A.imag):
+            A = A.real
+            
         # b is the vector to approximate
         b = array.flatten()[:, np.newaxis]
         # beta is the coefficient vector multiplied by the A to approximate the result
