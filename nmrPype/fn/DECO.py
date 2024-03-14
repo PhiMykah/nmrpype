@@ -122,7 +122,16 @@ class Decomposition(Function):
             if self.generateCoeffFile(beta.T.real, data_dic=dic) != 0:
                 raise CoeffWriteError
             
+            # Ensure only real is outputted in first dimension if imaginary is empty
+            if synthetic_data.shape == 1:
+                if not np.all(synthetic_data.imag):
+                    synthetic_data = synthetic_data.real
+                else:
+                    synthetic_data
+
             return synthetic_data
+        
+            
         
         except la.LinAlgError as e:
             catchError(e, new_e = Exception, 
