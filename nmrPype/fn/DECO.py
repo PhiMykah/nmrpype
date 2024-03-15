@@ -98,11 +98,13 @@ class Decomposition(Function):
                     basis_shape = basis_array.shape
 
                 # add flattened array to list since dimensions are not significant to calculation
-                bases.append(basis_array.flatten())
+                bases.append(basis_array.flatten(order='C'))
             
             sample_shape = array.shape
 
-            if len(sample_shape) > len(basis_shape):
+            isAsymmetric = True if len(sample_shape) > len(basis_shape) else False
+                
+            if isAsymmetric:
                 approx, beta = self.asymmetricDecomposition(array, bases)
                 synthetic_data = approx.T.reshape(sample_shape)
             else:
@@ -119,7 +121,7 @@ class Decomposition(Function):
                 os.makedirs(directory)
 
             # Save the coefficients to the file given by user
-            if self.generateCoeffFile(beta.T.real, data_dic=dic) != 0:
+            if self.generateCoeffFile(beta.T.real, data_dic=dic, isAsymmetric=isAsymmetric) != 0:
                 raise CoeffWriteError
         
 
@@ -160,7 +162,7 @@ class Decomposition(Function):
             A = A.real
             
         # b is the vector to approximate
-        b = array.flatten()[:, np.newaxis]
+        b = array.flatten(order='C')[:, np.newaxis]
         # beta is the coefficient vector multiplied by the A to approximate the result
         # Output rank if necessary
         beta, residuals, rank, singular_values = la.lstsq(A,b, 
@@ -199,7 +201,7 @@ class Decomposition(Function):
         return(approx, beta)
         
 
-    def generateCoeffFile(self, beta : np.ndarray, fmt : str = 'nmr', data_dic : dict = {}) -> int:
+    def generateCoeffFile(self, beta : np.ndarray, fmt : str = 'nmr', data_dic : dict = {}, isAsymmetric : bool = False) -> int:
         """
         fn generateCoeffFile
 
@@ -223,13 +225,17 @@ class Decomposition(Function):
             return 1
         
         try:
+
             # Initialize header from template
             dic = HEADER_TEMPLATE
-            if beta.ndim >= 2:
-                # Use the dict from the target array
+            if isAsymmetric:
                 dic = {key: value for key, value in data_dic.items()}
+            else: 
+                # Flatten beta if the basis and sample set are symmetrical in dimension
+                beta = beta.flatten(order='C')
                 
             dim = 1
+                
             # NOTE: This code is almost identical to ccp4 header formation
             #   Consider extrapolating to general function
             size = float(beta.shape[-1*dim])
@@ -238,6 +244,7 @@ class Decomposition(Function):
             # OBS is default 1
             # CAR is 0
             # ORIG is 0
+            dim_count = paramSyntax('FDDIMCOUNT', dim)
             size_param = paramSyntax('NDSIZE', dim)
             apod_param = paramSyntax('NDAPOD', dim)
             sw_param = paramSyntax('NDSW', dim)
@@ -254,6 +261,9 @@ class Decomposition(Function):
 
             # Consider the data in frequency domain, 1 for frequency
             dic[ft_flag] = 1
+
+            # Update dimcount
+            dic[dim_count] = beta.ndim
 
             coeffDF = DataFrame(header=dic, array=beta)
 
