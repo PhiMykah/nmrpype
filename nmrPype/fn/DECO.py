@@ -234,9 +234,10 @@ class Decomposition(Function):
             dic = HEADER_TEMPLATE
             if isAsymmetric:
                 dic = {key: value for key, value in data_dic.items()}
-                # Change the dimensions to be the indirect dimensions
-                asymmetric_diff = sample_dim - basis_dim
-                Decomposition.truncateHeader(asymmetric_diff, basis_dim, dic)
+                if basis_dim != 1:
+                    # Change the dimensions to be the indirect dimensions
+                    asymmetric_diff = sample_dim - basis_dim
+                    Decomposition.truncateHeader(asymmetric_diff, basis_dim, dic)
             else: 
                 # Flatten beta if the basis and sample set are symmetrical in dimension
                 beta = beta.flatten(order='C')
