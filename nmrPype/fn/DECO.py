@@ -121,7 +121,8 @@ class Decomposition(Function):
                 os.makedirs(directory)
 
             # Save the coefficients to the file given by user
-            if self.generateCoeffFile(beta.T.real, data_dic=dic, isAsymmetric=isAsymmetric) != 0:
+            if self.generateCoeffFile(beta.T.real, data_dic=dic, isAsymmetric=isAsymmetric,
+                                      basis_dim=len(basis_shape), sample_dim=len(sample_shape)) != 0:
                 raise CoeffWriteError
         
 
@@ -201,7 +202,10 @@ class Decomposition(Function):
         return(approx, beta)
         
 
-    def generateCoeffFile(self, beta : np.ndarray, fmt : str = 'nmr', data_dic : dict = {}, isAsymmetric : bool = False) -> int:
+    def generateCoeffFile(self, beta : np.ndarray, 
+                          fmt : str = 'nmr', data_dic : dict = {}, 
+                          isAsymmetric : bool = False, 
+                          basis_dim : int = 0, sample_dim : int = 0) -> int:
         """
         fn generateCoeffFile
 
@@ -230,6 +234,9 @@ class Decomposition(Function):
             dic = HEADER_TEMPLATE
             if isAsymmetric:
                 dic = {key: value for key, value in data_dic.items()}
+                # Change the dimensions to be the indirect dimensions
+                asymmetric_diff = sample_dim - basis_dim
+                Decomposition.truncateHeader(asymmetric_diff, basis_dim, dic)
             else: 
                 # Flatten beta if the basis and sample set are symmetrical in dimension
                 beta = beta.flatten(order='C')
@@ -281,11 +288,21 @@ class Decomposition(Function):
     ####################
         
     @staticmethod
-    def isValidFile(file) -> bool:
+    def isValidFile(file : str) -> bool:
         """
         fn isValidFile
 
         Check whether or not the inputted file exists
+
+        Parameters
+        ----------
+        file : str
+            String representation of target file
+
+        Returns
+        -------
+        bool
+            True or false value for whether the file exists
         """
 
         fpath = os.path.abspath(file)
@@ -294,6 +311,73 @@ class Decomposition(Function):
         
         return True
 
+
+    @staticmethod
+    def truncateHeader(asymmetric_diff : int, basis_dim : int, dic : dict):
+        """
+        fn truncate Header
+
+        Modify header to become coefficient data,
+            using the unmeasured dimensions and the coefficient dimension only
+
+        asymmetric_diff : int
+            gap between basis set and sample data
+
+        basis_dim : int
+            The last dimension of the basis
+        
+        dic : dict
+            Dictionary to modify
+        """
+        dim_order = dic["FDDIMORDER"]
+        for diff in range(asymmetric_diff):
+            dim1 = basis_dim + diff
+            dim2 = basis_dim + diff + 1
+
+            # Swap ndsizes
+            Decomposition.swapDictVals(
+                dic,
+                key1=paramSyntax("NDSIZE", dim1, dim_order),
+                key2=paramSyntax("NDSIZE", dim2, dim_order),
+            )
+
+            # Swap apod sizes
+            Decomposition.swapDictVals(
+                dic,
+                key1=paramSyntax("NDAPOD", dim1, dim_order),
+                key2=paramSyntax("NDAPOD", dim2, dim_order),
+            )
+
+            # Swap labels
+            Decomposition.swapDictVals(
+                dic,
+                key1=paramSyntax("NDLABEL", dim1, dim_order),
+                key2=paramSyntax("NDLABEL", dim2, dim_order),
+            )
+
+    @staticmethod
+    def swapDictVals(dic : dict, key1 : str, key2 : str):
+        """
+        fn swapDictVals
+        swaps the values between the two keys
+
+        Parameters
+        ----------
+        dic : dict
+            Dictionary that holds key1 and key2
+        key1 : str 
+            The first key to swap values with in the dict
+        key2 : str
+            The second key to swap values with in the dict
+
+        Returns
+        -------
+        None
+        """
+        if key1 in dic and key2 in dic:
+            temp = dic[key1]
+            dic[key1] = dic[key2]
+            dic[key2] = temp
 
     ##################
     # Static Methods #
@@ -349,7 +433,7 @@ class Decomposition(Function):
 #  Helper Functions  #
 ######################
 
-def paramSyntax(param : str, dim : int) -> str :
+def paramSyntax(param : str, dim : int, dim_order : dict = [2,1,3,4]) -> str :
     """
     fn paramSyntax
 
@@ -365,6 +449,9 @@ def paramSyntax(param : str, dim : int) -> str :
     dim : int
         Target parameter dimension
 
+    dim_order : dict
+        Order of ints to use to obtain the dim code integer
+
     Returns
     -------
     param : str
@@ -375,12 +462,12 @@ def paramSyntax(param : str, dim : int) -> str :
         # Since this function is not meant to be user-accessed
         dim = int(dim-1)
         if param.startswith('ND'):
-            dimCode =  int(FDDIMORDER[dim])
+            dimCode =  int(dim_order[dim])
             param = 'FDF' + str(dimCode) + param[2:]
     else:
         # If unspecified dimension for nd, then set dimension
         if param.startswith('ND'):
-            dimCode =  int(FDDIMORDER[0])
+            dimCode =  int(dim_order[0])
             param = 'FDF' + str(dimCode) + param[2:]
 
     # Check if the param ends with size and fix to match sizes
@@ -399,7 +486,7 @@ def paramSyntax(param : str, dim : int) -> str :
 class CoeffWriteError(Exception):
     pass
 
-FDDIMORDER = [2,1,3,4]
+#FDDIMORDER = [2,1,3,4]
 
 # Originally I was going to load with json, but I am unsure which is better to itilize
 # Snce this appears in both the deco and ccp4 files, json might be better
