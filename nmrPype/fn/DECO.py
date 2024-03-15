@@ -51,8 +51,8 @@ class Decomposition(Function):
                 if not Decomposition.isValidFile(file):
                     raise OSError("One or more files were not properly found!")
                 
-            if data.array.ndim > 2:
-                raise Exception("Dimensionality higher than 2 currently unsupported!")
+            #if data.array.ndim > 2:
+            #    raise Exception("Dimensionality higher than 2 currently unsupported!")
             
             data.array = self.process(data.header, data.array)
         except Exception as e:
@@ -102,9 +102,9 @@ class Decomposition(Function):
             
             sample_shape = array.shape
 
-            if len(sample_shape) == 2 and len(basis_shape) == 1:
-                approx, beta = self.decomposition2D(array, bases)
-                synthetic_data = approx.T
+            if len(sample_shape) > len(basis_shape):
+                approx, beta = self.asymmetricDecomposition(array, bases)
+                synthetic_data = approx.T.reshape(sample_shape)
             else:
                 approx, beta = self.decomposition(array, bases)
                 # Reshape back to target data
@@ -170,11 +170,11 @@ class Decomposition(Function):
 
         return (approx, beta)
 
-    def decomposition2D(self, array, bases) -> tuple[np.ndarray, np.ndarray]:
+    def asymmetricDecomposition(self, array, bases) -> tuple[np.ndarray, np.ndarray]:
         """
-        fn decomposition2D
+        fn asymmetricDecomposition
 
-        Perform a Decomposition with 1D Basis and 2D data
+        Perform a Decomposition with mismatch basis and data dimensions
 
         Parameters
         ----------
@@ -189,7 +189,7 @@ class Decomposition(Function):
         # A represents the len(array) x len(bases) array
         A = np.array(bases).T
         # b is the target number of data points x number of vectors to approximate
-        b = array.T
+        b = array.reshape(array.shape[0], np.prod(array.shape[1:])).T
         # beta is the coefficient vector of length len(bases) approximating result
         # Output rank if necessary
         beta, residuals, rank, singular_values = la.lstsq(A,b, rcond=self.SIG_ERROR*np.max(A))
