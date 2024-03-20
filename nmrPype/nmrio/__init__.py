@@ -53,7 +53,7 @@ def readFromFile(file : str) -> tuple[dict,np.ndarray]:
         # Utilize modified nmrglue code to read 
         dic, data = read(file)
     except Exception as e:
-        from utils import catchError, FileIOError
+        from ..utils import catchError, FileIOError
         e.args = (" ".join(str(arg) for arg in e.args),)
         catchError(e, new_e=FileIOError, msg="Unable to read File!", ePrint=False)
     return dic, data
@@ -85,7 +85,7 @@ def readFromBuffer(buffer) -> tuple[dict,np.ndarray]:
         # Utilize modified nmrglue code to read 
         dic, data = read(buffer)
     except Exception as e:
-        from utils import catchError, FileIOError
+        from ..utils import catchError, FileIOError
         e.args = (" ".join(str(arg) for arg in e.args),)
         catchError(e, new_e=FileNotFoundError, msg="Unable to read buffer!", ePrint=False)
     return dic, data
@@ -122,7 +122,7 @@ def writeToFile(data, output : str, overwrite : bool) -> int:
     try:
         write(output, data.getHeader(), data.getArray(), overwrite)
     except Exception as e:
-        from utils import catchError, FileIOError
+        from ..utils import catchError, FileIOError
         catchError(e, new_e=FileIOError, msg="Unable to write to file!")
 
     return 0
@@ -195,7 +195,7 @@ def writeToBuffer(data, output, overwrite : bool) -> int:
     return 0
 
 def writeHeaderToBuffer(output, header : dict) -> int:
-    from utils.fdata import dic2fdata
+    from ..utils.fdata import dic2fdata
     """
     fn writeHeaderToBuffer
 
@@ -227,12 +227,12 @@ def writeHeaderToBuffer(output, header : dict) -> int:
         # Write fdata to buffer
         output.write(fdata.tobytes())
     except Exception as e:
-        from utils import catchError, FileIOError
+        from ..utils import catchError, FileIOError
         catchError(e, new_e=FileIOError, msg="An exception occured when attempting to write header to buffer!")
 
 
 def writeDataToBuffer(output, array : np.ndarray) -> int:
-    from utils.fdata import append_data
+    from ..utils.fdata import append_data
     """
     fn writeToBuffer
 
@@ -274,5 +274,5 @@ def writeDataToBuffer(output, array : np.ndarray) -> int:
         output.write(array.tobytes())
         
     except Exception as e:
-        from utils import catchError, FileIOError
+        from ..utils import catchError, FileIOError
         catchError(e, new_e=FileIOError, msg="An exception occured when attempting to write data to buffer!")

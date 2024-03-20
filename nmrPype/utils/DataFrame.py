@@ -4,11 +4,9 @@ import sys
 
 class DataFrame:
     """
-    class DataFrame
-
     Object containing the nmr data vectors as well as the header.
     Contains methods for accessing and modifying the data based
-        on the header included with the data.
+    on the header included with the data.
 
     Parameters
     ----------
@@ -21,7 +19,7 @@ class DataFrame:
     """
     def __init__(self, file : str = "", header : dict = {}, array = None):
         if (file): # Read only if file is provided
-            from nmrio import readFromFile
+            from ..nmrio import readFromFile
 
             # Initialize header and array based on file
             dic, data = readFromFile(file)

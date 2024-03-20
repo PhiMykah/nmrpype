@@ -8,7 +8,7 @@ import numpy as np
 import struct
 import os
 from warnings import warn
-from nmrio.fileiobase import *
+from ...nmrio.fileiobase import *
 
 
 def fdata2dic(fdata):

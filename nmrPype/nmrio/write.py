@@ -65,7 +65,7 @@ def write(filename, dic, data, overwrite=False):
 
 
 def write_single(filename, dic, data, overwrite=False):
-    from utils.fdata import append_data, unshape_data, dic2fdata, put_data
+    from ..utils.fdata import append_data, unshape_data, dic2fdata, put_data
     """
     Write data to a single NMRPipe file from memory.
 
@@ -168,7 +168,7 @@ def write_lowmem(filename, dic, data, overwrite=False):
 
 
 def write_lowmem_2D(filename, dic, data, overwrite=False):
-    from utils.fdata import dic2fdata, put_fdata, put_trace
+    from ..utils.fdata import dic2fdata, put_fdata, put_trace
     """
     Write a 2D NMRPipe file using minimal memory (trace by trace)
 
@@ -189,7 +189,7 @@ def write_lowmem_2D(filename, dic, data, overwrite=False):
 
 
 def write_lowmem_3D(filename, dic, data, overwrite=False):
-    from utils.fdata import dic2fdata, put_fdata, put_trace
+    from ..utils.fdata import dic2fdata, put_fdata, put_trace
     """
     Write a standard multi-file 3D NMRPipe file using minimal memory.
 
@@ -215,7 +215,7 @@ def write_lowmem_3D(filename, dic, data, overwrite=False):
 
 
 def write_lowmem_3Ds(filename, dic, data, overwrite=False):
-    from utils.fdata import dic2fdata, put_fdata, put_trace
+    from ..utils.fdata import dic2fdata, put_fdata, put_trace
     """
     Write 3D NMRPipe data stream file using minimal memory (trace by trace)
 
@@ -237,7 +237,7 @@ def write_lowmem_3Ds(filename, dic, data, overwrite=False):
 
 
 def write_lowmem_4D(filename, dic, data, overwrite=False):
-    from utils.fdata import dic2fdata, put_fdata, put_trace
+    from ..utils.fdata import dic2fdata, put_fdata, put_trace
     """
     Write a multi-file (single or double index) 4D NMRPipe file using
     minimal memory.
@@ -269,7 +269,7 @@ def write_lowmem_4D(filename, dic, data, overwrite=False):
 
 
 def write_lowmem_4Ds(filename, dic, data, overwrite=False):
-    from utils.fdata import dic2fdata, put_fdata, put_trace
+    from ..utils.fdata import dic2fdata, put_fdata, put_trace
     """
     Write 4D NMRPipe data stream file using minimal memory (trace by trace)
 
