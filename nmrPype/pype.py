@@ -1,6 +1,6 @@
 import sys
-from utils import DataFrame, catchError, PipeBurst
-from parse import parser
+from .utils import DataFrame, catchError, PipeBurst
+from .parse import parser
 
 def fileInput(df : DataFrame, input) -> int:
     """
@@ -20,7 +20,7 @@ def fileInput(df : DataFrame, input) -> int:
     -------
     Integer exit code (e.g. 0 success 1 fail)
     """
-    from nmrio import readFromFile, readFromBuffer, load_ccp4_map
+    from .nmrio import readFromFile, readFromBuffer, load_ccp4_map
 
     # Determine whether or not reading from the pipeline
     if type(input) == str:
@@ -56,7 +56,7 @@ def fileOutput(data : DataFrame, args) -> int:
     output = args.output
     overwrite = args.overwrite
 
-    from nmrio import writeToFile, writeToBuffer
+    from .nmrio import writeToFile, writeToBuffer
 
     if args.fc:
         # Use alternate output if provided

@@ -1,4 +1,4 @@
-from utils import catchError, FunctionError, DataFrame
+from ..utils import catchError, FunctionError, DataFrame
 import numpy as np
 
 # Multiprocessing

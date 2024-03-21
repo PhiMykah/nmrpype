@@ -12,7 +12,7 @@ import numpy as np
 
 
 def read(filename):
-    from utils.fdata import get_fdata, fdata2dic
+    from ..utils.fdata import get_fdata, fdata2dic
     """
     Read a NMRPipe file.
 
@@ -85,7 +85,7 @@ def read(filename):
 
 
 def read_lowmem(filename):
-    from utils.fdata import get_fdata, fdata2dic
+    from ..utils.fdata import get_fdata, fdata2dic
     """
     Read a NMRPipe file with minimal memory usage.
 
@@ -135,7 +135,7 @@ def read_lowmem(filename):
 
 # dimension specific reading
 def read_1D(filename):
-    from utils.fdata import get_fdata_data, fdata2dic, reshape_data, find_shape, unappend_data
+    from ..utils.fdata import get_fdata_data, fdata2dic, reshape_data, find_shape, unappend_data
     """
     Read a 1D NMRPipe file.
 
@@ -154,7 +154,7 @@ def read_1D(filename):
 
 
 def read_2D(filename):
-    from utils.fdata import get_fdata_data,fdata2dic,reshape_data,find_shape,unappend_data
+    from ..utils.fdata import get_fdata_data,fdata2dic,reshape_data,find_shape,unappend_data
     """
     Read a 2D NMRPipe file or NMRPipe data stream.
 
@@ -175,7 +175,7 @@ def read_2D(filename):
 
 
 def read_lowmem_2D(filename):
-    from utils.fdata import fdata2dic,get_fdata,pipe_2d,pipestream_3d,pipestream_4d
+    from ..utils.fdata import fdata2dic,get_fdata,pipe_2d,pipestream_3d,pipestream_4d
     """
     Read a 2D NMRPipe file or NMRPipe data stream using minimal memory.
 
@@ -225,7 +225,7 @@ def read_3D(filemask):
 
 
 def read_lowmem_3D(filemask):
-    from utils.fdata import pipe_3d,fdata2dic,get_fdata
+    from ..utils.fdata import pipe_3d,fdata2dic,get_fdata
     """
     Read a 3D NMRPipe file using minimal memory.
 
@@ -258,7 +258,7 @@ def read_4D(filemask):
 
 
 def read_lowmem_4D(filemask):
-    from utils.fdata import pipe_4d,fdata2dic, get_fdata
+    from ..utils.fdata import pipe_4d,fdata2dic, get_fdata
     """
     Read a NMRPipe file using minimal memory.
 
