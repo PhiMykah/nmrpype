@@ -1,5 +1,5 @@
 import gemmi
-from utils import catchError
+from ...utils import catchError
 import numpy as np
 import json
 

@@ -2,8 +2,8 @@ from .function import DataFunction as Function
 import numpy as np
 import numpy.linalg as la
 import os
-from utils import catchError, DataFrame, FunctionError
-from nmrio import writeToFile
+from ..utils import catchError, DataFrame, FunctionError
+from ..nmrio import writeToFile
 
 class Decomposition(Function):
     """
@@ -12,7 +12,7 @@ class Decomposition(Function):
     Data Function object for decomposing processed file into coefficients and synthetic
         data set
     """
-    def __init__(self, deco_bases : list[str], deco_cfile : str, deco_error : 1e-8,
+    def __init__(self, deco_bases : list[str], deco_cfile : str, deco_error : int = 1e-8,
                  mp_enable : bool = False, mp_proc : int = 0,
                  mp_threads : int = 0):
         
