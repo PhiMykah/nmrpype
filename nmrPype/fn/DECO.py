@@ -1,7 +1,7 @@
 from .function import DataFunction as Function
 import numpy as np
 import numpy.linalg as la
-import os
+import os,sys
 from ..utils import catchError, DataFrame, FunctionError
 from ..nmrio import writeToFile
 
@@ -12,16 +12,18 @@ class Decomposition(Function):
     Data Function object for decomposing processed file into coefficients and synthetic
         data set
     """
-    def __init__(self, deco_bases : list[str], deco_cfile : str, deco_error : int = 1e-8,
-                 mp_enable : bool = False, mp_proc : int = 0,
-                 mp_threads : int = 0):
+    def __init__(self, deco_bases : list[str], deco_cfile : str, 
+                 deco_mask : str = "", deco_error : int = 1e-8, mp_enable : bool = False, 
+                 mp_proc : int = 0, mp_threads : int = 0):
         
         self.deco_bases = deco_bases
         self.deco_cfile = deco_cfile
+        self.deco_mask = deco_mask
         self.SIG_ERROR = deco_error
         self.mp = [mp_enable, mp_proc, mp_threads]
 
-        params = {'deco_bases':deco_bases, 'deco_cfile':deco_cfile, 'deco_error':deco_error}
+        params = {'deco_bases':deco_bases, 'deco_cfile':deco_cfile, 
+                  'deco_mask':deco_mask, 'deco_error':deco_error}
         super().__init__(params)
 
     ############
@@ -49,7 +51,14 @@ class Decomposition(Function):
         try: 
             for file in self.deco_bases:
                 if not Decomposition.isValidFile(file):
-                    raise OSError("One or more files were not properly found!")
+                    raise OSError("One or more basis files were not properly found!")
+                
+            # Check if there is a mask to be used with the data
+            if self.deco_mask:
+                # Return error if mask file is unable to be found
+                if not Decomposition.isValidFile(self.deco_mask):
+                    print("Mask file was not properly found, ignoring", file=sys.stderr)
+                    self.deco_mask = ""
                 
             #if data.array.ndim > 2:
             #    raise Exception("Dimensionality higher than 2 currently unsupported!")
@@ -86,6 +95,11 @@ class Decomposition(Function):
             modified array post-process
         """
         try:
+            # Check if applying the mask is necessary
+            if self.deco_mask:
+                mask = DataFrame(self.deco_mask).getArray()
+                array = array * mask
+
             # Obtain basis and the basis shape
             bases = []
             basis_shape = None
@@ -405,7 +419,9 @@ class Decomposition(Function):
         DECO.add_argument('-basis', '-bases', type=str, nargs='+', metavar='BASIS FILES', required=True,
                           dest='deco_bases', help='List of basis files to use separated by spaces')
         DECO.add_argument('-cfile', type=str, metavar='COEFFICIENT OUTPUT', required=True,
-                          dest='deco_cfile', help='Outpit file path for coefficients (WILL OVERWRITE FILE)')
+                          dest='deco_cfile', help='Output file path for coefficients (WILL OVERWRITE FILE)')
+        DECO.add_argument('-mask', type=str, metavar='MASK FILE INPUT', default="", 
+                          dest='deco_mask', help='Specify input mask file to multiply with data')
         DECO.add_argument('-err', type=float, metavar='SIG ERROR', default=1e-8,
                           dest='deco_error', help='Rank Calculation Significant Error (Determining Dependence)')
         # Include universal commands proceeding function call
