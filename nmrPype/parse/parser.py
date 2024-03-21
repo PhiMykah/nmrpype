@@ -1,5 +1,5 @@
 def parser(input_args : list):
-    import fn
+    from ..fn import __dict__ as fn_dict
     from argparse import ArgumentParser
     from sys import stdin,stdout, stderr
     import os
@@ -16,7 +16,7 @@ def parser(input_args : list):
     subparser = parser.add_subparsers(title='Function Commands', dest='fc')
 
     # Gather list of functions
-    fn_list = dict([(name, cls) for name, cls in fn.__dict__.items() if isinstance(cls, type)])
+    fn_list = dict([(name, cls) for name, cls in fn_dict.items() if isinstance(cls, type)])
 
     for fn in fn_list.values():
         if hasattr(fn, 'clArgs'):
