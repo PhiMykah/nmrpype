@@ -9,7 +9,7 @@ setup(name='nmrPype',
     ],
     entry_points={
         'console_scripts': [
-            'nmrPype = pype:main',
+            'nmrPype = nmrPype.pype:main',
         ]
     },
     author='Micah Smith',

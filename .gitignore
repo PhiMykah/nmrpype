@@ -167,4 +167,4 @@ cython_debug/
 .vscode
 
 # FID Files
-hf/*/basis
+hf/*/basis*
