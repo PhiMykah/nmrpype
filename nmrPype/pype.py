@@ -2,23 +2,31 @@ import sys
 from .utils import DataFrame, catchError, PipeBurst
 from .parse import parser
 
-def fileInput(df : DataFrame, input) -> int:
+# Typing Imports
+import argparse
+
+# Type declarations
+type InputStream = str | bytes | io.TextIOWrapper | io.BufferedReader
+type OutputStream = str | io.BufferedWriter
+
+def fileInput(df : DataFrame, input : InputStream) -> int:
     """
-    fn fileInput
+    nmrPype's default file input handler when run in command-line mode
 
     Parameters
     ----------
     data : DataFrame
         DataFrame object to put input data to
 
-    input : string, sys.stdin, or sys.stdin.buffer
-        string: reading file name
-        sys.stdin: read from standard input
-        sys.stdin.buffer: read from standard input buffer
+    input : InputStream
+        - str: reading file name
+        - io.TextIOWrapper: read from standard input
+        - io.BufferedReader: read from standard input buffer
     
     Returns
     -------
-    Integer exit code (e.g. 0 success 1 fail)
+    int
+        Integer exit code (e.g. 0 success 1 fail)
     """
     from .nmrio import readFromFile, readFromBuffer
 
@@ -33,22 +41,27 @@ def fileInput(df : DataFrame, input) -> int:
     return 0
     
 
-def fileOutput(data : DataFrame, args) -> int:
+def fileOutput(data : DataFrame, args : argparse.Namespace) -> int:
     """
-    fn fileOutput
+    nmrPype's default file output handler when run by command-line mode
 
     Parameters
     ----------
     data : DataFrame
         DataFrame object reading from to send out to putput
 
-    output : string or sys.stdout.buffer
-        string: output file name
-        sys.stdin.buffer: read from standard output buffer
-    
+    args : argparse.Namespace
+        Namespace object obtained from command-line args, output and overwrite attributes used
+
+        - args.output : OutputStream
+            - str: output file name
+            - io.BufferedWriter: write to standard output buffer
+        - args.overwrite : bool
+
     Returns
     -------
-    Integer exit code (e.g. 0 success 1 fail)
+    int
+        Integer exit code (e.g. 0 success 1 fail)
     """
     output = args.output
     overwrite = args.overwrite
@@ -71,9 +84,17 @@ def fileOutput(data : DataFrame, args) -> int:
 
 def headerModify(data : DataFrame, param : str, value : float) -> int:
     """
-    fn headerModify
+    Updates the header based on parameters and value.
+    Calls the DataFrame's internal setParam function to extrapolate access.
 
-    Updates the header based on parameters and value
+    Parameters
+    ----------
+        data : DataFrame
+            Target NMR data which will have its header modified
+        param : str
+            Header value to modify
+        value : float
+            New header value to set in the NMR data
     """
     try:
         data.setParam(param, value)
@@ -81,7 +102,27 @@ def headerModify(data : DataFrame, param : str, value : float) -> int:
         return 1
     return 0
 
-def function(data : DataFrame, args) -> int:
+def function(data : DataFrame, args : argparse.Namespace) -> int:
+    """
+    Handling of the user's input function within command-line mode.
+    Calls necessary function and passes parameters from the command line.
+
+    Parameters
+    ----------
+    data : DataFrame
+        Inputted NMR Data in which the function will process
+    args : argparse.Namespace
+        Namespace object obtained from command-line args.
+        Used for obtaining function and the required/optional arguments
+        matching the function
+
+        - args.fc : str
+
+    Returns
+    -------
+    int
+        Integer exit code (e.g. 0 success 1 fail)
+    """
     fn = args.fc
 
     fn_params = {}
@@ -106,8 +147,15 @@ def function(data : DataFrame, args) -> int:
     return (data.runFunc(fn, fn_params))
 
 def main() -> int:
-    #from rpy.parse import parser
-    
+    """
+    Starting-point for the command-line mode of NMRPype.
+
+    Returns
+    -------
+    int
+        Integer exit code (e.g. 0 success 1 fail)
+    """
+
     try:
         data = DataFrame() # Initialize DataFrame
 

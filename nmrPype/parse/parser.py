@@ -1,8 +1,26 @@
-def parser(input_args : list):
-    from ..fn import __dict__ as fn_dict
-    from argparse import ArgumentParser
-    from sys import stdin,stdout, stderr
-    import os
+from ..fn import __dict__ as fn_dict
+from argparse import ArgumentParser
+from argparse import Namespace
+from sys import stdin,stdout, stderr
+import os
+
+def parser(input_args : list[str]) -> Namespace:
+    """
+    nmrPype's dedicated argument parser function.
+    Takes arguments defined within functions as well to allow for
+    easier integration of custom functions.
+
+    Parameters
+    ----------
+    input_args : list[str]
+        List of arguments from the command-line to parse
+
+    Returns
+    -------
+    Namespace
+        argparse Namespace object which has attributes and values
+        properly handled to use in processing
+    """
     parser = ArgumentParser(prog='nmrPype',description='Handle NMR Data inputted through file or pipeline \
                                     and perform desired operations for output.')
     parser.add_argument('-help', action='help')

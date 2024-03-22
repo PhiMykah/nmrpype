@@ -2,6 +2,9 @@ import numpy as np
 from .errorHandler import *
 import sys
 
+# Type declarations
+type Array = np.ndarray | None
+
 class DataFrame:
     """
     Object containing the nmr data vectors as well as the header.
@@ -14,10 +17,10 @@ class DataFrame:
         Input file or stream for initializing frame
     header : dict
         Header to initialize, by default obtained from file or set
-    array : ndarray or None
+    array : Array [numpy.ndarray or None]
         Array to initialize, by default obtained from file or set
     """
-    def __init__(self, file : str = "", header : dict = {}, array = None):
+    def __init__(self, file : str = "", header : dict = {}, array : Array = None):
         if (file): # Read only if file is provided
             from ..nmrio import readFromFile
 
@@ -37,6 +40,29 @@ class DataFrame:
     
 
     def runFunc(self, targetFunction : str, arguments : dict = {}) -> int:
+        """
+        runFunc completes the following:
+
+        1. Checks for valid function call
+        2. Passes function arguments to function call
+        3. Uses function call to process array based on function implementation
+        4. Update the data's header accordingly
+
+        Can be called outside of command-line mode if arguments are passed with proper keys
+
+        Parameters
+        ----------
+        targetFunction : str
+            Function Code (e.g. FT, SP, ZF)
+        arguments: dict
+            Dictionary of arguments to pass to function initialization
+            (May become a kwargs in the future for user simplicity)
+
+        Returns
+        -------
+        int
+            Integer exit code obtained by the function itself (e.g. 0 success 1 fail)
+        """
         from ..fn import fn_list
         if targetFunction == 'NULL':
             return 0
@@ -51,8 +77,6 @@ class DataFrame:
 
     def updateParamSyntax(self, param, dim : int) -> str :
         """
-        fn updateParamSyntax
-
         Converts header keywords from ND to proper parameter syntax if necessary
 
         Parameters
@@ -90,17 +114,29 @@ class DataFrame:
         return param
     
 
-    def updatePipeCount(self, reset=False) -> int:
+    def updatePipeCount(self, reset : bool = False) -> int:
         """
-        fn resetPipeCount
-
         Increment the FDPIPECOUNT parameter or reset to zero
+
+        Parameters
+        ----------
+        reset : bool
+            Whether or not to reset pipe count or increment pipe count
+
+        Returns
+        -------
+        int
+            Integer exit code (e.g. 0 success 1 fail)
         """
-        if reset:
-            self.setParam('FDPIPECOUNT', 0.0)
-        else:
-            pCount = self.getParam('FDPIPECOUNT')
-            self.setParam('FDPIPECOUNT', float(pCount + 1))
+        try:
+            if reset:
+                self.setParam('FDPIPECOUNT', 0.0)
+            else:
+                pCount = self.getParam('FDPIPECOUNT')
+                self.setParam('FDPIPECOUNT', float(pCount + 1))
+        except:
+            return 1
+        return 0
 
 
     #######################
@@ -109,9 +145,7 @@ class DataFrame:
     
     def getHeader(self) -> dict:
         """
-        fn setArray
-
-        array variable getter for object
+        Dataframe header variable getter
 
         Returns
         -------
@@ -122,6 +156,20 @@ class DataFrame:
 
 
     def setHeader(self, dic : dict) -> int:
+        """
+        Dataframe header variable setter
+
+        Parameters
+        ----------
+        dic : dict
+            New header to assign to data frame
+
+        Returns
+        -------
+        int
+            Integer exit code (e.g. 0 success 1 fail)
+        """
+
         try:
             self.header = dic
         except:
@@ -129,34 +177,31 @@ class DataFrame:
         return 0 
     
 
-    def getArray(self) -> np.ndarray:
+    def getArray(self) -> Array:
         """
-        fn setArray
-
-        array variable getter for object
+        Dataframe array variable getter
 
         Returns
         -------
-        self.array : np.ndarray
+        self.array : Array
             Object's current ndarray
         """
         return self.array
     
 
-    def setArray(self, array : np.ndarray) -> int:
+    def setArray(self, array : Array) -> int:
         """
-        fn setArray
-
-        array variable setter for object
+        Dataframe array variable setter
 
         Parameters
         ----------
-        array : np.ndarray
-            New ndarray to set to object
+        array : Array
+            New array to assign to data frame
 
         Returns
         -------
-        Integer exit code (e.g. 0 success 1 fail)
+        int
+            Integer exit code (e.g. 0 success 1 fail)
         """
         try:
             self.array = array
@@ -167,8 +212,6 @@ class DataFrame:
 
     def getParam(self, param : str, dim : int = 0) -> float:
         """
-        fn getParam
-
         Obtain header parameter from dictionary given key and dimension
 
         Parameters
@@ -192,8 +235,6 @@ class DataFrame:
 
     def setParam(self, param : str, value : float, dim : int = 0) -> int:
         """
-        fn setParam
-
         Set given header parameter's value to inputted value
 
         Parameters
@@ -207,7 +248,8 @@ class DataFrame:
 
         Returns
         -------
-        Integer exit code (e.g. 0 success 1 fail)
+        int
+            Integer exit code (e.g. 0 success 1 fail)
         """
         targetParam = self.updateParamSyntax(param, dim)
         try:
@@ -218,23 +260,37 @@ class DataFrame:
     
     def getCurrDim(self) -> int:
         """
-        fn getCurrDim
-
         Obtain current dim for Dataframe based on dim order
+
+        Returns
+        -------
+        int
+            Current direct dimension
         """
         return 0 # Bandaid fix self.getDimOrder(1)
         
     def getDimOrder(self, dim : int) -> int:
         """
-        fn getDimOrder
-
         Convert order number into correct dimension index
         
-        1 = Direct
-        2 = First Indirect
-        3 = Second Indirect
-        4 = Third Indirect
-        ...
+
+
+        Parameters
+        ----------
+        dim : int
+            Dimension Index
+
+            * 1 = Direct
+            * 2 = First Indirect
+            * 3 = Second Indirect
+            * 4 = Third Indirect
+            * and so on..
+
+        Returns
+        -------
+        int
+            Integer corresponding to the inputted dimension
+            specifically for this dataset
         """
         if int(self.header['FDDIMORDER'][dim-1]) == 2:
             return 1
