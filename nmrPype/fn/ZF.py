@@ -5,15 +5,42 @@ import numpy as np
 from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 
+# type Imports/Definitions
+from ..utils import DataFrame
+
 class ZeroFill(Function):
     """
-    class ZeroFill
-
     Data Function object for performing a zero-fill on the data
+
+    Parameters
+    ----------
+    zf_count : int
+        Number of times to double the data
+
+    zf_pad : int
+        Number of zeros to pad the data by
+
+    zf_size : int
+        Set data to new size while filling empty data with zeros
+
+    zf_auto : bool
+        Automatically add zeros to pad data to the next power of two
+
+    zf_inv : bool
+        Reverse a zero-fill operation based on header params
+
+    mp_enable : bool
+        Enable multiprocessing
+
+    mp_proc : int
+        Number of processors to utilize for multiprocessing
+
+    mp_threads : int
+        Number of threads to utilize per process
     """
     def __init__(self, zf_count : int = 0, zf_pad : int = 0, zf_size : int = 0,
                  zf_auto : bool = False, zf_inv : bool = False,
-                 mp_enable = False, mp_proc = 0, mp_threads = 0):
+                 mp_enable : bool = False, mp_proc : int = 0, mp_threads : int = 0):
         self.zf_count = zf_count
         self.zf_pad = zf_pad
         self.zf_size = zf_size
@@ -28,27 +55,9 @@ class ZeroFill(Function):
     # Function #
     ############
             
-    def run(self, data) -> int:
+    def run(self, data : DataFrame) -> int:
         """
-        fn run
-
-        Main body of ZF code.
-            - Initializes Header
-            - Determine process to run using flags
-            - Start Process (process data vector by vector in multiprocess)
-            - Update Header
-            - Return information if necessary
-
-        Overload run for function specific operations
-
-        Parameters
-        ----------
-        data : DataFrame
-            Target data to to run function on
-
-        Returns
-        -------
-        Integer exit code (e.g. 0 success 1 fail)
+        See :py:func:`nmrPype.fn.function.DataFunction.run` for documentation
         """
 
         self.initialize(data)
@@ -70,16 +79,16 @@ class ZeroFill(Function):
 
     def parallelize(self, array : np.ndarray) -> np.ndarray:
         """
-        fn parallelize
-
         Multiprocessing implementation for function to properly optimize for hardware
 
-        Parameters:
-        array : np.ndarray
+        Parameters
+        ----------
+        array : ndarray
             Target data array to process with function
 
-        Returns:
-        new_array : np.ndarray
+        Returns
+        -------
+        new_array : ndarray
             Updated array after function operation
         """
         # Save array shape for reshaping later
@@ -153,15 +162,13 @@ class ZeroFill(Function):
         return new_array
     
 
-    def processMP(self, array : np.ndarray, arg, operation) -> np.ndarray:
+    def processMP(self, array : np.ndarray, arg : tuple, operation) -> np.ndarray:
         """
-        fn processMP
-
         Process specifically for MP, changes how it performs operation
 
         Parameters
         ----------
-        array : np.ndarray
+        array : ndarray
             array to process
 
         args : tuple
@@ -172,7 +179,7 @@ class ZeroFill(Function):
 
         Returns
         -------
-        np.ndarray
+        ndarray
             modified array post-process
         """
         args = ((array[i], arg) for i in range(len(array))) 
@@ -189,20 +196,7 @@ class ZeroFill(Function):
 
     def process(self, array : np.ndarray) -> np.ndarray:
         """
-        fn process
-
-        Process is called by function's run, returns modified array when completed.
-        Likely attached to multiprocessing for speed
-
-        Parameters
-        ----------
-        array : np.ndarray
-            array to process
-
-        Returns
-        -------
-        np.ndarray
-            modified array post-process
+        See :py:func:`nmrPype.fn.function.DataFunction.process` for documentation
         """
         # Collect last axis shape to fill array size
         dataLength = array.shape[-1]
@@ -267,13 +261,10 @@ class ZeroFill(Function):
     @staticmethod
     def clArgs(subparser):
         """
-        fn clArgs (ZF)
+        Zero Fill command-line arguments
 
         Adds Zero Fill parser to the subparser, with its corresponding default args
-        Called in nmrParse.py
-
-        Destinations are formatted typically by {function}_{argument}
-            e.g. the zf_pad destination stores the pad argument for the zf function
+        Called by :py:func:`nmrPype.parse.parser`.
 
         Parameters
         ----------
@@ -305,23 +296,25 @@ class ZeroFill(Function):
         
     @staticmethod
     def nextPowerOf2(x : int):
+        """
+        Helper function to set input integer to the nearest power of two
+        greater than input integer.
+        """
         return 1 if x == 0 else 2**(x-1).bit_length()
     
 
-    def initialize(self, data):
+    def initialize(self, data : DataFrame):
         """
-        fn initialize
-
         Initialization follows the following steps:
-            -Handle function specific arguments
-            -Update any header values before any calculations occur
-                that are independent of the data, such as flags and parameter storage
+            - Handle function specific arguments
+            - Update any header values before any calculations occur
+              that are independent of the data, such as flags and parameter storage
 
+            
         Parameters
         ----------
         data : DataFrame
             target data to manipulate 
-        None
         """
         currDim = data.getCurrDim()
         outSize = data.getParam('NDAPOD', currDim)
@@ -408,16 +401,15 @@ class ZeroFill(Function):
         """
 
 
-    def updateHeader(self, data):
+    def updateHeader(self, data : DataFrame):
         """
-        fn updateHeader
-
         Update the header following the main function's calculations.
-            Typically this includes header fields that relate to data size.
+        Typically this includes header fields that relate to data size.
 
         Parameters
         ----------
-        None
+        data : DataFrame
+            Target data frame containing header to update
         """
         # Update ndsize here  
         pass

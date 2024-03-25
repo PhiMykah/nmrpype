@@ -65,7 +65,6 @@ def write(filename, dic, data, overwrite=False):
 
 
 def write_single(filename, dic, data, overwrite=False):
-    from ..utils.fdata import append_data, unshape_data, dic2fdata, put_data
     """
     Write data to a single NMRPipe file from memory.
 
@@ -75,6 +74,8 @@ def write_single(filename, dic, data, overwrite=False):
     See :py:func:`write` for documentation.
 
     """
+    from ..utils.fdata import append_data, unshape_data, dic2fdata, put_data
+
     # append imaginary and flatten
     if data.dtype == "complex64":
         data = append_data(data)
@@ -168,13 +169,14 @@ def write_lowmem(filename, dic, data, overwrite=False):
 
 
 def write_lowmem_2D(filename, dic, data, overwrite=False):
-    from ..utils.fdata import dic2fdata, put_fdata, put_trace
     """
     Write a 2D NMRPipe file using minimal memory (trace by trace)
 
     See :py:func:`write_lowmem` for documentation.
 
     """
+    from ..utils.fdata import dic2fdata, put_fdata, put_trace
+
     fh = fileiobase.open_towrite(filename, overwrite=overwrite)
 
     # create the fdata array and put to disk
@@ -189,7 +191,6 @@ def write_lowmem_2D(filename, dic, data, overwrite=False):
 
 
 def write_lowmem_3D(filename, dic, data, overwrite=False):
-    from ..utils.fdata import dic2fdata, put_fdata, put_trace
     """
     Write a standard multi-file 3D NMRPipe file using minimal memory.
 
@@ -200,6 +201,8 @@ def write_lowmem_3D(filename, dic, data, overwrite=False):
     MIN/MAX parameters are not updated in the NMRPipe headers.
 
     """
+    from ..utils.fdata import dic2fdata, put_fdata, put_trace
+
     # create the fdata array
     fdata = dic2fdata(dic)
 
@@ -215,13 +218,14 @@ def write_lowmem_3D(filename, dic, data, overwrite=False):
 
 
 def write_lowmem_3Ds(filename, dic, data, overwrite=False):
-    from ..utils.fdata import dic2fdata, put_fdata, put_trace
     """
     Write 3D NMRPipe data stream file using minimal memory (trace by trace)
 
     See :py:func:`write_lowmem` for documentation.
 
     """
+    from ..utils.fdata import dic2fdata, put_fdata, put_trace
+
     fh = fileiobase.open_towrite(filename, overwrite=overwrite)
 
     # create the fdata array and put to disk
@@ -237,7 +241,6 @@ def write_lowmem_3Ds(filename, dic, data, overwrite=False):
 
 
 def write_lowmem_4D(filename, dic, data, overwrite=False):
-    from ..utils.fdata import dic2fdata, put_fdata, put_trace
     """
     Write a multi-file (single or double index) 4D NMRPipe file using
     minimal memory.
@@ -249,6 +252,8 @@ def write_lowmem_4D(filename, dic, data, overwrite=False):
     MIN/MAX parameters are not updated in the NMRPipe headers.
 
     """
+    from ..utils.fdata import dic2fdata, put_fdata, put_trace
+
     # create the fdata array
     fdata = dic2fdata(dic)
 
@@ -269,13 +274,14 @@ def write_lowmem_4D(filename, dic, data, overwrite=False):
 
 
 def write_lowmem_4Ds(filename, dic, data, overwrite=False):
-    from ..utils.fdata import dic2fdata, put_fdata, put_trace
     """
     Write 4D NMRPipe data stream file using minimal memory (trace by trace)
 
     See :py:func:`write_lowmem` for documentation.
 
     """
+    from ..utils.fdata import dic2fdata, put_fdata, put_trace
+    
     fh = fileiobase.open_towrite(filename, overwrite=overwrite)
 
     # create the fdata array and put to disk

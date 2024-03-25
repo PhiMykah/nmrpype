@@ -6,17 +6,38 @@ from scipy import fft
 from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 
-def negate(array : np.ndarray) -> np.ndarray:
-    return -1 * array
+# type Imports/Definitions
+from ..utils import DataFrame
 
 class FourierTransform(Function):
     """
-    class FourierTransform
-
     Data Function object for performing a DFFT or IDFFT on the data.
+
+    Parameters
+    ----------
+    ft_inv : bool
+        Use inverse fourier transform instead of fourier transform
+
+    ft_real : bool
+        Perform fourier transform on the real data only
+
+    ft_neg : bool
+        Negate imaginary values when performing fourier transform
+
+    ft_alt : bool
+        Alternate the signs of even and odd data points
+    
+    mp_enable : bool
+        Enable multiprocessing
+
+    mp_proc : int
+        Number of processors to utilize for multiprocessing
+
+    mp_threads : int
+        Number of threads to utilize per process
     """
     def __init__(self, ft_inv: bool = False, ft_real: bool = False, ft_neg: bool = False, ft_alt: bool = False, 
-                 mp_enable = False, mp_proc = 0, mp_threads = 0):
+                 mp_enable : bool = False, mp_proc : int = 0, mp_threads : int = 0):
             self.ft_inv = ft_inv 
             self.ft_real = ft_real
             self.ft_neg = ft_neg
@@ -30,27 +51,9 @@ class FourierTransform(Function):
     # Function #
     ############
             
-    def run(self, data) -> int:
+    def run(self, data : DataFrame) -> int:
         """
-        fn run
-
-        Main body of FFT code.
-            - Initializes Header
-            - Determine process to run using flags
-            - Start Process (process data vector by vector in multiprocess)
-            - Update Header
-            - Return information if necessary
-
-        Overload run for function specific operations
-
-        Parameters
-        ----------
-        data : DataFrame
-            Target data to to run function on
-
-        Returns
-        -------
-        Integer exit code (e.g. 0 success 1 fail)
+        See :py:func:`nmrPype.fn.function.DataFunction.run` for documentation
         """
 
         self.initialize(data)
@@ -75,19 +78,19 @@ class FourierTransform(Function):
 
     def parallelize(self, array : np.ndarray, ndQuad : int) -> np.ndarray:
         """
-        fn parallelize
-
         Multiprocessing implementation for function to properly optimize for hardware
 
-        Parameters:
-        array : np.ndarray
+        Parameters
+        ----------
+        array : ndarray
             Target data array to process with function
 
         ndQuad : int
             NDQUADFLAG header value
 
-        Returns:
-        new_array : np.ndarray
+        Returns
+        -------
+        new_array : ndarray
             Updated array after function operation
         """
         # Save array shape for reshaping later
@@ -110,14 +113,40 @@ class FourierTransform(Function):
         new_array = np.concatenate(output).reshape(array_shape)
         return new_array
 
-    def VectorFFT(self, array : np.ndarray) -> np.ndarray:
+    def vectorFFT(self, array : np.ndarray) -> np.ndarray:
+        """
+        Perform fourier transform on 1D array, transform result to match nmrPipe
+
+        Parameters
+        ----------
+        array : ndarray
+            Target vector 
+
+        Returns
+        -------
+        ndarray
+            Processed vector
+        """
         array = fft.fft(array)
         array = fft.fftshift(array)
         array = np.flip(array)
         array = np.roll(array, 1)
         return(array)
         
-    def VectorIFFT(self, array : np.ndarray) -> np.ndarray:
+    def vectorIFFT(self, array : np.ndarray) -> np.ndarray:
+        """
+        Perform inverse fourier transform on 1D array, transform result to match nmrPipe
+
+        Parameters
+        ----------
+        array : ndarray
+            Target vector 
+            
+        Returns
+        -------
+        ndarray
+            Processed vector
+        """
         array = fft.ifft(array)
         array = fft.ifftshift(array)
         array = np.flip(array)
@@ -131,37 +160,24 @@ class FourierTransform(Function):
 
     def process(self, array : np.ndarray, ndQuad : int) -> np.ndarray:
         """
-        fn process
-
-        Process is called by function's run, returns modified array when completed.
-        Likely attached to multiprocessing for speed
-
-        Parameters
-        ----------
-        array : np.ndarray
-            array to process
-
-        Returns
-        -------
-        np.ndarray
-            modified array post-process
+        See :py:func:`nmrPype.fn.function.DataFunction.process` for documentation
         """
         # Change operation based on parameters
         if (self.ft_alt and not self.ft_inv):
             # Alternate real and imaginary prior to transform
-            array.real = self.alternate(array.real)
-            array.imag = self.alternate(array.imag)
+            array.real = FourierTransform.alternate(array.real)
+            array.imag = FourierTransform.alternate(array.imag)
             
         if (self.ft_neg and not self.ft_inv):
             # Negate all imaginary values prior to transform
-            array.imag = negate(array.imag)
+            array.imag = FourierTransform.negate(array.imag)
 
         if (self.ft_real and ndQuad != 1):
             # Set all imaginary values to 0
             array.imag = np.zeros_like(array.imag)
 
         # Perform dfft or idfft depending on args
-        operation = self.VectorFFT if not self.ft_inv else self.VectorIFFT
+        operation = self.vectorFFT if not self.ft_inv else self.vectorIFFT
 
         # Check for parallelization
         if self.mp[0] and not array.ndim == 1:
@@ -185,12 +201,12 @@ class FourierTransform(Function):
     
         if (self.ft_alt and self.ft_inv):
             # Alternate after ifft if necessary
-            array.real = self.alternate(array.real)
-            array.imag = self.alternate(array.imag)
+            array.real = FourierTransform.alternate(array.real)
+            array.imag = FourierTransform.alternate(array.imag)
 
         if (self.ft_neg and self.ft_inv):
             # Negate all imaginary values after ifft if necessary
-            array.imag = negate(array.imag)
+            array.imag = FourierTransform.negate(array.imag)
         
         return array
     
@@ -202,13 +218,10 @@ class FourierTransform(Function):
     @staticmethod
     def clArgs(subparser):
         """
-        fn clArgs (FT command-line arguments)
+        Fourier Transform command-line arguments
 
         Adds Fourier Transform parser to the subparser, with its corresponding default args
-        Called in nmrParse.py
-
-        Destinations are formatted typically by {function}_{argument}
-            e.g. the zf_pad destination stores the pad argument for the zf function
+        Called by :py:func:`nmrPype.parse.parser`.
 
         Parameters
         ----------
@@ -230,15 +243,20 @@ class FourierTransform(Function):
         Function.clArgsTail(FT)
 
     @staticmethod
+    def negate(array : np.ndarray) -> np.ndarray:
+        """
+        Negate values of inputted array
+        """
+        return -1 * array
+
+    @staticmethod
     def alternate(array : np.ndarray, positiveStart : bool = True):
         """
-        fn alternate
-
         Return inputted array with alternating signs from postitive to negative
 
         Parameters
         ----------
-        array : np.ndarray
+        array : ndarray
             Target array to sign alternate, assumed to be non-complex
 
         positiveStart : bool
@@ -246,7 +264,7 @@ class FourierTransform(Function):
 
         Returns
         -------
-        np.ndarray
+        ndarray
             Sign alternating array
         """
         # Make an array of ones similar to the array
@@ -264,20 +282,18 @@ class FourierTransform(Function):
     #  Proc Functions  #
     ####################
         
-    def initialize(self, data):
+    def initialize(self, data : DataFrame):
         """
-        fn initialize
-
         Initialization follows the following steps:
-            -Handle function specific arguments
-            -Update any header values before any calculations occur
-                that are independent of the data, such as flags and parameter storage
+            - Handle function specific arguments
+            - Update any header values before any calculations occur
+              that are independent of the data, such as flags and parameter storage
 
+            
         Parameters
         ----------
         data : DataFrame
-            target data to manipulate 
-        None
+            Target data to manipulate 
         """
         currDim = data.getCurrDim()
 
@@ -318,16 +334,15 @@ class FourierTransform(Function):
             data.setParam('NDTDSIZE', float(tdSize), currDim)
 
 
-    def updateHeader(self, data):
+    def updateHeader(self, data : DataFrame):
         """
-        fn updateHeader
-
         Update the header following the main function's calculations.
-            Typically this includes header fields that relate to data size.
+        Typically this includes header fields that relate to data size.
 
         Parameters
         ----------
-        None
+        data : DataFrame
+            Target data frame containing header to update
         """
         # Update ndsize here  
         pass
