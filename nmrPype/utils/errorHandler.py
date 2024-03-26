@@ -3,28 +3,46 @@ import sys
 Error Classes 
 """
 class PipeBurst(Exception):
-    # Exception called when the main script reaches an exception,
-    # a.k.a. something broke
+    """
+    Exception called when the main script reaches an exception,
+    a.k.a. something broke. Just done for the nice name opportunity honestly
+    """
     pass 
 
 class FileIOError(Exception):
-    # Exception called when there is an error in reading/writing the data
-    pass 
+    """
+    Exception called when there is an error in reading/writing the data
+    """
+    pass
 
 class UnknownHeaderParam(Exception):
-    # Exception called when there is an error in calling for 
-    #   a nonexistent header param
+    """
+    Exception called when there is an attempt to call
+    a nonexistent header param
+    """
     pass
 
 class FunctionError(Exception):
-    # An error occurs when attempting to run a function
+    """
+    Exception called when attempting to run a function fails
+    """
     pass
 
 def catchError(e, new_e = Exception, msg : str = "", ePrint = False):
     """
-    fn catchError
+    This function is an error-handling helper function for nmrPype.
+    It can output to the stderr and continue, or terminate running.
 
-    This function is an error-handling helper function for nmrPype to output to screen
+    Parameters
+    ----------
+    e : Exception
+        Exception that called this error handler
+    new_e : Exception
+        New exception to pass onto the chain
+    msg : str
+        Error message to output to the screen
+    ePrint : bool
+        Whether to print to standard error stream or raise and error
     """
     # Obtain error names and initialize new argument tuple
     e_name = type(e).__name__

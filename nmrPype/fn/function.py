@@ -7,11 +7,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 class DataFunction:
     """
-    class dataFunction
-
     Data Function is a template class for all types of functions to run on
-        the NMR data. New user functions should copy format laid out by this 
-        class.
+    the NMR data. New user functions should copy format laid out by this 
+    class.
 
     Parameters
     ----------
@@ -30,8 +28,6 @@ class DataFunction:
         
     def run(self, data : DataFrame) -> int:
         """
-        fn run
-
         Main body of function code.
             - Initializes Header
             - Start Process (process data vector by vector in multiprocess)
@@ -47,7 +43,8 @@ class DataFunction:
 
         Returns
         -------
-        Integer exit code (e.g. 0 success 1 fail)
+        int
+            Integer exit code (e.g. 0 success 1 fail)
         """
         try:
             self.initialize(data)
@@ -68,20 +65,20 @@ class DataFunction:
         return 0
 
 
-    def parallelize(self, array) -> np.ndarray:
+    def parallelize(self, array : np.ndarray) -> np.ndarray:
         """
-        fn parallelize
+        The General Multiprocessing implementation for function, utilizing cores and threads. 
+        Parallelize should be overloaded if array_shape changes in processing
+        or process requires more args.
 
-        General Multiprocessing implementation for function, utilizing cores and threads
-        
-        Should be overloaded if array_shape changes in processing or process requires more args
-
-        Parameters:
-        array : np.ndarray
+        Parameters
+        ----------
+        array : ndarray
             Target data array to process with function
 
-        Returns:
-        new_array : np.ndarray
+        Returns
+        -------
+        new_array : ndarray
             Updated array after function operation
         """
         # Save array shape for reshaping later
@@ -106,10 +103,18 @@ class DataFunction:
 
     def process(self, array : np.ndarray) -> np.ndarray:
         """
-        fn process
-
         Process is called by function's run, returns modified array when completed.
         Likely attached to multiprocessing for speed
+
+        Parameters
+        ----------
+        array : ndarray
+            Target data array to process with function
+
+        Returns
+        -------
+        ndarray
+            Updated array after function operation
         """
         return array
     
@@ -120,13 +125,12 @@ class DataFunction:
     @staticmethod
     def clArgs(subparser):
         """
-        fn clArgs (Template command-line arguments)
+        Command-line arguments template 
 
-        Adds function parser to the subparser, with its corresponding default args
-        Called in nmrParse.py
-
-        Destinations are formatted typically by {function}_{argument}
-            e.g. the zf_pad destination stores the pad argument for the zf function
+        clArgs adds function parser to the subparser, with its corresponding default args
+        called by :py:func:`nmrPype.parse.parser`.
+        The Destinations are formatted typically by {function}_{argument},
+        e.g. the zf_pad destination stores the pad argument for the zf function.
 
         Parameters
         ----------
@@ -138,6 +142,14 @@ class DataFunction:
 
     @staticmethod
     def nullDeclare(subparser):
+        """
+        Null Function declaration
+
+        Parameters
+        ----------
+        subparser : _SubParsersAction[ArgumentParser]
+            Subparser object that will receive null function
+        """
         NULL = subparser.add_parser('NULL', help='Null Function, does not apply any function')
         DataFunction.clArgsTail(NULL)
 
@@ -145,15 +157,18 @@ class DataFunction:
     @staticmethod
     def clArgsTail(parser):
         """
-        fn clArgsTail (tail-end command-line arguments)
+        Tail-end command-line arguments
 
         Command-line arguments for the parser that are added to the end of each function.
-            Do not overload
+        
+        Note
+        ----
+        Do not overload!
+        
         Parameters
         ----------
-
-        Returns
-        -------
+        parser : ArgumentParser
+            Parser to add tail-end arguments to
         """
         from sys import stdout
         import os
@@ -178,33 +193,30 @@ class DataFunction:
     #  Proc Functions  #
     ####################
         
-    def initialize(self, data):
+    def initialize(self, data : DataFrame):
         """
-        fn initialize
-
         Initialization follows the following steps:
-            -Handle function specific arguments
-            -Update any header values before any calculations occur
-                that are independent of the data, such as flags and parameter storage
+            - Handle function specific arguments
+            - Update any header values before any calculations occur
+              that are independent of the data, such as flags and parameter storage
+
 
         Parameters
         ----------
         data : DataFrame
-            target data to manipulate 
-        None
+            Target data to manipulate 
         """
         pass
 
-    def updateHeader(self, data):
+    def updateHeader(self, data : DataFrame):
         """
-        fn updateHeader
-
         Update the header following the main function's calculations.
-            Typically this includes header fields that relate to data size.
+        Typically this includes header fields that relate to data size.
 
         Parameters
         ----------
-        None
+        data : DataFrame
+            Target data frame containing header to update
         """
         # Update ndsize here 
         pass

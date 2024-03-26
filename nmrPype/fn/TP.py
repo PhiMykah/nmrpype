@@ -7,6 +7,9 @@ from enum import Enum
 from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 
+# type Imports/Definitions
+from ..utils import DataFrame
+
 class PHASE(Enum):
     FD_MAGNITUDE = 0
     FD_TIPPI = 1
@@ -16,9 +19,22 @@ class PHASE(Enum):
 
 class Transpose(Function):
     """
-    class Transpose
-
     Template Data Function object for transposition operations
+
+    Parameters
+    ----------
+
+    tp_noord : bool
+        Do not change header FDORDER1 and 2.
+    
+    tp_exch : bool
+        Exchange header parameters for the two dimensions.
+    
+    tp_minMax : bool
+        Update FDMIN and FDMAX.
+    
+    tp_axis : int
+        Indirect dimension axis to be swapped with direct dimension
     """
     def __init__(self,
                 tp_noord: bool = False, tp_exch : bool = False,
@@ -46,23 +62,25 @@ class Transpose(Function):
     # Multiprocessing #
     ###################
         
-    def parallelize(self, array) -> np.ndarray:
+    def parallelize(self, array : np.ndarray) -> np.ndarray:
         """
-        fn parallelize
-
-        General Multiprocessing implementation for function, utilizing cores and threads
+        Blanket transpose parralelize implementation for function, utilizing cores and threads. 
+        Function Should be overloaded if array_shape changes in processing or process requires more args.
         
-        Should be overloaded if array_shape changes in processing or process requires more args
+        Note
+        ----
+        Multiprocessing and mulithreading transpose is likely slower due to stitching.
 
-        Parameters:
-        array : np.ndarray
+        Parameters
+        ----------
+        array : ndarray
             Target data array to process with function
 
-        Returns:
-        new_array : np.ndarray
+        Returns
+        -------
+        new_array : ndarray
             Updated array after function operation
         """
-        # Multiprocessing and mulithreading transpose is likely slower due to stitching
         return(self.process(array))
     
 
@@ -72,19 +90,17 @@ class Transpose(Function):
         
     def process(self, array : np.ndarray) -> np.ndarray:
         """
-        fn process
-
         Process is called by function's run, returns modified array when completed.
         Likely attached to multiprocessing for speed
 
         Parameters
         ----------
-        array : np.ndarray
+        array : ndarray
             array to process
 
         Returns
         -------
-        np.ndarray
+        ndarray
             modified array post-process
         """
         
@@ -104,13 +120,14 @@ class Transpose(Function):
     @staticmethod
     def clArgs(subparser):    
         """
-        fn clArgs (FT command-line arguments)
+        Transpose command-line arguments
 
-        Adds Fourier Transform parser to the subparser, with its corresponding default args
-        Called in nmrParse.py
+        Adds Transpose parser to the subparser, with its corresponding default args.
+        Called by :py:func:`nmrPype.parse.parser`
 
-        Destinations are formatted typically by {function}_{argument}
-            e.g. the zf_pad destination stores the pad argument for the zf function
+        Note
+        ----
+        Command-line arguments function is only called once for all transpose types
 
         Parameters
         ----------
@@ -158,9 +175,7 @@ class Transpose(Function):
     @staticmethod
     def headerArgsTP(parser):
         """
-        fn headerArgsTP 
-
-        Parse commands related to header adjustment
+        Helper function to parse commands related to header adjustment.
         """
         parser.add_argument('-noord', action='store_true',
                         dest='tp_noord', help='No Change to Header Orders')
@@ -172,22 +187,19 @@ class Transpose(Function):
     #  Proc Functions  #
     ####################
 
-    def initialize(self, data):
+    def initialize(self, data : DataFrame):
         """
-        fn initialize
-
         Initialization follows the following steps:
-            -Handle function specific arguments
-            -Update any header values before any calculations occur
-                that are independent of the data, such as flags and parameter storage
+            - Handle function specific arguments
+            - Update any header values before any calculations occur
+              that are independent of the data, such as flags and parameter storage
 
+              
         Parameters
         ----------
         data : DataFrame
-            target data to manipulate 
-        None
+            Target data frame to initialize
         """
-
         # Check if allowed to switch dimension orders
         if (self.tp_noord == False):
             # Swap dimension orders
@@ -207,16 +219,15 @@ class Transpose(Function):
         data.setParam('FDTRANSPOSED', isTransposed)
 
 
-    def updateHeader(self, data):
+    def updateHeader(self, data : DataFrame):
         """
-        fn updateHeader
-
         Update the header following the main function's calculations.
-            Typically this includes header fields that relate to data size.
+        Typically this includes header fields that relate to data size.
 
         Parameters
         ----------
-        None
+        data: DataFrame
+            Data frame containing header that will be updated
         """
         # Update ndsize here  
         shape = data.array.shape
@@ -228,14 +239,47 @@ class Transpose(Function):
         slices = np.prod(shape[:-1])
 
         data.setParam('FDSLICECOUNT', float(slices))
-        pass
 
 
 class Transpose2D(Transpose):
     """
-    class Transpose2D
-
     Data Function object for 2D transposition operations
+    
+    tp_hyper : bool 
+        Transpose in hypercomplex transpose mode
+
+    tp_nohyper : bool
+        Suppress hypercomplex mode from occuring
+
+    tp_auto : bool
+        Automatically determine transposition mode
+
+    tp_noauto : bool
+        Choose transposition mode in command-line
+
+    tp_nohdr : bool
+        Do not update transpose value in header
+        
+    tp_noord : bool
+        Do not change header FDORDER1 and 2.
+    
+    tp_exch : bool
+        Exchange header parameters for the two dimensions.
+    
+    tp_minMax : bool
+        Update FDMIN and FDMAX.
+    
+    tp_axis : int
+        Indirect dimension axis to be swapped with direct dimension
+        
+    mp_enable : bool
+        Enable multiprocessing
+
+    mp_proc : int
+        Number of processors to utilize for multiprocessing
+
+    mp_threads : int
+        Number of threads to utilize per process
     """
     def __init__(self,
                  tp_hyper : bool = True, tp_nohyper : bool = False, 
@@ -265,21 +309,19 @@ class Transpose2D(Transpose):
     # Default Processing #
     ######################
     
-    def process(self, array):
+    def process(self, array : np.ndarray):
         """
-        fn process
-
         Process is called by function's run, returns modified array when completed.
         Likely attached to multiprocessing for speed
 
         Parameters
         ----------
-        array : np.ndarray
+        array : ndarray
             array to process
 
         Returns
         -------
-        np.ndarray
+        ndarray
             modified array post-process
         """
 
@@ -295,16 +337,15 @@ class Transpose2D(Transpose):
             return self.matrixTP(array, self.xDim, self.yDim)
     
 
-    def hyperTP(self, array):
+    def hyperTP(self, array : np.ndarray):
         """
-        fn hyperTP
-
         Performs a hypercomplex transposition
 
         Parameters
         ----------
         array : ndarray
             N-dimensional array to swap first two dimensions
+
         Returns
         -------
         new_array : ndarray
@@ -350,19 +391,18 @@ class Transpose2D(Transpose):
     #  Proc Functions  #
     ####################
 
-    def initialize(self, data):
+    def initialize(self, data : DataFrame):
         """
-        fn initialize
-
         Initialization follows the following steps:
-            -Handle function specific arguments
-            -Update any header values before any calculations occur
-                that are independent of the data, such as flags and parameter storage
+            - Handle function specific arguments
+            - Update any header values before any calculations occur
+              that are independent of the data, such as flags and parameter storage
 
+              
         Parameters
         ----------
         data : DataFrame
-            target data to manipulate 
+            Target data frame to initialize
         """
         xDim = 1
         yDim = 2
@@ -383,28 +423,65 @@ class Transpose2D(Transpose):
             data.setParam('NDQUADFLAG', float(yID), xDim)
             data.setParam('NDQUADFLAG', float(xID), yDim)
 
-        super().initialize(data)
+        # Check if allowed to switch dimension orders
+        if (self.tp_noord == False):
+            # Swap dimension orders
+            dimOrder1 = data.getParam('FDDIMORDER1')
+            dimOrder2 = data.getParam(f'FDDIMORDER{str(self.tp_axis)}')
+
+            data.setParam('FDDIMORDER1', dimOrder2)
+            data.setParam(f'FDDIMORDER{str(self.tp_axis)}', dimOrder1)
+
+            # Swap in dim order
+            data.header['FDDIMORDER'][0] = dimOrder2
+            data.header['FDDIMORDER'][self.tp_axis-1] = dimOrder1
+
+        # Check if allowed to switch transpose value
+        if (self.tp_nohdr == False):
+            isTransposed = data.getParam('FDTRANSPOSED')
+            isTransposed = 0 if isTransposed else 1
+            data.setParam('FDTRANSPOSED', isTransposed)
         
 
-    def updateHeader(self, data):
+    def updateHeader(self, data : DataFrame):
         """
-        fn updateHeader
-
         Update the header following the main function's calculations.
-            Typically this includes header fields that relate to data size.
+        Typically this includes header fields that relate to data size.
 
         Parameters
         ----------
-        None
+        data : DataFrame
+            Target data frame containing header to update
         """
         super().updateHeader(data)
 
 
 class Transpose3D(Transpose):
     """
-    class Transpose3D
-
     Data Function object for 3D transposition operations
+
+    Parameters
+    ----------
+    tp_noord : bool
+        Do not change header FDORDER1 and 2.
+    
+    tp_exch : bool
+        Exchange header parameters for the two dimensions.
+    
+    tp_minMax : bool
+        Update FDMIN and FDMAX.
+    
+    tp_axis : int
+        Indirect dimension axis to be swapped with direct dimension
+        
+    mp_enable : bool
+        Enable multiprocessing
+
+    mp_proc : int
+        Number of processors to utilize for multiprocessing
+
+    mp_threads : int
+        Number of threads to utilize per process
     """
     def __init__(self, tp_noord: bool = False,
                  tp_exch : bool = False, tp_minMax: bool = False,
@@ -425,22 +502,9 @@ class Transpose3D(Transpose):
     # Default Processing #
     ######################
 
-    def process(self, array):
+    def process(self, array : np.ndarray):
         """
-        fn process
-
-        Process is called by function's run, returns modified array when completed.
-        Likely attached to multiprocessing for speed
-
-        Parameters
-        ----------
-        array : np.ndarray
-            array to process
-
-        Returns
-        -------
-        np.ndarray
-            modified array post-process
+        See :py:func:`nmrPype.fn.function.DataFunction.process` for documentation
         """
 
         # Ensure that there are at least 3 dimensions
@@ -452,14 +516,13 @@ class Transpose3D(Transpose):
         
     def TP3D(self, array : np.ndarray) -> np.ndarray:
         """
-        fn TP3D
-
         Performs a hypercomplex transposition on 3D Data
 
         Parameters
         ----------
         array : ndarray
             N-dimensional array to swap first and third dimensions
+            
         Returns
         -------
         new_array : ndarray
@@ -505,19 +568,18 @@ class Transpose3D(Transpose):
     #  Proc Functions  #
     ####################
 
-    def initialize(self, data):
+    def initialize(self, data : DataFrame):
         """
-        fn initialize
-
         Initialization follows the following steps:
-            -Handle function specific arguments
-            -Update any header values before any calculations occur
-                that are independent of the data, such as flags and parameter storage
+            - Handle function specific arguments
+            - Update any header values before any calculations occur
+              that are independent of the data, such as flags and parameter storage
 
+              
         Parameters
         ----------
         data : DataFrame
-            target data to manipulate 
+            Target data frame to initialize
         """
         # Designate proper dimensions based on dim order
         xDim = 1
@@ -541,16 +603,15 @@ class Transpose3D(Transpose):
         super().initialize(data)
 
 
-    def updateHeader(self, data):
+    def updateHeader(self, data : DataFrame):
         """
-        fn updateHeader
-
         Update the header following the main function's calculations.
-            Typically this includes header fields that relate to data size.
+        Typically this includes header fields that relate to data size.
 
         Parameters
         ----------
-        None
+        data: DataFrame
+            Data frame containing header that will be updated
         """
         # Update ndsize here  
         pass
@@ -558,9 +619,30 @@ class Transpose3D(Transpose):
 
 class Transpose4D(Transpose):
     """
-    class Transpose4D
-
     Data Function object for 4D transposition operations
+
+    Parameters
+    ----------
+    tp_noord : bool
+        Do not change header FDORDER1 and 2.
+    
+    tp_exch : bool
+        Exchange header parameters for the two dimensions.
+    
+    tp_minMax : bool
+        Update FDMIN and FDMAX.
+    
+    tp_axis : int
+        Indirect dimension axis to be swapped with direct dimension
+        
+    mp_enable : bool
+        Enable multiprocessing
+
+    mp_proc : int
+        Number of processors to utilize for multiprocessing
+
+    mp_threads : int
+        Number of threads to utilize per process
     """
     def __init__(self, data, tp_noord: bool = False,
                  tp_exch : bool = False, tp_minMax: bool = False,
@@ -595,33 +677,31 @@ class Transpose4D(Transpose):
     #  Proc Functions  #
     ####################
 
-    def initialize(self, data):
+    def initialize(self, data : DataFrame):
         """
-        fn initialize
-
         Initialization follows the following steps:
-            -Handle function specific arguments
-            -Update any header values before any calculations occur
-                that are independent of the data, such as flags and parameter storage
+            - Handle function specific arguments
+            - Update any header values before any calculations occur
+              that are independent of the data, such as flags and parameter storage
 
+              
         Parameters
         ----------
         data : DataFrame
-            target data to manipulate 
+            Target data frame to initialize
         """
         super().initialize(data)
 
 
-    def updateHeader(self, data):
+    def updateHeader(self, data : DataFrame):
         """
-        fn updateHeader
-
         Update the header following the main function's calculations.
-            Typically this includes header fields that relate to data size.
+        Typically this includes header fields that relate to data size.
 
         Parameters
         ----------
-        None
+        data : DataFrame
+            Target data frame containing header to update
         """
         # Update ndsize here  
         pass

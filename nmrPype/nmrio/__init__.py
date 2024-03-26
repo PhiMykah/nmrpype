@@ -25,15 +25,20 @@ all.extend(m.__name__ for m in w)
 
 __all__ = all
 
+# typing imports
+from ..utils import DataFrame
+
+# type Definitions
+type BufferStream = io.TextIOWrapper | io.BufferedReader
+type WriteStream = io.TextIOWrapper | io.BufferedWriter
+
 ######################
 # Reading Operations #
 ######################
 
 def readFromFile(file : str) -> tuple[dict,np.ndarray]:
     """
-    fn readFromFile
-
-    set the header object and data array based on the input file
+    Set the header object and data array based on the input file
 
     Parameters
     ----------
@@ -60,17 +65,15 @@ def readFromFile(file : str) -> tuple[dict,np.ndarray]:
     return dic, data
 
 
-def readFromBuffer(buffer) -> tuple[dict,np.ndarray]:
+def readFromBuffer(buffer : BufferStream) -> tuple[dict,np.ndarray]:
     """
-    fn readFromBuffer
-
-    set the header object and data array based on the input file
+    Set the header object and data array based on the input file
 
     Parameters
     ----------
-    buffer : sys.stdin or sys.stin.buffer
-        input buffer to read from, read from stdin if the
-            designated stdin does not have buffer
+    buffer : BufferStream [io.TextIOWrapper or io.BufferedReader]
+        input buffer to read from, read from standard input if the
+        designated standard input does not have a buffer
 
     Returns
     -------
@@ -96,12 +99,10 @@ def readFromBuffer(buffer) -> tuple[dict,np.ndarray]:
 # Writing Operations #
 ######################
 
-def writeToFile(data, output : str, overwrite : bool) -> int:
+def writeToFile(data : DataFrame, output : str, overwrite : bool) -> int:
     """
-    fn writeToFile
-
     Utilizes modified nmrglue code to output the Dataframe to a file
-        in a NMR data format.
+    in a NMR data format.
 
     Parameters
     ----------
@@ -114,7 +115,8 @@ def writeToFile(data, output : str, overwrite : bool) -> int:
 
     Returns
     -------
-    Integer exit code (e.g. 0 success 1 fail)
+    int
+        Integer exit code (e.g. 0 success 1 fail)
     """
     # Set pipe count to zero for writing out to file
     data.updatePipeCount(reset=True)
@@ -129,26 +131,25 @@ def writeToFile(data, output : str, overwrite : bool) -> int:
     return 0
 
 
-def writeToBuffer(data, output, overwrite : bool) -> int:
+def writeToBuffer(data : DataFrame, output : WriteStream, overwrite : bool) -> int:
     """
-    fn writeToBuffer
-
     Utilizes modified nmrglue code to output the Dataframe
-        to standard output or standard output buffer
-        in a NMR data format.
+    to standard output or standard output buffer
+    in a NMR data format.
 
     Parameters
     ----------
     data : DataFrame
         DataFrame object to write out
-    output : sys.stdin or sys.stdin.buffer
+    output : WriteStream [io.TextIOWrapper | .BufferedWriter]
         Output stream
     overwrite : bool
         Choose whether or not to overwrite existing files for file output
 
     Returns
     -------
-    Integer exit code (e.g. 0 success 1 fail)
+    int
+        Integer exit code (e.g. 0 success 1 fail)
     """
     # Increment pipe count when outputting to buffer
     data.updatePipeCount()
@@ -195,24 +196,18 @@ def writeToBuffer(data, output, overwrite : bool) -> int:
 
     return 0
 
-def writeHeaderToBuffer(output, header : dict) -> int:
+def writeHeaderToBuffer(output : WriteStream, header : dict):
     from ..utils.fdata import dic2fdata
     """
-    fn writeHeaderToBuffer
-
     Writes the header to the standard output as bytes
 
     Parameters
     ----------
-    output : sys.stdout or sys.stdout.buffer
+    output : WriteStream
         stream to send the header to
     dic : Dict
         Header represented as dictionary
             to write to the buffer
-
-    Returns
-    ----------
-    Returns input header to binary output stream
     """
     try:
         # create the fdata array
@@ -232,23 +227,17 @@ def writeHeaderToBuffer(output, header : dict) -> int:
         catchError(e, new_e=FileIOError, msg="An exception occured when attempting to write header to buffer!")
 
 
-def writeDataToBuffer(output, array : np.ndarray) -> int:
+def writeDataToBuffer(output : WriteStream, array : np.ndarray):
     from ..utils.fdata import append_data
     """
-    fn writeToBuffer
-
-    Writes the nmrData and its header to the standard output as bytes
+    Writes the NMR data and its header to the standard output as bytes
 
     Parameters
     ----------
-    outFileName : str
-        Output file or stream to send the header and nmr data to
-    data : ndarray
-        Nd
-
-    Returns
-    ----------
-    Returns input data to binary output stream
+    output : WriteStream
+        stream to send the NMR data to
+    array : np.ndarray
+        NMR data represented by an ndarray
     """
     try:
         """

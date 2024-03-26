@@ -6,18 +6,31 @@
 
 import numpy as np
 import struct
-import os
+import os, io
 from warnings import warn
 from ...nmrio.fileiobase import *
 
+# Type definitions
+type InputFile = str | os.pathlib.Path | bytes | io.BytesIO
 
-def fdata2dic(fdata):
+def fdata2dic(fdata : np.ndarray) -> dict:
     """
     Convert a fdata array to fdata dictionary.
 
     Converts the raw 512x4-byte NMRPipe header into a python dictionary
     with keys as given in fdatap.h
+    
+    See :py:func:`dic2fdata` for the inverse function.
 
+    Parameters
+    ----------
+    fdata : ndarray
+        512x4-byte array header
+
+    Returns
+    -------
+    dic : dict
+        python dictionary representation of NMRPipe header
     """
     dic = dict()
 
@@ -45,9 +58,20 @@ def fdata2dic(fdata):
     return dic
 
 
-def dic2fdata(dic):
+def dic2fdata(dic : dict) -> np.ndarray:
     """
     Converts a NMRPipe dictionary into an array.
+    See :py:func:`fdata2dic` for the inverse function. 
+
+    Parameters
+    ----------
+    dic : dict
+        python dictionary representation of NMRPipe header
+
+    Returns
+    -------
+    fdata : ndarray
+        512x4-byte array header   
     """
     # A 512 4-byte array to hold the nmrPipe header data
     fdata = np.zeros(512, 'float32')
@@ -90,9 +114,19 @@ def dic2fdata(dic):
 #################################
 
 
-def get_fdata(filename):
+def get_fdata(filename : InputFile) -> np.ndarray:
     """
     Get an array of length 512-bytes holding NMRPipe header.
+
+    Parameters
+    ----------
+    filename : InputFile [bytes/string/path-like]
+        Input stream to read fdata from
+
+    Returns
+    -------
+    fdata : ndarray
+        512x4-byte numpy array for header
     """
     if type(filename) is bytes:
         fdata = np.frombuffer(filename, dtype=np.float32, count=512)
@@ -104,9 +138,21 @@ def get_fdata(filename):
     return fdata
 
 
-def get_fdata_data(filename):
+def get_fdata_data(filename : InputFile) -> tuple[np.ndarray, np.ndarray]:
     """
-    Get fdata and data array, return (fdata, data)
+    Get fdata and data array one after another 
+
+    Parameters
+    ----------
+    filename : InputFile [bytes/string/path-like]
+        Input stream to read fdata from
+
+    Returns
+    -------
+    fdata : ndarray
+        512x4-byte header array
+    data : ndarray
+        1D array representation of NMR data 
     """
     if type(filename) is bytes:
         data = np.frombuffer(filename, dtype=np.float32)
@@ -118,9 +164,22 @@ def get_fdata_data(filename):
     return data[:512], data[512:]
 
 
-def reshape_data(data, shape):
+def reshape_data(data : np.ndarray, shape : tuple) -> np.ndarray:
     """
     Reshape data or return 1D data after warning.
+
+    Parameters
+    ----------
+    data : ndarray
+        1D numpy array data
+
+    shape : tuple
+        Target reshape
+
+    Returns
+    -------
+    ndarray
+        Data shaped to match input shape
     """
     try:
         return data.reshape(shape)
@@ -133,45 +192,74 @@ def reshape_data(data, shape):
             return data
 
 
-def unshape_data(data):
+def unshape_data(data : np.ndarray) -> np.ndarray:
     """
     Return 1D version of data.
     """
     return data.flatten()
 
 
-def unappend_data(data):
+def unappend_data(data : np.ndarray) -> np.ndarray:
     """
     Return complex data with last axis (-1) unappended.
 
     Data should have imaginary data vector appended to real data vector
 
+    See :py:func:`append_data` for the inverse operation.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        NMR data with complex direct dimension concatenating real and imaginary points
+    
+    Returns
+    -------
+    ndarray
+        NMR data with direct dimension represented as complex numpy values
     """
     h = int(data.shape[-1] / 2)
     return np.array(data[..., :h] + data[..., h:] * 1.j, dtype="complex64")
 
 
-def append_data(data):
+def append_data(data : np.ndarray) -> np.ndarray:
     """
     Return data with last axis (-1) appended.
 
     Data should be complex
+    
+    See :py:func:`unappend_data` for the inverse operation.
 
+    Parameters
+    ----------
+    data : np.ndarray
+        NMR data with complex direct dimension represented as complex numpy values
+
+    Returns
+    -------
+    ndarray
+        NMR data with complex direct dimension concatenating real and imaginary points
     """
     return np.concatenate((data.real, data.imag), axis=-1)
 
 
-def find_shape(dic):
+def find_shape(dic : dict) -> tuple:
     """
     Find the shape (tuple) of data in a NMRPipe file from parameters.
-
-    1-tuple is returned for 1D data, 2-tuple for 2D and non-stream 3D/4D data,
-    3-tuple or 4-tuple for stream 3D/4D data.
 
     The last dimension of the tuple is length of the data in the file, the
     actual length of the data matrix may be half of this if the data is
     complex.
 
+    Parameters
+    ----------
+    dic : dict
+        NMR data header as python dictionary for obtaining correct shape
+    Returns
+    -------
+    tuple
+        1-tuple is returned for 1D data,
+        2-tuple for 2D and non-stream 3D/4D data,
+        3-tuple or 4-tuple for stream 3D/4D data.
     """
     if dic["FDDIMCOUNT"] == 1:  # 1D Data
         if dic["FDF2QUADFLAG"] == 1:
@@ -214,7 +302,7 @@ def find_shape(dic):
 ###############
 
 
-def put_fdata(fh, fdata):
+def put_fdata(fh, fdata : np.ndarray):
     """
     Put NMR data, fdata, to a NMRPipe file described by file object fh.
     """
@@ -223,7 +311,7 @@ def put_fdata(fh, fdata):
     fh.write(fdata.tobytes())
 
 
-def put_trace(fh, trace):
+def put_trace(fh, trace : np.ndarray):
     """
     Put a trace (real or complex) to NMRPipe file described by file object fh.
     """

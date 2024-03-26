@@ -5,11 +5,23 @@ import numpy as np
 from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 
+# type Imports/Definitions
+from ..utils import DataFrame
+
 class DeleteImaginary(Function):
     """
-        class ZeroFill
+    Data Function object for deleting imaginary values of NMR data.
 
-        Data Function object for performing a zero-fill on the data
+    Parameters
+    ----------
+    mp_enable : bool
+        Enable multiprocessing
+
+    mp_proc : int
+        Number of processors to utilize for multiprocessing
+
+    mp_threads : int
+        Number of threads to utilize per process
     """
     def __init__(self, mp_enable = False, mp_proc = 0, mp_threads = 0):
         self.mp = [mp_enable, mp_proc, mp_threads]
@@ -20,7 +32,10 @@ class DeleteImaginary(Function):
     # Function #
     ############
     
-    def run(self, data) -> int:
+    def run(self, data : DataFrame) -> int:
+        """
+        See :py:func:`nmrPype.fn.function.DataFunction.run` for documentation
+        """
         # check if direct dimension is already real
         currDim = data.getCurrDim()
         quadFlag = data.getParam('NDQUADFLAG', currDim)
@@ -68,20 +83,7 @@ class DeleteImaginary(Function):
     
     def process(self, array: np.ndarray) -> np.ndarray:
         """
-        fn process
-
-        Process is called by function's run, returns modified array when completed.
-        Likely attached to multiprocessing for speed
-
-        Parameters
-        ----------
-        array : np.ndarray
-            array to process
-
-        Returns
-        -------
-        np.ndarray
-            modified array post-process
+        See :py:func:`nmrPype.fn.function.DataFunction.process` for documentation
         """
         dataLength = array.shape[-1]
 
@@ -105,7 +107,19 @@ class DeleteImaginary(Function):
     #  Proc Functions  #
     ####################
         
-    def initialize(self, data):
+    def initialize(self, data : DataFrame):
+        """
+        Initialization follows the following steps:
+            - Handle function specific arguments
+            - Update any header values before any calculations occur
+              that are independent of the data, such as flags and parameter storage
+
+              
+        Parameters
+        ----------
+        data : DataFrame
+            Target data to manipulate 
+        """
         currDim = data.getCurrDim()
         shape = data.array.shape 
 
@@ -128,16 +142,15 @@ class DeleteImaginary(Function):
         data.setParam('FDSLICECOUNT', float(slices))
 
 
-    def updateHeader(self, data):
+    def updateHeader(self, data : DataFrame):
         """
-        fn updateHeader
-
         Update the header following the main function's calculations.
-            Typically this includes header fields that relate to data size.
+        Typically this includes header fields that relate to data size.
 
         Parameters
         ----------
-        None
+        data : DataFrame
+            Target data frame containing header to update
         """
         shape = data.array.shape
         # Check if 1D or ND data

@@ -5,11 +5,63 @@ import numpy as np
 from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 
+# type Imports/Definitions
+from ..utils import DataFrame
+
 class SineBell(Function):
     """
-    class SineBell
-
     Data Function object for performing a Sinusoidal Filter on the data.
+
+    Parameters
+    ----------
+    sp_off : float
+        PI value starting offset
+
+    sp_end : float
+        PI value ending offset
+
+    sp_pow : float
+        Sine function exponent
+
+    sp_size : int
+        Span of data to apply sinusoidal filter to
+        
+    sp_start : int
+        Starting point of sinusoidal filter window
+
+    sp_c : float
+        Scaling value for the first point of the sinusoidal filter window
+        (e.g. scale first point by 0.5 or 2.0)
+
+    sp_one : bool
+        Set all points outside of sinusoidal filter window to 1 instead of 0
+
+    sp_hdr : bool
+        Use constant values from the header
+
+    sp_inv : bool
+        Invert the sinusoidal filter window
+
+    sp_df : bool
+        Adjust PI value starting offset and gaussian offset for Digital Oversampling.
+
+    sp_elb : float
+        Add an exponential filter by value in Hz
+
+    sp_glb : float 
+        Add a gaussian filter by value in Hz
+
+    sp_goff : float
+        Set gausian offset, within 0 to 1.
+
+    mp_enable : bool
+        Enable multiprocessing
+
+    mp_proc : int
+        Number of processors to utilize for multiprocessing
+
+    mp_threads : int
+        Number of threads to utilize per process
     """
     def __init__(self, sp_off : float = 0.0, sp_end : float = 1.0,
                  sp_pow : float = 1.0, sp_size : int = 0, sp_start : int = 1,
@@ -47,7 +99,17 @@ class SineBell(Function):
     # Function #
     ############
         
-    def run(self, data) -> int:
+    def run(self, data : DataFrame) -> int:
+        """
+        Sine Bell's run utilizes the generic function run but saves computation time by
+        skipping the running step for trivial constants.
+
+        For example, a power of 0 for the sinusoidal filter will return the data unchanged.
+
+        See Also
+        --------
+        nmrPype.fn.function.DataFunction.run : Default run function
+        """
         # Return unmodified array to save time if computation would return self
         if (self.sp_pow == 0.0):
             return 0
@@ -60,7 +122,10 @@ class SineBell(Function):
     # Multiprocessing #
     ###################
 
-    def parallelize(self, array) -> np.ndarray:
+    def parallelize(self, array : np.ndarray) -> np.ndarray:
+        """
+        See :py:func:`nmrPype.fn.function.DataFunction.parallelize` for documentation.
+        """
         # Set length of each vector
         dataLength = array.shape[-1]
 
@@ -92,20 +157,7 @@ class SineBell(Function):
         
     def process(self, array: np.ndarray) -> np.ndarray:
         """
-        fn process
-
-        Process is called by function's run, returns modified array when completed.
-        Likely attached to multiprocessing for speed
-
-        Parameters
-        ----------
-        array : np.ndarray
-            array to process
-
-        Returns
-        -------
-        np.ndarray
-            modified array post-process
+        See :py:func:`nmrPype.fn.function.DataFunction.process` for documentation
         """
         dataLength = array.shape[-1]
         
@@ -134,8 +186,6 @@ class SineBell(Function):
     def applyFunc(self, array : np.ndarray, a1 : float, a2 : float,
                   a3 : float, fps : int, df : float) -> np.ndarray:
         """
-        def applyFunc
-
         Apply sine bell to array
 
         Parameters
@@ -153,6 +203,11 @@ class SineBell(Function):
             first point scale to apply
         df : float
             digital filter value
+
+        Returns
+        -------
+        new_array : np.ndarray
+            Array with sinusoidal filter
         """
         if array.ndim == 1:
             tSize = len(array)
@@ -205,13 +260,8 @@ class SineBell(Function):
     @staticmethod
     def clArgs(subparser):
         """
-        fn commands
-
-        Adds Phase Correction parser to the subparser, with its corresponding args
-        Called in nmrParse.py
-
-        Destinations are formatted typically by {function}_{argument},
-            e.g. the sp_off destination stores the off value for the sp function
+        Adds Sine Bell parser to the subparser, with its corresponding args
+        Called by :py:func:`nmrPype.parse.parser`.
 
         Parameters
         ----------
@@ -255,20 +305,18 @@ class SineBell(Function):
     #  Proc Functions  #
     ####################
         
-    def initialize(self, data):
+    def initialize(self, data : DataFrame):
         """
-        fn initialize
-
         Initialization follows the following steps:
-            -Handle function specific arguments
-            -Update any header values before any calculations occur
-                that are independent of the data, such as flags and parameter storage
+            - Handle function specific arguments
+            - Update any header values before any calculations occur
+              that are independent of the data, such as flags and parameter storage
 
+              
         Parameters
         ----------
         data : DataFrame
             target data to manipulate 
-        None
         """
         # Initialize Header Params
         currDim = data.getCurrDim()
@@ -301,16 +349,15 @@ class SineBell(Function):
         data.setParam('NDAPODCODE', float(1), currDim)
 
 
-    def updateHeader(self, data):
+    def updateHeader(self, data : DataFrame):
         """
-        fn updateHeader
-
         Update the header following the main function's calculations.
-            Typically this includes header fields that relate to data size.
+        Typically this includes header fields that relate to data size.
 
         Parameters
         ----------
-        None
+        data : DataFrame
+            Target data frame containing header to update
         """
         # Update ndsize here  
         pass

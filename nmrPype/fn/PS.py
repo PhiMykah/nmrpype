@@ -6,11 +6,47 @@ import operator
 from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 
+# type Imports/Definitions
+from ..utils import DataFrame
+
 class PhaseCorrection(Function):
     """
-    class PhaseCorrection
-
     Data Function object for performing a Phase Correction on the data.
+
+    Parameters
+    ----------
+    ps_p0 : float
+        Zero-order phase value in degrees
+
+    ps_p1 : float
+        First-order phase value in degrees
+
+    ps_inv : bool
+        Perform an inverse phase correction on the data
+
+    ps_hdr : bool
+        Use constant values from the header
+
+    ps_noup : bool
+        Don't update the header with the used constants
+
+    ps_df : bool
+        Adjust the p1 value for digital oversampling
+
+    ps_ht : bool
+        Reconstruct Imaginaries via Hilbert Transform
+
+    ps_zf : bool
+        Use Temporary Zero Fill for the Hilbert Transform.
+
+    mp_enable : bool
+        Enable multiprocessing
+
+    mp_proc : int
+        Number of processors to utilize for multiprocessing
+
+    mp_threads : int
+        Number of threads to utilize per process
     """
     def __init__(self, ps_p0 : float = 0, ps_p1 : float = 0,
                  ps_inv : bool = False, ps_hdr : bool = False, 
@@ -45,19 +81,19 @@ class PhaseCorrection(Function):
     
     def parallelize(self, array: np.ndarray) -> np.ndarray:
         """
-        fn parallelize
-
         Multiprocessing implementation for function to properly optimize for hardware
 
-        Parameters:
-        array : np.ndarray
+        Parameters
+        ----------
+        array : ndarray
             Target data array to process with function
 
         ndQuad : int
             NDQUADFLAG header value
 
-        Returns:
-        new_array : np.ndarray
+        Returns
+        -------
+        new_array : ndarray
             Updated array after function operation
         """
         # Save array shape for reshaping later
@@ -80,6 +116,19 @@ class PhaseCorrection(Function):
         return new_array
 
     def phaseCorrect(self, array: np.ndarray) -> np.ndarray:
+        """
+        Phase correction helper function for multiprocessing
+
+        Parameters
+        ----------
+        array : ndarray
+            Target data array to phase correct
+
+        Returns
+        -------
+        new_array : ndarray
+            Updated array after function operation
+        """
         # Set arguments for function
         args = [(a, self.phase) for a in array]
         with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
@@ -94,10 +143,7 @@ class PhaseCorrection(Function):
 
     def process(self, array : np.ndarray) -> np.ndarray:
         """
-        fn process
-
-        Process is called by function's run, returns modified array when completed.
-        Likely attached to multiprocessing for speed
+        See :py:func:`nmrPype.fn.function.DataFunction.process` for documentation
         """
         # Check for parallelization
 
@@ -116,13 +162,8 @@ class PhaseCorrection(Function):
     @staticmethod
     def clArgs(subparser):
         """
-        fn clArgs (Template command-line arguments)
-
-        Adds function parser to the subparser, with its corresponding default args
-        Called in nmrParse.py
-
-        Destinations are formatted typically by {function}_{argument}
-            e.g. the zf_pad destination stores the pad argument for the zf function
+        Adds Phase Correction parser to the subparser, with its corresponding default args
+        Called by :py:func:`nmrPype.parse.parser`.
 
         Parameters
         ----------
@@ -150,20 +191,20 @@ class PhaseCorrection(Function):
     #  Proc Functions  #
     ####################
         
-    def initialize(self, data):
+    def initialize(self, data : DataFrame):
         """
         fn initialize
 
         Initialization follows the following steps:
-            -Handle function specific arguments
-            -Update any header values before any calculations occur
-                that are independent of the data, such as flags and parameter storage
+            - Handle function specific arguments
+            - Update any header values before any calculations occur
+              that are independent of the data, such as flags and parameter storage
 
+              
         Parameters
         ----------
         data : DataFrame
             target data to manipulate 
-        None
         """
         # Obtain size for phase correction from data
         size = data.array.shape[-1*data.getDimOrder(1)]
@@ -191,16 +232,15 @@ class PhaseCorrection(Function):
             data.setParam('NDP1', float(self.ps_p1), currDim)
         
 
-    def updateHeader(self, data):
+    def updateHeader(self, data : DataFrame):
         """
-        fn updateHeader
-
         Update the header following the main function's calculations.
-            Typically this includes header fields that relate to data size.
+        Typically this includes header fields that relate to data size.
 
         Parameters
         ----------
-        None
+        data : DataFrame
+            Target data frame containing header to update
         """
-        # Update ndsize here 
+        # Update ndsize here  
         pass

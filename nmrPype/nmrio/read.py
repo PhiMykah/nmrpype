@@ -12,7 +12,6 @@ import numpy as np
 
 
 def read(filename):
-    from ..utils.fdata import get_fdata, fdata2dic
     """
     Read a NMRPipe file.
 
@@ -47,6 +46,8 @@ def read(filename):
     write : Write a NMRPipe data to file(s).
 
     """
+    from ..utils.fdata import get_fdata, fdata2dic
+
     if (type(filename) is bytes):
         filemask = None
     elif hasattr(filename, "read"):
@@ -85,7 +86,6 @@ def read(filename):
 
 
 def read_lowmem(filename):
-    from ..utils.fdata import get_fdata, fdata2dic
     """
     Read a NMRPipe file with minimal memory usage.
 
@@ -104,6 +104,8 @@ def read_lowmem(filename):
     write_lowmem : Write NMRPipe files using minimal amounts of memory.
 
     """
+    from ..utils.fdata import get_fdata, fdata2dic
+
     if filename.count("%") == 1:
         filemask = filename
         filename = filename % 1
@@ -135,13 +137,13 @@ def read_lowmem(filename):
 
 # dimension specific reading
 def read_1D(filename):
-    from ..utils.fdata import get_fdata_data, fdata2dic, reshape_data, find_shape, unappend_data
     """
     Read a 1D NMRPipe file.
 
     See :py:func:`read` for documentation.
 
     """
+    from ..utils.fdata import get_fdata_data, fdata2dic, reshape_data, find_shape, unappend_data
     fdata, data = get_fdata_data(filename)   # get the fdata and data arrays
     dic = fdata2dic(fdata)  # convert the fdata block to a python dictionary
     data = reshape_data(data, find_shape(dic))    # reshape data
@@ -154,13 +156,13 @@ def read_1D(filename):
 
 
 def read_2D(filename):
-    from ..utils.fdata import get_fdata_data,fdata2dic,reshape_data,find_shape,unappend_data
     """
     Read a 2D NMRPipe file or NMRPipe data stream.
 
     See :py:func:`read` for documentation.
 
     """
+    from ..utils.fdata import get_fdata_data,fdata2dic,reshape_data,find_shape,unappend_data
     fdata, data = get_fdata_data(filename)   # get the fdata and data arrays
     dic = fdata2dic(fdata)  # convert the fdata block to a python dictionary
     data = reshape_data(data, find_shape(dic))    # reshape data
@@ -175,13 +177,13 @@ def read_2D(filename):
 
 
 def read_lowmem_2D(filename):
-    from ..utils.fdata import fdata2dic,get_fdata,pipe_2d,pipestream_3d,pipestream_4d
     """
     Read a 2D NMRPipe file or NMRPipe data stream using minimal memory.
 
     See :py:func:`read_lowmem` for documentation
 
     """
+    from ..utils.fdata import fdata2dic,get_fdata,pipe_2d,pipestream_3d,pipestream_4d
     dic = fdata2dic(get_fdata(filename))
     order = dic["FDDIMCOUNT"]
     if order == 2:
@@ -225,13 +227,13 @@ def read_3D(filemask):
 
 
 def read_lowmem_3D(filemask):
-    from ..utils.fdata import pipe_3d,fdata2dic,get_fdata
     """
     Read a 3D NMRPipe file using minimal memory.
 
     See :py:func:`read_lowmem` for documentation
 
     """
+    from ..utils.fdata import pipe_3d,fdata2dic,get_fdata
     if '%' not in filemask:  # data streams should be read with read_stream
         return read_lowmem_stream(filemask)
     data = pipe_3d(filemask)    # create a new pipe_3d object
@@ -258,7 +260,6 @@ def read_4D(filemask):
 
 
 def read_lowmem_4D(filemask):
-    from ..utils.fdata import pipe_4d,fdata2dic, get_fdata
     """
     Read a NMRPipe file using minimal memory.
 
@@ -271,6 +272,7 @@ def read_lowmem_4D(filemask):
     :py:func:`read_lowmem_2D` should be used.
 
     """
+    from ..utils.fdata import pipe_4d,fdata2dic, get_fdata
     if '%' not in filemask:  # data streams should be read with read_stream
         return read_lowmem_stream(filemask)
 
