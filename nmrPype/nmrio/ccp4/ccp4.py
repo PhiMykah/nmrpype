@@ -7,8 +7,6 @@ FDDIMORDER = [2,1,3,4]
 
 def load_ccp4_map(file : str) -> tuple[dict, np.ndarray]:
     """
-    fn load_ccp4_map
-
     Loads electron density map into nmrPype format using gemmi
 
     Parameters
@@ -32,18 +30,22 @@ def load_ccp4_map(file : str) -> tuple[dict, np.ndarray]:
 
     return dic, map_array
 
+
 def init_ccp4_header(ccp4_map : gemmi.Ccp4Map, array : np.ndarray) -> dict:
     """
-    fn init_ccp4_header
-
     Creates a header based in nmrPype format using a ccp4 file
 
     Parameters
     ----------
-    ccp4_map : gemmi.Ccp4Map
+    ccp4_map : Ccp4Map
         Target ccp4 map data
-    array : np.ndarray
+    array : ndarray
         Array generated from ccp4_map grid
+
+    Returns
+    -------
+    dict
+        NMR data header matching the ccp4 map data
     """
     # initialize header dictionary
     dic = HEADER_TEMPLATE
@@ -92,11 +94,10 @@ def init_ccp4_header(ccp4_map : gemmi.Ccp4Map, array : np.ndarray) -> dict:
     return dic
 
 
-def paramSyntax(param : str, dim : int) -> str :
+def paramSyntax(param : str, dim : int) -> str:
     """
-    fn paramSyntax
-
-    local verison of updateHeaderSyntax found in DataFrame.py
+    Local verison of updateHeaderSyntax defined by
+    :py:func:`nmrPype.utils.DataFrame.DataFrame.updateParamSyntax`
 
     Parameters
     ----------

@@ -5,15 +5,38 @@ import os,sys
 from ..utils import catchError, DataFrame, FunctionError
 from ..nmrio import writeToFile
 
+# type Imports/Definitions
+from typing import Literal
 class Decomposition(Function):
     """
-    class Decomposition
-
     Data Function object for decomposing processed file into coefficients and synthetic
-        data set
+    data set
+    
+    Parameters
+    ----------
+    deco_bases : list[str]
+        List of basis files in string format
+    
+    deco_cfile : str
+        Output file path as string for coefficient data
+
+    deco_mask : str
+        Input mask to use for sample data 
+
+    deco_error : float
+        Significant error used to determine the rank by comparing vectors
+
+    mp_enable : bool
+        Enable multiprocessing
+
+    mp_proc : int
+        Number of processors to utilize for multiprocessing
+
+    mp_threads : int
+        Number of threads to utilize per process
     """
     def __init__(self, deco_bases : list[str], deco_cfile : str, 
-                 deco_mask : str = "", deco_error : int = 1e-8, mp_enable : bool = False, 
+                 deco_mask : str = "", deco_error : float = 1e-8, mp_enable : bool = False, 
                  mp_proc : int = 0, mp_threads : int = 0):
         
         self.deco_bases = deco_bases
@@ -30,7 +53,7 @@ class Decomposition(Function):
     # Function #
     ############
 
-    def run(self, data) -> int:
+    def run(self, data : DataFrame) -> int:
         """
         fn run
 
@@ -46,7 +69,8 @@ class Decomposition(Function):
 
         Returns
         -------
-        Integer exit code (e.g. 0 success, non-zero fail)
+        int
+            Integer exit code (e.g. 0 success, non-zero fail)
         """
         try: 
             for file in self.deco_bases:
@@ -75,7 +99,7 @@ class Decomposition(Function):
     # Processing #
     ##############
 
-    def process(self, dic, array) -> np.ndarray:
+    def process(self, dic : dict, array : np.ndarray) -> np.ndarray:
         """
         fn process
 
@@ -86,12 +110,12 @@ class Decomposition(Function):
         dic : dict
             Copy of current data frame's header for coefficient output
 
-        array : np.ndarray
+        array : ndarray
             input array to compare to
 
         Returns
         -------
-        np.ndaray
+        ndarray
             modified array post-process
         """
         try:
@@ -156,18 +180,24 @@ class Decomposition(Function):
                        ePrint = True)
             return synthetic_data
 
-    def decomposition(self, array, bases) -> tuple[np.ndarray, np.ndarray] :
+    def decomposition(self, array : np.ndarray, 
+                      bases : list[np.ndarray]) -> tuple[np.ndarray, np.ndarray] :
         """
-        fn decomposition
-
         Use A and b to solve for the x that minimizes Ax-b = 0
+
+        See :py:func:`asymmetricDecomposition` for the asymmetric implementation
 
         Parameters
         ----------
-        array : np.ndarray
-            input dataframe array
-        bases : list
+        array : ndarray
+            Input array to calculate least squares
+        bases : list[ndarray]
             List of bases
+
+        Returns
+        -------
+        (approx, beta) : tuple[ndarray,ndarray]
+            Approximation matrix and coefficient matrix
         """
         # A represents the (data length, number of bases) array
         A = np.array(bases).T
@@ -187,21 +217,25 @@ class Decomposition(Function):
 
         return (approx, beta)
 
-    def asymmetricDecomposition(self, array, bases) -> tuple[np.ndarray, np.ndarray]:
+    def asymmetricDecomposition(self, array : np.ndarray,
+                                bases : list[np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
         """
-        fn asymmetricDecomposition
-
         Perform a Decomposition with mismatch basis and data dimensions
+
+        See :py:func:`decomposition` for the symmetric implementation
 
         Parameters
         ----------
-        array : np.ndarray
-            input array to compare to
+        array : ndarray
+            Input array to calculate least squares
 
+        bases : list[ndarray]
+            List of basis vectors/matrices
+        
         Returns
         -------
-        np.ndarray
-            modified array post-process
+        (approx, beta) : tuple[ndarray,ndarray]
+            Approximation matrix and coefficient matrix
         """
         # A represents the len(array) x len(bases) array
         A = np.array(bases).T
@@ -217,12 +251,10 @@ class Decomposition(Function):
         
 
     def generateCoeffFile(self, beta : np.ndarray, 
-                          fmt : str = 'nmr', data_dic : dict = {}, 
+                          fmt : Literal['nmr','txt'] = 'nmr', data_dic : dict = {}, 
                           isAsymmetric : bool = False, 
                           basis_dim : int = 0, sample_dim : int = 0) -> int:
         """
-        fn generateCoeffFile
-
         Creates a coefficient file from the least square sum operation
 
         Parameters
@@ -231,10 +263,24 @@ class Decomposition(Function):
             coefficient 1D vector array (1 row)
 
         fmt : Literal['nmr','txt']
+            Output type for the coefficient data (NMR Data or text)
+
+        data_dic : dict
+            Dictionary used for the coefficient file header when outputting as NMR data
+
+        isAsymmetric : bool 
+            Both the sample data shape and the basis data shapes are not equal
+
+        basis_dim : int
+            Number of dimensions for each basis array
+
+        sample_dim : int
+            Number of dimensions for the sample array
 
         Returns
         -------
-        Integer exit code (e.g. 0 success, non-zero fail)
+        int
+            Integer exit code (e.g. 0 success, non-zero fail)
         """
         if fmt == 'txt':
             np.savetxt(self.deco_cfile, beta.T)
@@ -305,8 +351,6 @@ class Decomposition(Function):
     @staticmethod
     def isValidFile(file : str) -> bool:
         """
-        fn isValidFile
-
         Check whether or not the inputted file exists
 
         Parameters
@@ -330,8 +374,6 @@ class Decomposition(Function):
     @staticmethod
     def truncateHeader(asymmetric_diff : int, basis_dim : int, dic : dict):
         """
-        fn truncate Header
-
         Modify header to become coefficient data,
             using the unmeasured dimensions and the coefficient dimension only
 
@@ -373,8 +415,7 @@ class Decomposition(Function):
     @staticmethod
     def swapDictVals(dic : dict, key1 : str, key2 : str):
         """
-        fn swapDictVals
-        swaps the values between the two keys
+        Swaps the values between the two keys of the same dictionary
 
         Parameters
         ----------
@@ -384,10 +425,6 @@ class Decomposition(Function):
             The first key to swap values with in the dict
         key2 : str
             The second key to swap values with in the dict
-
-        Returns
-        -------
-        None
         """
         if key1 in dic and key2 in dic:
             temp = dic[key1]
@@ -401,13 +438,10 @@ class Decomposition(Function):
     @staticmethod
     def clArgs(subparser):
         """
-        fn clArgs (Template command-line arguments)
+        Decomposition command-line arguments
 
         Adds function parser to the subparser, with its corresponding default args
-        Called in nmrParse.py
-
-        Destinations are formatted typically by {function}_{argument}
-            e.g. the zf_pad destination stores the pad argument for the zf function
+        Called by :py:func:`nmrPype.parse.parser`.
 
         Parameters
         ----------
@@ -450,13 +484,15 @@ class Decomposition(Function):
 #  Helper Functions  #
 ######################
 
-def paramSyntax(param : str, dim : int, dim_order : dict = [2,1,3,4]) -> str :
+def paramSyntax(param : str, dim : int, dim_order : dict = [2,1,3,4]) -> str:
     """
-    fn paramSyntax
+    Local verison of updateHeaderSyntax defined by
+    :py:func:`nmrPype.utils.DataFrame.DataFrame.updateParamSyntax`
 
-    local verison of updateHeaderSyntax found in DataFrame.py
-
-    NOTE: This is identical to the function seen in ccp4, consider extrapolating
+    NOTE
+    ---- 
+    This is nearly identical to :py:func:`nmrPype.nmrio.ccp4.ccp4.paramSyntax`,
+    may be extrapolated in the future
 
     Parameters
     ----------
@@ -501,6 +537,9 @@ def paramSyntax(param : str, dim : int, dim_order : dict = [2,1,3,4]) -> str :
 #############
 
 class CoeffWriteError(Exception):
+    """
+    Exception called when unable to write coefficients to a file
+    """
     pass
 
 #FDDIMORDER = [2,1,3,4]

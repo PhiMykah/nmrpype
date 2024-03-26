@@ -1,4 +1,4 @@
-import sys
+import sys, io
 from .utils import DataFrame, catchError, PipeBurst
 from .parse import parser
 

@@ -3,11 +3,37 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+# type Imports/Definitions
+from matplotlib.colors import LinearSegmentedColormap
+from ..utils import DataFrame
+type ColorMap = LinearSegmentedColormap | str
+
 class Draw(Function):
     """
-    class Draw
-
     Data Function object for drawing the current state of the data to a file
+
+    Parameters
+    ----------
+    draw_file : str
+        Output file for drawing graphic in string format
+
+    draw_fmt : str
+        Format to save the file in (e.g png, pdf)
+
+    draw_plot : str
+        Plotting method for drawing output (e.g line plot or contour plot)
+    
+    draw_slice : int
+        Number of 1D/2D slices to draw out of the total vectors/planes
+
+    mp_enable : bool
+        Enable multiprocessing
+
+    mp_proc : int
+        Number of processors to utilize for multiprocessing
+
+    mp_threads : int
+        Number of threads to utilize per process
     """
     def __init__(self, draw_file : str = "", draw_fmt : str = "",
                  draw_plot : str = "line", draw_slice : int = 5,
@@ -34,25 +60,9 @@ class Draw(Function):
     # Function #
     ############
 
-    def run(self, data) -> int:
+    def run(self, data : DataFrame) -> int:
         """
-        fn run
-
-        Main body of DRAW code.
-            - determines saving file
-            - identifies format
-            - graphs to file based on plot type
-
-        Overload run for function specific operations
-
-        Parameters
-        ----------
-        data : DataFrame
-            Target data to run function on
-
-        Returns
-        -------
-        Integer exit code (e.g. 0 success 1 fail)
+        See :py:func:`nmrPype.fn.function.DataFunction.run` for documentation
         """
         
         # Check if format is provided, and set it manually if needed
@@ -73,10 +83,8 @@ class Draw(Function):
         return self.graphContour(data)
 
 
-    def graphLine(self, data, **kwargs) -> int:
+    def graphLine(self, data : DataFrame, **kwargs) -> int:
         """
-        fn graphLine
-
         Graph a certain amount of lines based on the user parameters and data
 
         Parameters
@@ -89,7 +97,8 @@ class Draw(Function):
 
         Returns
         -------
-        Integer exit code (e.g. 0 success 1 fail)
+        int
+            Integer exit code (e.g. 0 success 1 fail)
         """
         shape = data.array.shape
 
@@ -108,8 +117,26 @@ class Draw(Function):
         return self.drawLineToFile(data.array, title, fig, axs, limit, slices, xLabel, **kwargs)
 
 
-    def graphContour(self, data, cmap="", **kwargs) -> int:
+    def graphContour(self, data : DataFrame, cmap : ColorMap ="", **kwargs) -> int:
+        """
+        Graph a certain amount of contour planes based on the user parameters and data
 
+        Parameters
+        ----------
+        data : DataFrame
+            Target data to plot
+
+        cmap : ColorMap [LinearSegmentedColorMap or str]
+            Designated color map for contour plot 
+
+        **kwargs
+            Plotting arguments, *** CURRENTLY UNUSED ***
+
+        Returns
+        -------
+        int
+            Integer exit code (e.g. 0 success 1 fail)
+        """
         shape = data.array.shape
 
         # Obtain title function, number of total slices, and slice per cube
@@ -141,8 +168,6 @@ class Draw(Function):
     def drawLineToFile(self, array : np.ndarray, title,
                        fig, axs, limit : int, slices : int, xLabel : str, **kwargs) -> int:
         """
-        fn drawLineToFile
-
         Takes parameters processed in graphLine and plots using matplotlib
 
         Parameters
@@ -173,7 +198,8 @@ class Draw(Function):
 
         Returns
         -------
-        Integer exit code (e.g. 0 success 1 fail)
+        int
+            Integer exit code (e.g. 0 success 1 fail)
         """
         # Avoid division by 0 through assertion
         assert slices != 0
@@ -227,17 +253,19 @@ class Draw(Function):
         fig.savefig(fpath, format=self.fmt)
 
 
-    def drawContourToFile(self, array : np.ndarray, cmap, title,
-                       fig, axs, limit : int, slices : int, xLabel, yLabel : str, **kwargs) -> int:
+    def drawContourToFile(self, array : np.ndarray, cmap : ColorMap, title,
+                       fig : plt.Figure, axs : plt.Axes, limit : int, 
+                       slices : int, xLabel : str, yLabel : str, **kwargs) -> int:
         """
-        fn drawLineToFile
-
-        Takes parameters processed in graphLine and plots using matplotlib
+        Takes parameters processed in graphContour and plots using matplotlib
 
         Parameters
         ----------
         array : np.ndarray
             ndarray to plot
+
+        cmap : ColorMap [LinearSegmentedColorMap or str]
+            Designated color map for contour plot 
 
         title : function
             Title lambda function for outputting the title (see graphContourSyntax)
@@ -265,7 +293,8 @@ class Draw(Function):
 
         Returns
         -------
-        Integer exit code (e.g. 0 success 1 fail)
+        int
+            Integer exit code (e.g. 0 success 1 fail)
         """
         # Avoid division by 0 through assertion
         assert slices != 0
@@ -329,28 +358,26 @@ class Draw(Function):
         fig.savefig(fpath, format=self.fmt)
 
 
-    def graphLineSyntax(self, ndim, shape):
+    def graphLineSyntax(self, ndim : int, shape : tuple[int, ...]):
         """
-        fn graphLineSyntax
-
         Obtain number of slices given shape and dimension
-            then create title lambda function to output information for plotting
+        then create title lambda function to output information for plotting
 
         Parameters
         ----------
         ndim : int
             Number of dimensions in array
-        shape : tuple(int)
+        shape : tuple[int, ...]
             Shape of array being plotted
 
         Returns
         -------
-            title : function
-                Information output lambda function
-            slice_num : int 
-                Total number of 1D vectors
-            lenY : int
-                Number of 1D vectors per plane
+        title : function
+            Information output lambda function
+        slice_num : int 
+            Total number of 1D vectors
+        lenY : int
+            Number of 1D vectors per plane
         """
         lenY = 1
         slice_num = 1
@@ -376,28 +403,26 @@ class Draw(Function):
         return title, slice_num, lenY
     
 
-    def graphContourSyntax(self, ndim, shape):
+    def graphContourSyntax(self, ndim : int, shape : tuple[int, ...]):
         """
-        fn graphContourSyntax
-
         Obtain number of slices given shape and dimension
-            then create title lambda function to output information for plotting
+        then create title lambda function to output information for plotting
 
         Parameters
         ----------
         ndim : int
             Number of dimensions in array
-        shape : tuple(int)
+        shape : tuple[int, ...]
             Shape of array being plotted
 
         Returns
         -------
-            title : function
-                Information output lambda function
-            slice_num : int 
-                Total number of 1D vectors
-            lenY : int
-                Number of 1D vectors per plane
+        title : function
+            Information output lambda function
+        slice_num : int 
+            Total number of 1D vectors
+        lenY : int
+            Number of 1D vectors per plane
         """
         lenZ = 1
         slice_num = 1
@@ -426,14 +451,11 @@ class Draw(Function):
     @staticmethod
     def clArgs(subparser):
         """
-        fn clArgs (Template command-line arguments)
+        Draw command-line arguments
 
         Adds function parser to the subparser, with its corresponding default args
-        Called in nmrParse.py
-
-        Destinations are formatted typically by {function}_{argument}
-            e.g. the zf_pad destination stores the pad argument for the zf function
-
+        Called by :py:func:`nmrPype.parse.parser`.
+        
         Parameters
         ----------
         subparser : _SubParsersAction[ArgumentParser]
