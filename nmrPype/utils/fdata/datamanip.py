@@ -9,9 +9,10 @@ import struct
 import os, io
 from warnings import warn
 from ...nmrio.fileiobase import *
+from typing import TypeAlias
 
 # Type definitions
-type InputFile = str | os.pathlib.Path | bytes | io.BytesIO
+InputFile : TypeAlias = str | os.PathLike | bytes | io.BytesIO
 
 def fdata2dic(fdata : np.ndarray) -> dict:
     """

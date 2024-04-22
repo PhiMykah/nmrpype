@@ -1,8 +1,9 @@
+from typing import TypeAlias
 import numpy as np
 from .read import *
 from .write import *
 from .fileiobase import *
-
+import io
 """
 nmrio
 
@@ -28,8 +29,8 @@ __all__ = all
 from ..utils import DataFrame
 
 # type Definitions
-type BufferStream = io.TextIOWrapper | io.BufferedReader
-type WriteStream = io.TextIOWrapper | io.BufferedWriter
+BufferStream : TypeAlias = io.TextIOWrapper | io.BufferedReader
+WriteStream : TypeAlias = io.TextIOWrapper | io.BufferedWriter
 
 ######################
 # Reading Operations #
