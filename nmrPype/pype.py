@@ -1,13 +1,15 @@
 import sys, io
 from .utils import DataFrame, catchError, PipeBurst
 from .parse import parser
+from typing import TypeAlias
+import io
 
 # Typing Imports
 import argparse
 
 # Type declarations
-type InputStream = str | bytes | io.TextIOWrapper | io.BufferedReader
-type OutputStream = str | io.BufferedWriter
+InputStream : TypeAlias = str | bytes | io.TextIOWrapper | io.BufferedReader
+OutputStream : TypeAlias = str | io.BufferedWriter
 
 def fileInput(df : DataFrame, input : InputStream) -> int:
     """

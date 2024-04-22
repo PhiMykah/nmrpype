@@ -1,9 +1,10 @@
 import numpy as np 
 from .errorHandler import *
 import sys
+from typing import TypeAlias
 
 # Type declarations
-type Array = np.ndarray | None
+Array : TypeAlias = np.ndarray | None
 
 class DataFrame:
     """
