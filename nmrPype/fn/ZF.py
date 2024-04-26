@@ -282,9 +282,9 @@ class ZeroFill(Function):
         group.add_argument('-size', type=int, metavar='xSize', default=0,
                         dest='zf_size', help='Desired Final size')
         group.add_argument('-auto', action='store_true',
-                        dest='zf_auto', help='Round Final Size to Power of 2.')
+                        dest='zf_auto', help='Round Final Size to Power of 2')
         group.add_argument('-inv', action='store_true',
-                        dest='zf_inv', help='Extract Original Time Domain.')
+                        dest='zf_inv', help='Extract Original Time Domain')
         
         # Include tail arguments proceeding function call
         Function.clArgsTail(ZF)

@@ -22,10 +22,11 @@ def parser(input_args : list[str]) -> Namespace:
         properly handled to use in processing
     """
     parser = ArgumentParser(prog='nmrPype',description='Handle NMR Data inputted through file or pipeline \
-                                    and perform desired operations for output.')
-    parser.add_argument('-help', action='help')
-    parser.add_argument('-in', '--input', nargs='?', metavar='File Path', 
-                        default=stdin.buffer)
+                                    and perform desired operations for output',
+                            usage='nmrPype -in inFile -fn fnName -out outFile -ov')
+    parser.add_argument('-help', action='help', help='Use the -fn fnName switch for more')
+    parser.add_argument('-in', '--input', nargs='?', metavar='inName', 
+                        help='NMRPipe format input file name', default=stdin.buffer)
     parser.add_argument('-mod', '--modify', nargs=2, metavar=('Param', 'Value'))
     parser.add_argument('-fn','--function', dest='rf', action='store_true',
                         help='Read for inputted function')
@@ -47,18 +48,20 @@ def parser(input_args : list[str]) -> Namespace:
     
     parser.add_argument('-mpd', '--disable', action='store_false', dest='mp_enable',
                                 help='Disable Multiprocessing')
-    parser.add_argument('-proc', '--processors', nargs='?', metavar='Number of Processors', type=int, 
-                            default=os.cpu_count(), dest='mp_proc')
-    parser.add_argument('-t', '--threads', nargs='?', metavar='Number of Threads', type=int,
-                            default=min(os.cpu_count(),4), dest='mp_threads')
+    parser.add_argument('-proc', '--processors', nargs='?', metavar='#', type=int, 
+                            default=os.cpu_count(), dest='mp_proc',
+                            help='Number of processors to use for multiprocessing')
+    parser.add_argument('-t', '--threads', nargs='?', metavar='#', type=int,
+                            default=min(os.cpu_count(),4), dest='mp_threads', 
+                            help='Number of threads per process to use for multiprocessing')
     
     # Add file output params
     parser.add_argument('-di', '--delete-imaginary', action='store_true', dest='di',
                         help='Remove imaginary elements from dataset')
-    parser.add_argument('-out', '--output', nargs='?',
-                        default=(stdout.buffer if hasattr(stdout,'buffer') else stdout))
+    parser.add_argument('-out', '--output', nargs='?', metavar='outName',
+                        default=(stdout.buffer if hasattr(stdout,'buffer') else stdout),
+                        help='NMRPipe format output file name')
     parser.add_argument('-ov', '--overwrite', action='store_true', 
-                        help='Call this argument to overwrite when sending output to file.')
-    
+                        help='Call this argument to overwrite when sending output to file')
 
     return parser.parse_args(input_args)

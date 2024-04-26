@@ -136,36 +136,36 @@ class Transpose(Function):
         """
 
         # 2D Transpose subparser
-        YTP = subparser.add_parser('YTP', aliases=['TP', 'XY2YX'], help='2D Plane Transpose.')
+        YTP = subparser.add_parser('YTP', aliases=['TP', 'XY2YX'], help='2D Plane Transpose')
         group = YTP.add_mutually_exclusive_group()
         group.add_argument('-hyper', action='store_true',
-                        dest='tp_hyper', help='Hypercomplex Transpose Mode.')
+                        dest='tp_hyper', help='Hypercomplex Transpose Mode')
         group.add_argument('-noauto', action='store_true',
-                dest='tp_noauto', help='Choose Mode via Command Line.')
+                dest='tp_noauto', help='Choose Mode via Command Line')
         group.add_argument('-nohyper', action='store_true',
-                        dest='tp_nohyper', help='Suppress Hypercomplex Mode.')
+                        dest='tp_nohyper', help='Suppress Hypercomplex Mode')
         group.add_argument('-auto', action='store_true',
-                        dest='tp_auto', help='Chose Mode Automaticaly (Default).')
+                        dest='tp_auto', help='Chose Mode Automaticaly (Default)')
         YTP.add_argument('-nohdr', action='store_true',
-                        dest='tp_nohdr', help='No Change to Header TRANSPOSE state.')
+                        dest='tp_nohdr', help='No Change to Header TRANSPOSE state')
         YTP.add_argument('-exch', action='store_true',
-                dest='tp_exch', help='Exchange Header Parameters for the Two Dimensions.')
+                dest='tp_exch', help='Exchange Header Parameters for the Two Dimensions')
         
         # Include tail arguments proceeding function call
         Transpose.headerArgsTP(YTP)
         Function.clArgsTail(YTP)
 
         # 3D Transpose subparser
-        ZTP = subparser.add_parser('ZTP', aliases=['XYZ2ZYX'], help='3D Matrix Transpose.')
+        ZTP = subparser.add_parser('ZTP', aliases=['XYZ2ZYX'], help='3D Matrix Transpose')
         ZTP.add_argument('-exch', action='store_true',
-                dest='tp_exch', help='Exchange Header Parameters for the Two Dimensions.')
+                dest='tp_exch', help='Exchange Header Parameters for the Two Dimensions')
         
         # Include tail arguments proceeding function call
         Transpose.headerArgsTP(ZTP)
         Function.clArgsTail(ZTP)
 
         # 4D Transpose subparser
-        ATP = subparser.add_parser('ATP', aliases=['XYZA2AYZX'], help='4D Matrix Transpose.')
+        ATP = subparser.add_parser('ATP', aliases=['XYZA2AYZX'], help='4D Matrix Transpose')
 
         # Include tail arguments proceeding function call
         Transpose.headerArgsTP(ATP)

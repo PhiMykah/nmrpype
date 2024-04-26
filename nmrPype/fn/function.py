@@ -176,18 +176,20 @@ class DataFunction:
     
         parser.add_argument('-mpd', '--disable', action='store_false', dest='mp_enable2',
                                     help='Disable Multiprocessing')
-        parser.add_argument('-proc', '--processors', nargs='?', metavar='Number of Processors', type=int, 
-                                default=None, dest='mp_proc_alt')
-        parser.add_argument('-t', '--threads', nargs='?', metavar='Number of Threads', type=int,
-                                default=None, dest='mp_threads_alt')
+        parser.add_argument('-proc', '--processors', nargs='?', metavar='', type=int, 
+                                default=None, dest='mp_proc_alt',
+                                help='Number of processors to use for multiprocessing')
+        parser.add_argument('-t', '--threads', nargs='?', metavar='', type=int,
+                                default=None, dest='mp_threads_alt',
+                                help='Number of threads per process to use for multiprocessing')
         
         # Output settings
         parser.add_argument('-di', '--delete-imaginary', action='store_true', dest = 'di_alt',
                             help='Remove imaginary elements from dataset')
-        parser.add_argument('-out', '--output', nargs='?', dest='output_alt',
-                            default=None)
+        parser.add_argument('-out', '--output', nargs='?', dest='output_alt', metavar='outName',
+                            help='NMRPipe format output file name', default=None)
         parser.add_argument('-ov', '--overwrite', action='store_true', dest='overwrite_alt',
-                            help='Call this argument to overwrite when sending output to file.')
+                            help='Call this argument to overwrite when sending output to file')
 
     ####################
     #  Proc Functions  #

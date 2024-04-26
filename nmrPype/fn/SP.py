@@ -276,19 +276,19 @@ class SineBell(Function):
         SP.add_argument('-pow', type=float, metavar='exp [1.0]', default=1.0,
                         dest='sp_pow', help='Sine Exponent.  (Q3)')
         SP.add_argument('-size', type=float, metavar='aSize [APOD]', default=0.0,
-                        dest='sp_size', help='Apodize Length.')
+                        dest='sp_size', help='Apodize Length')
         SP.add_argument('-start', type=int, metavar='aStart [1]', default=1,
-                        dest='sp_start', help='Apodize Start.')
+                        dest='sp_start', help='Apodize Start')
         SP.add_argument('-c', type=float, metavar='fScale [1]', default=1,
-                        dest='sp_c', help='Scaling Value for the First Point.')
+                        dest='sp_c', help='Scaling Value for the First Point')
         SP.add_argument('-one', action='store_true',
-                        dest='sp_one', help='Outside = 1.')
+                        dest='sp_one', help='Outside = 1')
         SP.add_argument('-hdr', action='store_true',
-                        dest='sp_hdr', help='Use Q/LB/GB/GOFF from Header.')
+                        dest='sp_hdr', help='Use Q/LB/GB/GOFF from Header')
         SP.add_argument('-inv', action='store_true',
-                        dest='sp_inv', help='Invert Window.')
+                        dest='sp_inv', help='Invert Window')
         SP.add_argument('-df', action='store_true',
-                        dest='sp_df', help='Adjust -off and -goff for Digital Oversampling.')
+                        dest='sp_df', help='Adjust -off and -goff for Digital Oversampling')
         group = SP.add_argument_group('Composite Window Options')
         group.add_argument('-elb', type=float, metavar='elbHz [0.0]', default=0.0,
                         dest='sp_elb', help='Addition Exponential, Hz. (LB)')
