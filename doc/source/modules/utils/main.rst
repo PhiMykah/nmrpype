@@ -2,8 +2,8 @@ Utility
 =======
 **Classes, functions, and exceptions that serve as the backbone of handling NMR data**
 
-Classes
--------
+DataFrame
+---------
 .. automodule:: nmrPype.utils.DataFrame
     :members:
     :undoc-members:

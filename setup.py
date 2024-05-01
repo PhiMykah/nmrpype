@@ -1,7 +1,7 @@
 from setuptools import setup,find_packages
 
 setup(name='nmrPype',
-    version='0.8.5',
+    version='0.8.6',
     packages=find_packages(), 
     install_requires=[
         'numpy',
