@@ -15,7 +15,10 @@ release = '1.0.0'
 # -- Imports -----------------------------------------------------------------
 import os
 import sys
-pth = os.environ['PYPE_PATH']
+try:
+    pth = os.environ['PYPE_PATH']
+except KeyError:
+    pth = "../.."
 sys.path.insert(0, os.path.abspath(pth))
 
 
