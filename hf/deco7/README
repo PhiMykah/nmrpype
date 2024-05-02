@@ -1,0 +1,47 @@
+
+Simulated 3D data for 2D Decomposition Usinmg Assignments for bmr16051
+frank.delaglio@nist.gov 5/1/2024
+
+sim.fid 
+ Simulated 3D CBCANH time-domain data. 
+ Decompose with "basis_fid/*.fid"
+
+sim.ft1
+ Data "sim.fid" processed in the X-axis (direct dimension).
+ Decompose with "basis_ft1/*.ft1"
+
+sim.ft2
+ Data "sim.fid" processed in the X and Y axis.
+ Decompose with "basis/*.ft2"
+
+sim.ft3
+ Data "sim.fid" fully processed in X, Y, and Z.
+ Decompose with "basis/*.ft2"
+
+mask.fid
+  Non-uniform sampling (NUS) mask of 0 and 1, 25% sampling density.
+
+sim_nus.fid
+  Data "sim.fid" with all but 25% set to zero according to "mask.fid".
+  Decompose with "basis_fid/*.fid" 
+  *** Does the decomposition reproduce the missing data well?
+
+sim_nus.ft1
+  Data "sim_nus.fid" processed in the X-axis.
+  Decompose with "basis_ft1/*.ft1"
+
+mask.ft1
+  NUS mask corresponding to "sim_nus.ft1"
+
+sim_inv.fid
+  Data "sim.ft1" inverse processed in X-axis to time-domain.
+  Decompose with "basis_inv/*.fid"
+
+sim_inv_baseline.fid
+  Data "sim_inv.fid" with first 5 points of every row set to zero (baseline distortion).
+  Decompose with "basis_inv/*.fid"
+  *** Does the decomposition reproduce the missing 5 points well?
+ 
+mask_inv_baseline.fid
+  NUS mask corresponding to "sim_inv_baseline.fid" (that is, all 1 but the first 5 points).
+
