@@ -171,6 +171,7 @@ class PhaseCorrection(Function):
             Subparser object that will receive function and its arguments
         """
         PS = subparser.add_parser('PS', help='Perform a Phase Correction (PS) on the data')
+        PS.add_argument('-help', action='help', help='')
         PS.add_argument('-p0', type=float, metavar='p0Deg', default=0.0,
                         dest='ps_p0', help='Zero Order Phase, Degrees')
         PS.add_argument('-p1', type=float, metavar='p1Deg', default=0.0,

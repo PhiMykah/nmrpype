@@ -273,7 +273,8 @@ class ZeroFill(Function):
         """
         # ZF subparser
         ZF = subparser.add_parser('ZF', help='Perform a Zero Fill (ZF) Operation on the data')
-
+        ZF.add_argument('-help', action='help', help='')
+        
         group = ZF.add_mutually_exclusive_group() 
         group.add_argument('-zf', type=int, metavar='count', default=0,
                         dest='zf_count', help='-Number of Times to Double the size')

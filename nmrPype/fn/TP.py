@@ -137,6 +137,7 @@ class Transpose(Function):
 
         # 2D Transpose subparser
         YTP = subparser.add_parser('YTP', aliases=['TP', 'XY2YX'], help='2D Plane Transpose')
+        YTP.add_argument('-help', action='help', help='')
         group = YTP.add_mutually_exclusive_group()
         group.add_argument('-hyper', action='store_true',
                         dest='tp_hyper', help='Hypercomplex Transpose Mode')
@@ -157,6 +158,7 @@ class Transpose(Function):
 
         # 3D Transpose subparser
         ZTP = subparser.add_parser('ZTP', aliases=['XYZ2ZYX'], help='3D Matrix Transpose')
+        ZTP.add_argument('-help', action='help', help='')
         ZTP.add_argument('-exch', action='store_true',
                 dest='tp_exch', help='Exchange Header Parameters for the Two Dimensions')
         
@@ -166,7 +168,8 @@ class Transpose(Function):
 
         # 4D Transpose subparser
         ATP = subparser.add_parser('ATP', aliases=['XYZA2AYZX'], help='4D Matrix Transpose')
-
+        ATP.add_argument('-help', action='help', help='')
+        
         # Include tail arguments proceeding function call
         Transpose.headerArgsTP(ATP)
         Function.clArgsTail(ATP)
