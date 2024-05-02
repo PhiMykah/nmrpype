@@ -230,6 +230,7 @@ class FourierTransform(Function):
         """
         # FT subparser
         FT = subparser.add_parser('FT', help='Perform a Fourier transform (FT) on the data')
+        FT.add_argument('-help', action='help', help='')
         FT.add_argument('-inv', '--inverse', action='store_true',
                         dest='ft_inv', help='Perform inverse FT')
         FT.add_argument('-real', action='store_true',

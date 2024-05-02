@@ -269,6 +269,7 @@ class SineBell(Function):
             Subparser object that will receive function and its arguments
         """
         SP = subparser.add_parser('SP', aliases=['SINE'], help='Adjustable Sine Bell')
+        SP.add_argument('-help', action='help', help='')
         SP.add_argument('-off', type=float, metavar='offset [0.0]', default=0.0,
                         dest='sp_off', help='Sine Start*PI.    (Q1)')
         SP.add_argument('-end', type=float, metavar='end [1.0]', default=1.0,

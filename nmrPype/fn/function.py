@@ -151,6 +151,7 @@ class DataFunction:
             Subparser object that will receive null function
         """
         NULL = subparser.add_parser('NULL', help='Null Function, does not apply any function')
+        NULL.add_argument('-help', action='help', help='')
         DataFunction.clArgsTail(NULL)
 
 
