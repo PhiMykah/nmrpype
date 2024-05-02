@@ -450,6 +450,7 @@ class Decomposition(Function):
         """
         # DECO subparser
         DECO = subparser.add_parser('DECO', help='Draw the current state of the data out to a file')
+        DECO.add_argument('-help', action='help', help='')
         DECO.add_argument('-basis', '-bases', type=str, nargs='+', metavar='BASIS FILES', required=True,
                           dest='deco_bases', help='List of basis files to use separated by spaces')
         DECO.add_argument('-cfile', type=str, metavar='COEFFICIENT OUTPUT', required=True,

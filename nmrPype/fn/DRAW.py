@@ -463,6 +463,7 @@ class Draw(Function):
         """
         # DRAW subparser
         DRAW = subparser.add_parser('DRAW', help='Draw the current state of the data out to a file')
+        DRAW.add_argument('-help', action='help', help='')
         DRAW.add_argument('-file', type=str, metavar='PATH/NAME.FMT', required=True,
                           dest='draw_file', help='Destination file to output')
         DRAW.add_argument('-fmt', type=str, metavar='File Format', default='',
