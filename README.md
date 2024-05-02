@@ -1,7 +1,6 @@
 # nmrPype
 Python implementation of command-line program nmrpipe, using linux pipelines to process NMR data.
 
-- **Website:** 
 - **Documentation:** https://phimykah.github.io/nmrpype
 - **NMRPipe Website:** https://www.ibbr.umd.edu/nmrpipe
 - **Source Code:** https://github.com/PhiMykah/nmrPype
