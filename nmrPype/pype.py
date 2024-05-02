@@ -197,7 +197,7 @@ def main() -> int:
             function(data,args)
 
     except Exception as e:
-        catchError(e, PipeBurst, msg='nmrPype has encountered an error!', ePrint=True)
+        catchError(e, PipeBurst, msg='nmrPype has encountered an error!', ePrint=False)
          
     return 0
 
