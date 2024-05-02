@@ -18,7 +18,7 @@ import sys
 try:
     pth = os.environ['PYPE_PATH']
 except KeyError:
-    pth = "../.."
+    pth = os.getcwd()+"/../.."
 sys.path.insert(0, os.path.abspath(pth))
 
 
