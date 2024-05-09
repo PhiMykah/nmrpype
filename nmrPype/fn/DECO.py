@@ -337,7 +337,6 @@ class Decomposition(Function):
             ft_flag = paramSyntax('NDFTFLAG', dim)
             label = paramSyntax('NDLABEL', dim)
             quad_flag = paramSyntax('NDQUADFLAG', dim)
-            quad_flag_global = paramSyntax('FDQUADFLAG',dim)
 
             # Set parameters in the dictionary
             dic[size_param] = size
@@ -355,7 +354,6 @@ class Decomposition(Function):
 
             # Update data to be real
             dic[quad_flag] = 1
-            dic[quad_flag_global] = 1
             
             coeffDF = DataFrame(header=dic, array=beta)
 
@@ -420,6 +418,17 @@ class Decomposition(Function):
                 dic,
                 key1=paramSyntax("NDSIZE", dim1, dim_order),
                 key2=paramSyntax("NDSIZE", dim2, dim_order),
+            )
+
+            # Half the data size if complex
+            if dic[paramSyntax('NDQUADFLAG', dim2, dim_order)] == 0:
+                dic[paramSyntax("NDSIZE", dim1, dim_order)] /= 2
+            
+            # Swap FT flags
+            Decomposition.swapDictVals(
+                dic,
+                key1=paramSyntax("NDFTFLAG", dim1, dim_order),
+                key2=paramSyntax("NDFTFLAG", dim2, dim_order),
             )
 
             # Swap apod sizes
