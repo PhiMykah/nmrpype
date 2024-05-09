@@ -2,11 +2,13 @@ from .function import DataFunction as Function
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from typing import TypeAlias
 
 # type Imports/Definitions
 from matplotlib.colors import LinearSegmentedColormap
 from ..utils import DataFrame
-type ColorMap = LinearSegmentedColormap | str
+
+ColorMap : TypeAlias = LinearSegmentedColormap | str
 
 class Draw(Function):
     """
