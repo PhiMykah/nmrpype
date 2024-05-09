@@ -155,7 +155,7 @@ class Decomposition(Function):
             directory = os.path.split(self.deco_cfile)[0]
 
             # Make the missing directories if there are any
-            if not os.path.exists(directory):
+            if directory and not os.path.exists(directory):
                 os.makedirs(directory)
 
             # Save the coefficients to the file given by user
