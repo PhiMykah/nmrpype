@@ -333,7 +333,7 @@ class Decomposition(Function):
             if dim == 1:
                 dic['FDREALSIZE'] = size
             dic[sw_param] = size
-            dic[label] = 'COEFF'
+            dic[label] = 'COEF'
 
             # Consider the data in frequency domain, 1 for frequency
             dic[ft_flag] = 1
