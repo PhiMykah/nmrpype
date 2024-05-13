@@ -247,21 +247,10 @@ class Decomposition(Function):
         # beta is the coefficient vector of length len(bases) approximating result
         # Output rank if necessary 
         
-        # Check for complexity of data
-        # Both A and b are complex
-        if np.iscomplexobj(A) or np.iscomplexobj(b):
-            A_real = np.real(A)
-            A_imag = np.imag(A)
-            b_real = np.real(b)
-            b_imag = np.imag(b)
-
-            beta_r, residuals_r, rank_r, singular_values_r = la.lstsq(A_real,b_real, rcond=self.SIG_ERROR*np.max(A_real))
-            beta_i, residuals_i, rank_i, singular_values_i = la.lstsq(A_imag,b_imag, rcond=self.SIG_ERROR*np.max(A_imag))
-
-            beta = np.array(beta_r + 1j*beta_i)
-        # Neither are complex
-        else:
-            beta, residuals, rank, singular_values = la.lstsq(A,b, rcond=self.SIG_ERROR*np.max(A))
+        if not np.all(A.imag):
+            A = A.real
+            
+        beta, residuals, rank, singular_values = la.lstsq(A,b, rcond=self.SIG_ERROR*np.max(A.real))
         # approx represents data approximation from beta and bases
         approx = A @ beta
 
