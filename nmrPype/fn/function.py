@@ -123,7 +123,7 @@ class DataFunction:
     ##################
         
     @staticmethod
-    def clArgs(subparser):
+    def clArgs(subparser, parent_parser):
         """
         Command-line arguments template 
 
@@ -141,7 +141,7 @@ class DataFunction:
 
 
     @staticmethod
-    def nullDeclare(subparser):
+    def nullDeclare(subparser, parent_parser):
         """
         Null Function declaration
 
@@ -150,47 +150,46 @@ class DataFunction:
         subparser : _SubParsersAction[ArgumentParser]
             Subparser object that will receive null function
         """
-        NULL = subparser.add_parser('NULL', help='Null Function, does not apply any function')
-        NULL.add_argument('-help', action='help', help='')
-        DataFunction.clArgsTail(NULL)
+        NULL = subparser.add_parser('NULL', parents=[parent_parser], help='Null Function, does not apply any function')
+        # DataFunction.clArgsTail(NULL)
 
 
-    @staticmethod
-    def clArgsTail(parser):
-        """
-        Tail-end command-line arguments
+    # @staticmethod
+    # def clArgsTail(parser):
+    #     """
+    #     Tail-end command-line arguments
 
-        Command-line arguments for the parser that are added to the end of each function.
+    #     Command-line arguments for the parser that are added to the end of each function.
         
-        Note
-        ----
-        Do not overload!
+    #     Note
+    #     ----
+    #     Do not overload!
         
-        Parameters
-        ----------
-        parser : ArgumentParser
-            Parser to add tail-end arguments to
-        """
-        from sys import stdout
-        import os
-        # Add parsers for multiprocessing
+    #     Parameters
+    #     ----------
+    #     parser : ArgumentParser
+    #         Parser to add tail-end arguments to
+    #     """
+    #     from sys import stdout
+    #     import os
+    #     # Add parsers for multiprocessing
     
-        parser.add_argument('-mpd', '--disable', action='store_false', dest='mp_enable2',
-                                    help='Disable Multiprocessing')
-        parser.add_argument('-proc', '--processors', nargs='?', metavar='', type=int, 
-                                default=None, dest='mp_proc_alt',
-                                help='Number of processors to use for multiprocessing')
-        parser.add_argument('-t', '--threads', nargs='?', metavar='', type=int,
-                                default=None, dest='mp_threads_alt',
-                                help='Number of threads per process to use for multiprocessing')
+    #     parser.add_argument('-mpd', '--disable', action='store_false', dest='mp_enable2',
+    #                                 help='Disable Multiprocessing')
+    #     parser.add_argument('-proc', '--processors', nargs='?', metavar='', type=int, 
+    #                             default=None, dest='mp_proc_alt',
+    #                             help='Number of processors to use for multiprocessing')
+    #     parser.add_argument('-t', '--threads', nargs='?', metavar='', type=int,
+    #                             default=None, dest='mp_threads_alt',
+    #                             help='Number of threads per process to use for multiprocessing')
         
-        # Output settings
-        parser.add_argument('-di', '--delete-imaginary', action='store_true', dest = 'di_alt',
-                            help='Remove imaginary elements from dataset')
-        parser.add_argument('-out', '--output', nargs='?', dest='output_alt', metavar='outName',
-                            help='NMRPipe format output file name', default=None)
-        parser.add_argument('-ov', '--overwrite', action='store_true', dest='overwrite_alt',
-                            help='Call this argument to overwrite when sending output to file')
+    #     # Output settings
+    #     parser.add_argument('-di', '--delete-imaginary', action='store_true', dest = 'di_alt',
+    #                         help='Remove imaginary elements from dataset')
+    #     parser.add_argument('-out', '--output', nargs='?', dest='output_alt', metavar='outName',
+    #                         help='NMRPipe format output file name', default=None)
+    #     parser.add_argument('-ov', '--overwrite', action='store_true', dest='overwrite_alt',
+    #                         help='Call this argument to overwrite when sending output to file')
 
     ####################
     #  Proc Functions  #

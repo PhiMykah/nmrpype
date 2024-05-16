@@ -72,13 +72,6 @@ def fileOutput(data : DataFrame, args : argparse.Namespace) -> int:
     overwrite = args.overwrite
 
     from .nmrio import writeToFile, writeToBuffer
-
-    if args.fc:
-        # Use alternate output if provided
-        if args.output_alt:
-            output = args.output_alt
-        if args.overwrite_alt:
-            overwrite = args.overwrite_alt
     
     # Determine whether or not writing to pipeline
     if type(output) == str:
@@ -135,18 +128,6 @@ def function(data : DataFrame, args : argparse.Namespace) -> int:
     for opt in vars(args):
         if (opt.startswith(fn.lower())):
             fn_params[opt] = getattr(args, opt)
-        elif (opt.startswith('mp')):
-            # Allows for cl args to call regardless of location
-            if opt.endswith('alt'):
-                if getattr(args,opt) != None:
-                    new_opt = opt.rstrip('_alt')
-                    fn_params[new_opt] = getattr(args, opt)
-            elif opt.endswith('2'):
-                if getattr(args,opt) != getattr(args,opt.rstrip('2')):
-                    new_opt = opt.rstrip('2')
-                    fn_params[new_opt] = getattr(args, opt)
-            else:
-                fn_params[opt] = getattr(args, opt)
 
     # Attempt to run operation, error handling within is handled per function
     return (data.runFunc(fn, fn_params))
@@ -184,9 +165,10 @@ def main() -> int:
                 function(data, args)
         
         # Obtain delete imaginary parameter only if no function is called
-        runDI = args.di if not args.fc else (args.di or args.di_alt)
+        # runDI = args.di if not args.fc else (args.di or args.di_alt)
+
         # Delete imaginary element if prompted
-        if runDI:
+        if args.di:
             data.runFunc('DI', {'mp_enable':args.mp_enable,'mp_proc':args.mp_proc,'mp_threads':args.mp_threads})
 
         # Output Data as Necessary
