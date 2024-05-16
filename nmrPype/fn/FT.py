@@ -216,7 +216,7 @@ class FourierTransform(Function):
     ##################
         
     @staticmethod
-    def clArgs(subparser):
+    def clArgs(subparser, parent_parser):
         """
         Fourier Transform command-line arguments
 
@@ -229,8 +229,7 @@ class FourierTransform(Function):
             Subparser object that will receive function and its arguments
         """
         # FT subparser
-        FT = subparser.add_parser('FT', help='Perform a Fourier transform (FT) on the data')
-        FT.add_argument('-help', action='help', help='')
+        FT = subparser.add_parser('FT', parents=[parent_parser], help='Perform a Fourier transform (FT) on the data')
         FT.add_argument('-inv', '--inverse', action='store_true',
                         dest='ft_inv', help='Perform inverse FT')
         FT.add_argument('-real', action='store_true',
@@ -241,7 +240,7 @@ class FourierTransform(Function):
                         dest='ft_alt', help='Use sign alternation when performing FT')
         
         # Include tail arguments proceeding function call
-        Function.clArgsTail(FT)
+        # Function.clArgsTail(FT)
 
     @staticmethod
     def negate(array : np.ndarray) -> np.ndarray:

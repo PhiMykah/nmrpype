@@ -118,7 +118,7 @@ class Transpose(Function):
     ##################
         
     @staticmethod
-    def clArgs(subparser):    
+    def clArgs(subparser, parent_parser):    
         """
         Transpose command-line arguments
 
@@ -136,8 +136,7 @@ class Transpose(Function):
         """
 
         # 2D Transpose subparser
-        YTP = subparser.add_parser('YTP', aliases=['TP', 'XY2YX'], help='2D Plane Transpose')
-        YTP.add_argument('-help', action='help', help='')
+        YTP = subparser.add_parser('YTP', parents=[parent_parser], aliases=['TP', 'XY2YX'], help='2D Plane Transpose')
         group = YTP.add_mutually_exclusive_group()
         group.add_argument('-hyper', action='store_true',
                         dest='tp_hyper', help='Hypercomplex Transpose Mode')
@@ -154,25 +153,23 @@ class Transpose(Function):
         
         # Include tail arguments proceeding function call
         Transpose.headerArgsTP(YTP)
-        Function.clArgsTail(YTP)
+        # Function.clArgsTail(YTP)
 
         # 3D Transpose subparser
-        ZTP = subparser.add_parser('ZTP', aliases=['XYZ2ZYX'], help='3D Matrix Transpose')
-        ZTP.add_argument('-help', action='help', help='')
+        ZTP = subparser.add_parser('ZTP', parents=[parent_parser], aliases=['XYZ2ZYX'], help='3D Matrix Transpose')
         ZTP.add_argument('-exch', action='store_true',
                 dest='tp_exch', help='Exchange Header Parameters for the Two Dimensions')
         
         # Include tail arguments proceeding function call
         Transpose.headerArgsTP(ZTP)
-        Function.clArgsTail(ZTP)
+        # Function.clArgsTail(ZTP)
 
         # 4D Transpose subparser
-        ATP = subparser.add_parser('ATP', aliases=['XYZA2AYZX'], help='4D Matrix Transpose')
-        ATP.add_argument('-help', action='help', help='')
+        ATP = subparser.add_parser('ATP', parents=[parent_parser], aliases=['XYZA2AYZX'], help='4D Matrix Transpose')
         
         # Include tail arguments proceeding function call
         Transpose.headerArgsTP(ATP)
-        Function.clArgsTail(ATP)
+        # Function.clArgsTail(ATP)
 
 
     @staticmethod
@@ -386,7 +383,7 @@ class Transpose2D(Transpose):
     ##################
         
     @staticmethod
-    def clArgs(subparser): 
+    def clArgs(subparser, parent_parser): 
         pass 
 
 
@@ -564,7 +561,7 @@ class Transpose3D(Transpose):
     ##################
         
     @staticmethod
-    def clArgs(subparser): 
+    def clArgs(subparser, parent_parser): 
         pass
 
     ####################
@@ -672,7 +669,7 @@ class Transpose4D(Transpose):
     ##################
         
     @staticmethod
-    def clArgs(subparser): 
+    def clArgs(subparser, parent_parser): 
         pass
 
 

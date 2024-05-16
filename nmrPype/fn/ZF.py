@@ -259,7 +259,7 @@ class ZeroFill(Function):
     ##################
         
     @staticmethod
-    def clArgs(subparser):
+    def clArgs(subparser, parent_parser):
         """
         Zero Fill command-line arguments
 
@@ -272,8 +272,7 @@ class ZeroFill(Function):
             Subparser object that will receive function and its arguments
         """
         # ZF subparser
-        ZF = subparser.add_parser('ZF', help='Perform a Zero Fill (ZF) Operation on the data')
-        ZF.add_argument('-help', action='help', help='')
+        ZF = subparser.add_parser('ZF', parents=[parent_parser], help='Perform a Zero Fill (ZF) Operation on the data')
         
         group = ZF.add_mutually_exclusive_group() 
         group.add_argument('-zf', type=int, metavar='count', default=0,
@@ -288,7 +287,7 @@ class ZeroFill(Function):
                         dest='zf_inv', help='Extract Original Time Domain')
         
         # Include tail arguments proceeding function call
-        Function.clArgsTail(ZF)
+        # Function.clArgsTail(ZF)
 
 
     ####################
