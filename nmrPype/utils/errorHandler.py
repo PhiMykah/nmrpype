@@ -66,9 +66,9 @@ def catchError(e, new_e = Exception, msg : str = "", ePrint = False):
         err_count = len(new_args)
         for i in range(err_count-1, -1, -1):
             print("{0}. {1}".format(err_count-i, new_args[i]), file=sys.stderr)
-            if i == 0:
-                print(f"Exception was caught on line {exc_line} in module {exc_func}", file=sys.stderr)
-                print(f"File: {exc_file}", file=sys.stderr, end="\n\n")
+            # if i == 0:
+                # print(f"Exception was caught on line {exc_line} in module {exc_func}", file=sys.stderr)
+                # print(f"File: {exc_file}", file=sys.stderr, end="\n\n")
             if i-1 != -1:
                 print("The above exception was the cause of the following exception:", file=sys.stderr)
     else:
