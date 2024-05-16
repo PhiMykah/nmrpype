@@ -451,7 +451,7 @@ class Draw(Function):
     ##################
 
     @staticmethod
-    def clArgs(subparser):
+    def clArgs(subparser, parent_parser):
         """
         Draw command-line arguments
 
@@ -464,8 +464,7 @@ class Draw(Function):
             Subparser object that will receive function and its arguments
         """
         # DRAW subparser
-        DRAW = subparser.add_parser('DRAW', help='Draw the current state of the data out to a file')
-        DRAW.add_argument('-help', action='help', help='')
+        DRAW = subparser.add_parser('DRAW', parents=[parent_parser], help='Draw the current state of the data out to a file')
         DRAW.add_argument('-file', type=str, metavar='PATH/NAME.FMT', required=True,
                           dest='draw_file', help='Destination file to output')
         DRAW.add_argument('-fmt', type=str, metavar='File Format', default='',
@@ -476,7 +475,7 @@ class Draw(Function):
                           dest='draw_slice', help='Number of data 1D/2D slices to draw from full set')
         
         # Include universal commands proceeding function call
-        Function.clArgsTail(DRAW)
+        # Function.clArgsTail(DRAW)
 
 
     ####################

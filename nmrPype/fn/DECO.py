@@ -458,7 +458,7 @@ class Decomposition(Function):
     ##################
 
     @staticmethod
-    def clArgs(subparser):
+    def clArgs(subparser, parent_parser):
         """
         Decomposition command-line arguments
 
@@ -471,8 +471,7 @@ class Decomposition(Function):
             Subparser object that will receive function and its arguments
         """
         # DECO subparser
-        DECO = subparser.add_parser('DECO', help='Create synthetic decomposition with basis set and original data.')
-        DECO.add_argument('-help', action='help', help='')
+        DECO = subparser.add_parser('DECO', parents=[parent_parser], help='Create synthetic decomposition with basis set and original data.')
         DECO.add_argument('-basis', '-bases', type=str, nargs='+', metavar='BASIS FILES', required=True,
                           dest='deco_bases', help='List of basis files to use separated by spaces')
         DECO.add_argument('-cfile', type=str, metavar='COEFFICIENT OUTPUT', required=True,
@@ -482,7 +481,7 @@ class Decomposition(Function):
         DECO.add_argument('-err', type=float, metavar='SIG ERROR', default=1e-8,
                           dest='deco_error', help='Rank Calculation Significant Error (Determining Dependence)')
         # Include universal commands proceeding function call
-        Function.clArgsTail(DECO)
+        # Function.clArgsTail(DECO)
 
 
         ####################
