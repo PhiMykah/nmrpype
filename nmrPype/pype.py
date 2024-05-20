@@ -128,6 +128,8 @@ def function(data : DataFrame, args : argparse.Namespace) -> int:
     for opt in vars(args):
         if (opt.startswith(fn.lower())):
             fn_params[opt] = getattr(args, opt)
+        elif (opt.startswith('mp')):
+            fn_params[opt] = getattr(args,opt)
 
     # Attempt to run operation, error handling within is handled per function
     return (data.runFunc(fn, fn_params))
