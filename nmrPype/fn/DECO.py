@@ -35,7 +35,7 @@ class Decomposition(Function):
     mp_threads : int
         Number of threads to utilize per process
     """
-    def __init__(self, deco_bases : list[str], deco_cfile : str, 
+    def __init__(self, deco_bases : list[str], deco_cfile : str = "coef.dat", 
                  deco_mask : str = "", deco_error : float = 1e-8, mp_enable : bool = False, 
                  mp_proc : int = 0, mp_threads : int = 0):
         
@@ -119,11 +119,6 @@ class Decomposition(Function):
             modified array post-process
         """
         try:
-            # Check if applying the mask is necessary
-            if self.deco_mask:
-                mask = DataFrame(self.deco_mask).getArray()
-                array = array * mask
-
             # Obtain basis and the basis shape
             bases = []
             basis_shape = None
@@ -158,10 +153,11 @@ class Decomposition(Function):
             if directory and not os.path.exists(directory):
                 os.makedirs(directory)
 
-            # Save the coefficients to the file given by user
-            if self.generateCoeffFile(beta.T.real, data_dic=dic, isAsymmetric=isAsymmetric,
-                                      basis_dim=len(basis_shape), sample_dim=len(sample_shape)) != 0:
-                raise CoeffWriteError
+            if self.deco_cfile.lower() != "none":
+                # Save the coefficients to the file given by user
+                if self.generateCoeffFile(beta.T.real, data_dic=dic, isAsymmetric=isAsymmetric,
+                                        basis_dim=len(basis_shape), sample_dim=len(sample_shape)) != 0:
+                    raise CoeffWriteError
         
 
             return synthetic_data
@@ -202,12 +198,18 @@ class Decomposition(Function):
         # A represents the (data length, number of bases) array
         A = np.array(bases).T
 
+        # Check if applying the mask is necessary
+        if self.deco_mask:
+            mask = DataFrame(self.deco_mask).getArray()
+            A = (A.T * mask.T.flatten()).T
+
         # Ensure only real is outputted in first dimension if imaginary is empty
         if not np.all(A.imag):
             A = A.real
             
         # b is the vector to approximate
         b = array.flatten(order='C')[:, np.newaxis]
+        
         # beta is the coefficient vector multiplied by the A to approximate the result
         # Output rank if necessary
         beta, residuals, rank, singular_values = la.lstsq(A,b, 
@@ -239,6 +241,12 @@ class Decomposition(Function):
         """
         # A represents the len(array) x len(bases) array
         A = np.array(bases).T
+
+        # Check if applying the mask is necessary
+        if self.deco_mask:
+            mask = DataFrame(self.deco_mask).getArray()
+            A = A * mask.reshape(array.shape[0], np.prod(array.shape[1:])).T
+
         # b is the target number of data points x number of vectors to approximate
         b = array.reshape(array.shape[0], np.prod(array.shape[1:])).T
         # b is the vector to approximate
@@ -474,7 +482,7 @@ class Decomposition(Function):
         DECO = subparser.add_parser('DECO', parents=[parent_parser], help='Create synthetic decomposition with basis set and original data.')
         DECO.add_argument('-basis', '-bases', type=str, nargs='+', metavar='BASIS FILES', required=True,
                           dest='deco_bases', help='List of basis files to use separated by spaces')
-        DECO.add_argument('-cfile', type=str, metavar='COEFFICIENT OUTPUT', required=True,
+        DECO.add_argument('-cfile', type=str, metavar='COEFFICIENT OUTPUT', default='coef.dat',
                           dest='deco_cfile', help='Output file path for coefficients (WILL OVERWRITE FILE)')
         DECO.add_argument('-mask', type=str, metavar='MASK FILE INPUT', default="", 
                           dest='deco_mask', help='Specify input mask file to multiply with data')
