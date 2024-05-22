@@ -131,7 +131,8 @@ class Decomposition(Function):
                     basis_shape = basis_array.shape
 
                 # add flattened array to list since dimensions are not significant to calculation
-                bases.append(basis_array.flatten(order='C'))
+                # bases.append(basis_array.flatten(order='C'))
+                bases.append(basis_array)
             
             sample_shape = array.shape
 
@@ -196,17 +197,18 @@ class Decomposition(Function):
             Approximation matrix and coefficient matrix
         """
         # A represents the (data length, number of bases) array
-        A = np.array(bases).T
+        A = np.array(bases)
 
         # Check if applying the mask is necessary
         if self.deco_mask:
             mask = DataFrame(self.deco_mask).getArray()
-            A = (A.T * mask.T.flatten()).T
+            A = (A * mask)
 
         # Ensure only real is outputted in first dimension if imaginary is empty
         if not np.all(A.imag):
             A = A.real
-            
+        
+        A = np.reshape(A, (A.shape[0], -1,)).T
         # b is the vector to approximate
         b = array.flatten(order='C')[:, np.newaxis]
         
@@ -240,15 +242,17 @@ class Decomposition(Function):
             Approximation matrix and coefficient matrix
         """
         # A represents the len(array) x len(bases) array
-        A = np.array(bases).T
+        A = np.array(bases)
 
         # Check if applying the mask is necessary
         if self.deco_mask:
             mask = DataFrame(self.deco_mask).getArray()
-            A = A * mask.reshape(array.shape[0], np.prod(array.shape[1:])).T
+            A = (A * mask)
 
+        A = np.reshape(A, (A.shape[0], -1,)).T
+        
         # b is the target number of data points x number of vectors to approximate
-        b = array.reshape(array.shape[0], np.prod(array.shape[1:])).T
+        b = np.reshape(array, (array.shape[0], -1,)).T
         # b is the vector to approximate
         # b = array.flatten(order='C')[:, np.newaxis]
 
