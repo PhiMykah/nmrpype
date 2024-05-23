@@ -241,28 +241,36 @@ class Decomposition(Function):
         (approx, beta) : tuple[ndarray,ndarray]
             Approximation matrix and coefficient matrix
         """
-        # A represents the len(array) x len(bases) array
-        A = np.array(bases)
-
         # Check if applying the mask is necessary
         if self.deco_mask:
             mask = DataFrame(self.deco_mask).getArray()
-            A = (A * mask)
-
-        A = np.reshape(A, (A.shape[0], -1,)).T
         
-        # b is the target number of data points x number of vectors to approximate
-        b = np.reshape(array, (array.shape[0], -1,)).T
-        # b is the vector to approximate
-        # b = array.flatten(order='C')[:, np.newaxis]
+        betas = []
+        for slice_num in range(len(array)):
+            # A represents the len(array) x len(bases) array
+            if self.deco_mask:
+                A = (np.array(bases) * mask[slice_num])
+            else: 
+                A = (np.array(bases))
 
-        # beta is the coefficient vector of length len(bases) approximating result
-        # Output rank if necessary 
+            A = np.reshape(A, (A.shape[0], -1,)).T
         
-        if not np.all(A.imag):
-            A = A.real
+            # b is the target number of data points x number of vectors to approximate
+            b = array[slice_num].flatten(order='C')[:, np.newaxis]
+            # b is the vector to approximate
+            # b = array.flatten(order='C')[:, np.newaxis]
+
+            # beta is the coefficient vector of length len(bases) approximating result
+            # Output rank if necessary 
+        
+            if not np.all(A.imag):
+                A = A.real
             
-        beta, residuals, rank, singular_values = la.lstsq(A,b, rcond=self.SIG_ERROR*np.max(A.real))
+            # Find x that minimizes A @ x = b
+            x, residuals, rank, singular_values = la.lstsq(A,b, rcond=self.SIG_ERROR*np.max(A.real))
+            betas.append(x)
+
+        beta = np.array(betas)
         # approx represents data approximation from beta and bases
         approx = A @ beta
 
