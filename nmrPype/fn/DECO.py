@@ -196,30 +196,19 @@ class Decomposition(Function):
         (approx, beta) : tuple[ndarray,ndarray]
             Approximation matrix and coefficient matrix
         """
-        # A represents the (data length, number of bases) array
-        A = np.array(bases)
-
         # Check if applying the mask is necessary
         if self.deco_mask:
             mask = DataFrame(self.deco_mask).getArray()
-            A = (A * mask)
+            beta = _decomposition(array, bases, self.SIG_ERROR, mask)
+        else:
+            beta = _decomposition(array,bases, self.SIG_ERROR)
 
-        # Ensure only real is outputted in first dimension if imaginary is empty
-        if not np.all(A.imag):
-            A = A.real
-        
-        A = np.reshape(A, (A.shape[0], -1,)).T
-        # b is the vector to approximate
-        b = array.flatten(order='C')[:, np.newaxis]
-        
-        # beta is the coefficient vector multiplied by the A to approximate the result
-        # Output rank if necessary
-        beta, residuals, rank, singular_values = la.lstsq(A,b, 
-                                                            rcond=self.SIG_ERROR*np.max(A))
-        # approx is the test approximation to be made
+        A = np.reshape(np.array(bases), (len(bases), -1,)).T
         approx = A @ beta
 
         return (approx, beta)
+
+        
 
     def asymmetricDecomposition(self, array : np.ndarray,
                                 bases : list[np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
@@ -245,35 +234,21 @@ class Decomposition(Function):
         if self.deco_mask:
             mask = DataFrame(self.deco_mask).getArray()
         
-        betas = []
+        approx = []
+        beta_planes = []
         for slice_num in range(len(array)):
             # A represents the len(array) x len(bases) array
-            if self.deco_mask:
-                A = (np.array(bases) * mask[slice_num])
-            else: 
-                A = (np.array(bases))
-
-            A = np.reshape(A, (A.shape[0], -1,)).T
-        
-            # b is the target number of data points x number of vectors to approximate
-            b = array[slice_num].flatten(order='C')[:, np.newaxis]
-            # b is the vector to approximate
-            # b = array.flatten(order='C')[:, np.newaxis]
-
-            # beta is the coefficient vector of length len(bases) approximating result
-            # Output rank if necessary 
-        
-            if not np.all(A.imag):
-                A = A.real
             
-            # Find x that minimizes A @ x = b
-            x, residuals, rank, singular_values = la.lstsq(A,b, rcond=self.SIG_ERROR*np.max(A.real))
-            betas.append(x)
-
-        beta = np.array(betas)
-        # approx represents data approximation from beta and bases
+            if self.deco_mask:
+                x = _decomposition(array[slice_num], bases, self.SIG_ERROR,mask[slice_num])
+            else:
+                x = _decomposition(array[slice_num], bases, self.SIG_ERROR)
+            # approx represents data approximation from beta and bases
+            beta_planes.append(x)
+        
+        beta = np.array(beta_planes).squeeze().T
+        A = np.reshape(np.array(bases), (len(bases), -1,)).T
         approx = A @ beta
-
         return(approx, beta)
         
 
@@ -526,6 +501,30 @@ class Decomposition(Function):
 #  Helper Functions  #
 ######################
 
+def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, mask : np.ndarray | None = None) -> np.ndarray:
+    # A represents the (data length, number of bases) array
+    A = np.array(bases)
+
+    if type(mask) != type(None):
+        A = (np.array(bases) * mask)
+    else:
+        A = np.array(bases)
+
+    # Ensure only real is outputted in first dimension if imaginary is empty
+    if not np.all(A.imag):
+        A = A.real
+
+    A = np.reshape(A, (A.shape[0], -1,)).T
+    # b is the vector to approximate
+    b = array.flatten(order='C')[:, np.newaxis]
+    
+    # beta is the coefficient vector multiplied by the A to approximate the result
+    # Output rank if necessary
+    beta, residuals, rank, singular_values = la.lstsq(A,b, 
+                                                        rcond=err*np.max(A))
+
+    return beta
+    
 def paramSyntax(param : str, dim : int, dim_order : dict = [2,1,3,4]) -> str:
     """
     Local verison of updateHeaderSyntax defined by
