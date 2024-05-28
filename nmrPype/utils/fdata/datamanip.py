@@ -189,7 +189,7 @@ def reshape_data(data : np.ndarray, shape : tuple) -> np.ndarray:
             # For 1-D case where imaginary data is zeros appended to the end of the list
             return data[:shape[0]].reshape(shape)
         except ValueError:
-            warn(str(data.shape) + "cannot be shaped into" + str(shape))
+            warn(str(data.shape) + " cannot be shaped into " + str(shape))
             return data
 
 
@@ -294,6 +294,9 @@ def find_shape(dic : dict) -> tuple:
             dim3 = int(dic["FDF3SIZE"])
             dim4 = int(dic["FDF4SIZE"])
             return (dim4, dim3, dim2, dim1)
+        elif dic["FDDIMCOUNT"] == 4 and dic["FDPIPEFLAG"] == 0:
+            dim3 = int(dic["FDF3SIZE"])
+            return (dim3, dim2, dim1)
 
         return (dim2, dim1)
     
