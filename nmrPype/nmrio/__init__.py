@@ -187,11 +187,11 @@ def writeToBuffer(data : DataFrame, output : WriteStream, overwrite : bool) -> i
                     plane = data.getArray()[ai, zi]
 
                     # Update dictionary if needed 
-                    if data.getParam("FDSCAPEFLAG") == 1:
-                        data.setParam("FDMAX", plane.max())
-                        data.setParam("FDDISPMAX", data.getParam("FDMAX"))
-                        data.setParam("FDMIN", plane.min())
-                        data.setParam("FDDISPMIN", data.getParam("FDMIN"))
+                    # if data.getParam("FDSCAPEFLAG") == 1:
+                    #     data.setParam("FDMAX", plane.max())
+                    #     data.setParam("FDDISPMAX", data.getParam("FDMAX"))
+                    #     data.setParam("FDMIN", plane.min())
+                    #     data.setParam("FDDISPMIN", data.getParam("FDMIN"))
                     writeDataToBuffer(output, plane)
 
     return 0
