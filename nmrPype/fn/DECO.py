@@ -36,17 +36,18 @@ class Decomposition(Function):
         Number of threads to utilize per process
     """
     def __init__(self, deco_bases : list[str], deco_cfile : str = "coef.dat", 
-                 deco_mask : str = "", deco_error : float = 1e-8, mp_enable : bool = False, 
-                 mp_proc : int = 0, mp_threads : int = 0):
+                 deco_mask : str = "", deco_retain : bool = False, deco_error : float = 1e-8, 
+                 mp_enable : bool = False, mp_proc : int = 0, mp_threads : int = 0):
         
         self.deco_bases = deco_bases
         self.deco_cfile = deco_cfile
         self.deco_mask = deco_mask
+        self.deco_retain = deco_retain
         self.SIG_ERROR = deco_error
         self.mp = [mp_enable, mp_proc, mp_threads]
 
         params = {'deco_bases':deco_bases, 'deco_cfile':deco_cfile, 
-                  'deco_mask':deco_mask, 'deco_error':deco_error}
+                  'deco_mask':deco_mask, 'deco_retain':deco_retain, 'deco_error':deco_error}
         super().__init__(params)
 
     ############
@@ -139,13 +140,9 @@ class Decomposition(Function):
             isAsymmetric = True if len(sample_shape) > len(basis_shape) else False
                 
             if isAsymmetric:
-                approx, beta = self.asymmetricDecomposition(array, bases)
-                synthetic_data = approx.T.reshape(sample_shape)
+                synthetic_data, beta = self.asymmetricDecomposition(array, bases)
             else:
-                approx, beta = self.decomposition(array, bases)
-                # Reshape back to target data
-                # index 0 is used since the data is technically 2D
-                synthetic_data = approx.T[0].reshape(sample_shape)
+                synthetic_data, beta = self.decomposition(array, bases)
 
             # Identify directory for saving file
             directory = os.path.split(self.deco_cfile)[0]
@@ -204,9 +201,19 @@ class Decomposition(Function):
             beta = _decomposition(array,bases, self.SIG_ERROR)
 
         A = np.reshape(np.array(bases), (len(bases), -1,)).T
+
         approx = A @ beta
 
-        return (approx, beta)
+        # Check to see if original array should be retained
+        if not self.deco_retain:
+            return (approx.squeeze().reshape(array.shape), beta)
+        
+        if self.deco_mask:
+            # Apply elements at mask
+            gaps = np.invert(mask.astype(bool))
+            array[gaps] = approx.squeeze().reshape(array.shape)[gaps]
+
+        return (array, beta)
 
         
 
@@ -248,8 +255,19 @@ class Decomposition(Function):
         
         beta = np.array(beta_planes).squeeze().T
         A = np.reshape(np.array(bases), (len(bases), -1,)).T
+
         approx = A @ beta
-        return(approx, beta)
+
+        # Check to see if original array should be retained
+        if not self.deco_retain:
+            return (approx.T.reshape(array.shape), beta)
+        
+        if self.deco_mask:
+            # Apply elements at mask
+            gaps = np.invert(mask.astype(bool))
+            array[gaps] = approx.T.reshape(array.shape)[gaps]
+
+        return (array, beta)
         
 
     def generateCoeffFile(self, beta : np.ndarray, 
@@ -473,6 +491,8 @@ class Decomposition(Function):
                           dest='deco_cfile', help='Output file path for coefficients (WILL OVERWRITE FILE)')
         DECO.add_argument('-mask', type=str, metavar='MASK FILE INPUT', default="", 
                           dest='deco_mask', help='Specify input mask file to multiply with data')
+        DECO.add_argument('-retain', action='store_true',
+                          dest='deco_retain', help='Retain source data whilst adding synthetic data to gaps.')
         DECO.add_argument('-err', type=float, metavar='SIG ERROR', default=1e-8,
                           dest='deco_error', help='Rank Calculation Significant Error (Determining Dependence)')
         # Include universal commands proceeding function call
