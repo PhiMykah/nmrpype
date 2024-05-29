@@ -148,7 +148,7 @@ class PhaseCorrection(Function):
         # Check for parallelization
 
         dataLength = array.shape[-1]
-        it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength)
+        it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength, order='C')
         with it:
             for x in it:
                 x[...] = self.phase * x

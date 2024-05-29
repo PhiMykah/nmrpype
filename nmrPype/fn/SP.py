@@ -175,7 +175,7 @@ class SineBell(Function):
 
         df = self.headerParams['DFVAL'] if self.sp_df else 0.0
 
-        it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength)
+        it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength, order='C')
         with it:
             for x in it:
                 x[...] = self.applyFunc(x, a1, a2, a3, firstPointScale, df)
