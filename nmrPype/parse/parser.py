@@ -78,8 +78,6 @@ def parser(input_args : list[str]) -> Namespace:
 
     parser.parse_known_args(args=[], namespace=empty_container)
     _, unknown = parser.parse_known_args(args=general_args, namespace=initial_container)
-    parser.parse_known_args(args=[], namespace=empty_container)
-    _, unknown = parser.parse_known_args(args=general_args, namespace=initial_container)
 
     if len(input_args) == 1:
         return initial_container
