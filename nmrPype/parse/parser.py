@@ -78,6 +78,8 @@ def parser(input_args : list[str]) -> Namespace:
 
     parser.parse_known_args(args=[], namespace=empty_container)
     _, unknown = parser.parse_known_args(args=general_args, namespace=initial_container)
+    parser.parse_known_args(args=[], namespace=empty_container)
+    _, unknown = parser.parse_known_args(args=general_args, namespace=initial_container)
 
     if len(input_args) == 1:
         return initial_container
@@ -85,7 +87,8 @@ def parser(input_args : list[str]) -> Namespace:
         fn_args = " ".join(["-fn",*input_args[1].split(" ")]).split(" ")
         _, fn_unknown = parser.parse_known_args(args=fn_args, namespace=container)
 
-    print("WARNING! Unknown Arguments:", *unknown, *fn_unknown, file=stderr)
+    if unknown or fn_unknown:
+        print("WARNING! Unknown Arguments:", *unknown, *fn_unknown, file=stderr)
 
     for attribute in vars(empty_container):
         # Check if the attribute has been changed from default in the initial container
