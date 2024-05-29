@@ -185,7 +185,7 @@ class FourierTransform(Function):
                 processed_chunk = list(executor.map(operation, array))
                 array = np.array(processed_chunk)
         else:
-            it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=array.shape[-1])
+            it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=array.shape[-1], order='C')
             with it:
                 for x in it:
                     x[...] = operation(x)

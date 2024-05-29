@@ -244,7 +244,7 @@ class ZeroFill(Function):
         # Iterate through each 1-D strip and copy over existing data
         it = np.nditer([a,b], flags=['external_loop', 'buffered'], 
                         op_flags=[['readonly'],['writeonly']],
-                        buffersize=dataLength)
+                        buffersize=dataLength, order='C')
         with it:
             for x,y in it:
                 y[...] = x

@@ -216,7 +216,7 @@ class Draw(Function):
             ax.remove()
 
         # Iterate over each vector and plot with proper formatting
-        with np.nditer(array, flags=['external_loop','buffered'], op_flags=['readonly'], buffersize=dataLength) as it:
+        with np.nditer(array, flags=['external_loop','buffered'], op_flags=['readonly'], buffersize=dataLength, order='C') as it:
             graph_num = 1
             
             for vector in it:
@@ -307,7 +307,7 @@ class Draw(Function):
             ax.remove()
 
         # Iterate over each vector and plot with proper formatting
-        it = np.nditer(array, flags=['multi_index'])
+        it = np.nditer(array, flags=['multi_index'], order='C')
         with it:
             graph_num = 1
             while not it.finished:
