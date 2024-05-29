@@ -38,7 +38,7 @@ class ZeroFill(Function):
     mp_threads : int
         Number of threads to utilize per process
     """
-    def __init__(self, zf_count : int = 0, zf_pad : int = 0, zf_size : int = 0,
+    def __init__(self, zf_count : int = -1, zf_pad : int = 0, zf_size : int = 0,
                  zf_auto : bool = False, zf_inv : bool = False,
                  mp_enable : bool = False, mp_proc : int = 0, mp_threads : int = 0):
         self.zf_count = zf_count
@@ -115,7 +115,7 @@ class ZeroFill(Function):
             if self.zf_pad:
                 # Add amount of zeros corresponding to pad amount
                 new_size += self.zf_pad
-            elif self.zf_count:
+            elif self.zf_count >= 0:
                 # Double data zf_count times
                 magnitude = 2**self.zf_count
                 new_size = dataLength * magnitude
@@ -222,7 +222,7 @@ class ZeroFill(Function):
                 # Add amount of zeros corresponding to pad amount
                 new_size = dataLength
                 new_size += self.zf_pad
-            elif self.zf_count:
+            elif self.zf_count >= 0:
                 # Double data zf_count times
                 magnitude = 2**self.zf_count
                 new_size = dataLength * magnitude
@@ -274,15 +274,16 @@ class ZeroFill(Function):
         # ZF subparser
         ZF = subparser.add_parser('ZF', parents=[parent_parser], help='Perform a Zero Fill (ZF) Operation on the data')
         
+        ZF.add_argument('-auto', action='store_true',
+                        dest='zf_auto', help='Round Final Size to Power of 2')
+        
         group = ZF.add_mutually_exclusive_group() 
-        group.add_argument('-zf', type=int, metavar='count', default=0,
+        group.add_argument('-zf', type=int, metavar='count', default=-1,
                         dest='zf_count', help='-Number of Times to Double the size')
         group.add_argument('-pad', type=int, metavar='padCount', default=0,
                         dest='zf_pad', help='Zeros to Add by Padding')
         group.add_argument('-size', type=int, metavar='xSize', default=0,
                         dest='zf_size', help='Desired Final size')
-        group.add_argument('-auto', action='store_true',
-                        dest='zf_auto', help='Round Final Size to Power of 2')
         group.add_argument('-inv', action='store_true',
                         dest='zf_inv', help='Extract Original Time Domain')
         
@@ -342,11 +343,9 @@ class ZeroFill(Function):
             elif (self.zf_pad):
                 zfSize = outSize + self.zf_pad
                 outSize = zfSize
-            else:
-                zfCount = 0 if zfCount < 0 else zfCount
-                for i in range (zfCount):
-                    outSize *= 2
-                zfSize = outSize
+            elif self.zf_count >= 0:
+                magnitude = 2**self.zf_count
+                zfSize = outSize * magnitude
             if (self.zf_auto):
                 zfSize = ZeroFill.nextPowerOf2(int(zfSize))
                 outSize = zfSize
