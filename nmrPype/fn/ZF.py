@@ -136,7 +136,7 @@ class ZeroFill(Function):
         chunk_size = array_shape[0] if chunk_size == 0 else chunk_size
         
         chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
-        
+
         # Pad if size is larger and trim if size is shorter
         if new_size > dataLength:
             padding = new_size - dataLength
@@ -149,7 +149,7 @@ class ZeroFill(Function):
             # Pass the chunk, the pad width, and the padding function
             args = [(chunks[i], pad_width, operation) for i in range(len(chunks))]
         else:
-            operation = lambda a, size : a[...,:size]
+            operation = ZeroFill.truncate
             # Pass the chunk, the new array size, and the trimming function
             args = [(chunks[i], new_size, operation) for i in range(len(chunks))]
             
@@ -303,6 +303,9 @@ class ZeroFill(Function):
         """
         return 1 if x == 0 else 2**(x-1).bit_length()
     
+    @staticmethod
+    def truncate(array : np.array, size : int):
+        return array[...,:size]
 
     def initialize(self, data : DataFrame):
         """

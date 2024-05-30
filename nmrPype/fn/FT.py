@@ -1,7 +1,7 @@
 from .function import DataFunction as Function
 import numpy as np
 from scipy import fft
-
+import sys
 # Multiprocessing
 from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
@@ -110,7 +110,7 @@ class FourierTransform(Function):
             output = pool.starmap(self.process, args, chunksize=chunk_size)
 
         # Recombine and reshape data
-        new_array = np.concatenate(output).reshape(array_shape)
+        new_array = np.concatenate(output).reshape(array_shape, order='C')
         return new_array
 
     def vectorFFT(self, array : np.ndarray) -> np.ndarray:
@@ -179,16 +179,19 @@ class FourierTransform(Function):
         # Perform dfft or idfft depending on args
         operation = self.vectorFFT if not self.ft_inv else self.vectorIFFT
 
+        # -------------------------------------------------
+        # USAGE OF THREADS IS BUGGED WITH FT, OBSOLETE CODE
+        # -------------------------------------------------
         # Check for parallelization
-        if self.mp[0] and not array.ndim == 1:
-            with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
-                processed_chunk = list(executor.map(operation, array))
-                array = np.array(processed_chunk)
-        else:
-            it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=array.shape[-1], order='C')
-            with it:
-                for x in it:
-                    x[...] = operation(x)
+        # if self.mp[0] and (1 < array.ndim < 4):
+        #     with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
+        #         processed_chunk = list(executor.map(operation, array))
+        #         array = np.array(processed_chunk, order='C')
+        # else:
+        it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=array.shape[-1], order='C')
+        with it:
+            for x in it:
+                x[...] = operation(x)
 
         # Flag operations following operation
 
