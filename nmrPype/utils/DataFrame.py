@@ -30,6 +30,7 @@ class DataFrame:
 
             self.header = dic
             self.array = data
+            self.file = file
         else:
             # Initialize header and array based on args
             self.header = header
@@ -37,9 +38,27 @@ class DataFrame:
 
 
     def __repr__(self):
-        return ""
-    
+        if type(self.array) == None or not self.header or not self.file:
+            return "Empty NMR DataFrame"
+        
+        file = self.file
+        dim = self.array.ndim
+        size = self.array.size
+        order = " ".join([str(int(s)) for s in self.header['FDDIMORDER']])
+        shape = " ".join([str(s) for s in reversed(self.array.shape)])
+        quad = "Complex" if np.any(np.iscomplex(self.array)) else "Real"
+        t = "True" if self.header['FDTRANSPOSED'] else 'False'
+        hdr = "\n".join(["{}: {}".format(k,v) for k, v in self.header.items()])
+        data = str(self.array)
+        return \
+        f"NMR DataFrame @ {file}\
+        \nDIM: {dim}\tSIZE: {size}\tORDER: {order}\tSHAPE: {shape}\
+        \nQUAD: {quad} TRANSPOSED: {t}\n"
+            
 
+    def __str__(self):
+        return f"NMR DataFrame @ {self.file}"
+    
     def runFunc(self, targetFunction : str, arguments : dict = {}) -> int:
         """
         runFunc completes the following:
