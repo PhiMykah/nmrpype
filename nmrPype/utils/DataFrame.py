@@ -38,6 +38,9 @@ class DataFrame:
 
 
     def __repr__(self):
+        """
+        Printable string describe the DataFrame
+        """
         if type(self.array) == None or not self.header or not self.file:
             return "Empty NMR DataFrame"
         
@@ -56,8 +59,16 @@ class DataFrame:
         \nQUAD: {quad} TRANSPOSED: {t}\n"
             
 
-    def __str__(self):
-        return f"NMR DataFrame @ {self.file}"
+    def __str__(self) -> str:
+        """
+        String describing the DataFrame, with file and shape
+
+        Returns
+        -------
+        str
+            Returns string description
+        """
+        return f"NMR DataFrame @ {self.file} ({" ".join([str(s) for s in reversed(self.array.shape)])})"
     
     def runFunc(self, targetFunction : str, arguments : dict = {}) -> int:
         """
