@@ -1,5 +1,6 @@
 from .function import DataFunction as Function
 import numpy as np
+from sys import stderr
 
 # Multiprocessing
 from multiprocessing import Pool, TimeoutError
@@ -155,7 +156,7 @@ class SineBell(Function):
     # Default Processing #
     ######################
         
-    def process(self, array: np.ndarray) -> np.ndarray:
+    def process(self, array: np.ndarray, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         """
         See :py:func:`nmrPype.fn.function.DataFunction.process` for documentation
         """
@@ -178,7 +179,11 @@ class SineBell(Function):
         it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength, order='C')
         with it:
             for x in it:
+                if verb[0]:
+                    Function.verbPrint('SP', it.iterindex, it.itersize, array.shape[-1], verb[1:])
                 x[...] = self.applyFunc(x, a1, a2, a3, firstPointScale, df)
+            if verb[0]:
+                print("", file=stderr)
 
         return array
 

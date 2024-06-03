@@ -21,7 +21,7 @@ class DataFrame:
     array : Array [numpy.ndarray or None]
         Array to initialize, by default obtained from file or set
     """
-    def __init__(self, file : str = "", header : dict = {}, array : Array = None):
+    def __init__(self, file : str = "", header : dict = {}, array : Array = None, verb : int = 0, inc : int = 16):
         if (file): # Read only if file is provided
             from ..nmrio import readFromFile
 
@@ -31,10 +31,15 @@ class DataFrame:
             self.header = dic
             self.array = data
             self.file = file
+            self.verb = verb
+            self.inc = inc
         else:
             # Initialize header and array based on args
             self.header = header
             self.array = array
+            self.file = file
+            self.verb = verb
+            self.inc = inc
 
 
     def __repr__(self):
@@ -185,7 +190,6 @@ class DataFrame:
         """
         return self.header
 
-
     def setHeader(self, dic : dict) -> int:
         """
         Dataframe header variable setter
@@ -329,3 +333,47 @@ class DataFrame:
             return 2
         else:
             return int(self.header['FDDIMORDER'][dim-1])
+
+    def getVerb(self) -> int:
+        """
+        Obtain verbosity value
+
+        Returns
+        -------
+        int
+            Integer corresponding to verbosity value
+        """ 
+        return self.verb
+    
+    def setVerb(self, level : int):
+        """
+        Set verbosity value
+
+        Parameters
+        ----------
+        level : int
+            Integer for new verbosity value
+        """
+        self.verb = level
+
+    def getInc(self) -> int:
+        """
+        Obtain verbose increment vlue
+
+        Returns
+        -------
+        int
+            Integer corresponding to verbose output loop increment
+        """
+        return self.inc
+
+    def setInc(self, level : int):
+        """
+        Set verbosity increment
+
+        Parameters
+        ----------
+        level : int
+            Integer for verbose output loop increment
+        """
+        self.inc = level

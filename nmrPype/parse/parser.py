@@ -33,6 +33,10 @@ def parser(input_args : list[str]) -> Namespace:
     parent_parser.add_argument('-fn','--function', dest='rf', action='store_true',
                         help='Read for inputted function')
     parent_parser.add_argument('-help', action='help', help='Use the -fn fnName switch for more')
+    parent_parser.add_argument('-verb', '--verbose', metavar='[0]', type=int, default=0, dest='verb',
+                        help='Debug verbose level')
+    parent_parser.add_argument('-inc','--increment', metavar='[16]', type=int, default=16, dest='inc',
+                        help='Verbose loop print increment')
     # Add parsers for multiprocessing
     parent_parser.add_argument('-mpd', '--disable', action='store_false', dest='mp_enable',
                                 help='Disable Multiprocessing')

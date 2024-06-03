@@ -1,6 +1,7 @@
 from .function import DataFunction as Function
 import numpy as np
 import operator
+from sys import stderr
 
 # Multiprocessing
 from multiprocessing import Pool, TimeoutError
@@ -141,7 +142,7 @@ class PhaseCorrection(Function):
     # Default Processing #
     ######################
 
-    def process(self, array : np.ndarray) -> np.ndarray:
+    def process(self, array : np.ndarray, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         """
         See :py:func:`nmrPype.fn.function.DataFunction.process` for documentation
         """
@@ -151,7 +152,16 @@ class PhaseCorrection(Function):
         it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength, order='C')
         with it:
             for x in it:
+                if verb[0]:
+                    iter_index = int(np.floor(it.iterindex / 512) + 1)
+                    iter_size = int(it.itersize / array.shape[-1])
+                    digits = len(str(iter_size))
+                    loop_string = f"PS\t{{:0{digits}d}} of {{:0{digits}d}}\t{{}}"
+                    if (iter_index % verb[1] == 0) or (iter_index == 1):
+                        print(loop_string.format(iter_index, iter_size, verb[2]),end='\r',file=stderr)
                 x[...] = self.phase * x
+            if verb[0]:
+                print("", file=stderr)
 
         return array
     
