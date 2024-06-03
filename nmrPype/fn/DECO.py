@@ -88,7 +88,7 @@ class Decomposition(Function):
             #if data.array.ndim > 2:
             #    raise Exception("Dimensionality higher than 2 currently unsupported!")
             
-            data.array = self.process(data.header, data.array)
+            data.array = self.process(data.header, data.array, (data.verb, data.inc, data.getParam('NDLABEL')))
         except Exception as e:
             msg = "Unable to run function {0}!".format(type(self).__name__)
             catchError(e, new_e=FunctionError, msg=msg)
@@ -100,7 +100,7 @@ class Decomposition(Function):
     # Processing #
     ##############
 
-    def process(self, dic : dict, array : np.ndarray) -> np.ndarray:
+    def process(self, dic : dict, array : np.ndarray, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         """
         fn process
 
@@ -140,9 +140,9 @@ class Decomposition(Function):
             isAsymmetric = True if len(sample_shape) > len(basis_shape) else False
                 
             if isAsymmetric:
-                synthetic_data, beta = self.asymmetricDecomposition(array, bases)
+                synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
             else:
-                synthetic_data, beta = self.decomposition(array, bases)
+                synthetic_data, beta = self.decomposition(array, bases, verb)
 
             # Identify directory for saving file
             directory = os.path.split(self.deco_cfile)[0]
@@ -175,7 +175,7 @@ class Decomposition(Function):
             return synthetic_data
 
     def decomposition(self, array : np.ndarray, 
-                      bases : list[np.ndarray]) -> tuple[np.ndarray, np.ndarray] :
+                      bases : list[np.ndarray], verb : tuple[int,int,str] = (0,16,'H')) -> tuple[np.ndarray, np.ndarray] :
         """
         Use A and b to solve for the x that minimizes Ax-b = 0
 
@@ -188,6 +188,11 @@ class Decomposition(Function):
         bases : list[ndarray]
             List of bases
 
+        verb : tuple[int,int,str], optional
+            Tuple containing elements for verbose print, by default (0, 16,'H')
+                - Verbosity level
+                - Verbosity Increment
+                - Direct Dimension Label
         Returns
         -------
         (approx, beta) : tuple[ndarray,ndarray]
@@ -218,7 +223,7 @@ class Decomposition(Function):
         
 
     def asymmetricDecomposition(self, array : np.ndarray,
-                                bases : list[np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
+                                bases : list[np.ndarray], verb : tuple[int,int,str] = (0,16,'H')) -> tuple[np.ndarray, np.ndarray]:
         """
         Perform a Decomposition with mismatch basis and data dimensions
 
@@ -232,6 +237,11 @@ class Decomposition(Function):
         bases : list[ndarray]
             List of basis vectors/matrices
         
+        verb : tuple[int,int,str], optional
+            Tuple containing elements for verbose print, by default (0, 16,'H')
+                - Verbosity level
+                - Verbosity Increment
+                - Direct Dimension Label
         Returns
         -------
         (approx, beta) : tuple[ndarray,ndarray]
@@ -245,13 +255,16 @@ class Decomposition(Function):
         beta_planes = []
         for slice_num in range(len(array)):
             # A represents the len(array) x len(bases) array
-            
+            if verb[0]:
+                    Function.verbPrint('DECO', slice_num, len(array), 1, verb[1:])
             if self.deco_mask:
                 x = _decomposition(array[slice_num], bases, self.SIG_ERROR,mask[slice_num])
             else:
                 x = _decomposition(array[slice_num], bases, self.SIG_ERROR)
             # approx represents data approximation from beta and bases
             beta_planes.append(x)
+        if verb[0]:
+            print("", file=sys.stderr)
         
         beta = np.array(beta_planes).squeeze().T
         A = np.reshape(np.array(bases), (len(bases), -1,)).T
