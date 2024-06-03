@@ -1,6 +1,7 @@
 from ..utils import catchError, FunctionError, DataFrame
 import numpy as np
 from sys import stderr
+from sys import stderr
 
 # Multiprocessing
 from multiprocessing import Pool, TimeoutError
@@ -180,7 +181,7 @@ class DataFunction:
         iter_size = int(size / step)
         digits = len(str(iter_size))
         loop_string = f"{{}}\t{{:0{digits}d}} of {{:0{digits}d}}\t{{}}"
-        if (iter_index % verb[0] == 0) or (iter_index == 1):
+        if (iter_index % verb[0] == 0) or (iter_index == 1) or (iter_index == iter_size):
             print(loop_string.format(func_name, iter_index, iter_size, verb[1]),end='\r',file=stderr)
 
     # @staticmethod
