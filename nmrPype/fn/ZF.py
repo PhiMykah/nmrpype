@@ -1,5 +1,6 @@
 from .function import DataFunction as Function
 import numpy as np
+from sys import stderr
 
 # Multiprocessing
 from multiprocessing import Pool, TimeoutError
@@ -64,7 +65,7 @@ class ZeroFill(Function):
 
         # Perform ZF without multiprocessing
         if not self.mp[0] or data.array.ndim == 1:
-            data.array = self.process(data.array)
+            data.array = self.process(data.array, (data.verb, data.inc, data.getParam('NDLABEL')))
         else:
             data.array = self.parallelize(data.array)
 
@@ -194,7 +195,7 @@ class ZeroFill(Function):
     # Default Processing #
     ######################
 
-    def process(self, array : np.ndarray) -> np.ndarray:
+    def process(self, array : np.ndarray, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         """
         See :py:func:`nmrPype.fn.function.DataFunction.process` for documentation
         """
@@ -247,7 +248,11 @@ class ZeroFill(Function):
                         buffersize=dataLength, order='C')
         with it:
             for x,y in it:
+                if verb[0]:
+                    Function.verbPrint('ZF', it.iterindex, it.itersize, array.shape[-1], verb[1:])
                 y[...] = x
+            if verb[0]:
+                print("", file=stderr)
 
         # Flag operations following operation
         

@@ -1,5 +1,6 @@
 from ..utils import catchError, FunctionError, DataFrame
 import numpy as np
+from sys import stderr
 
 # Multiprocessing
 from multiprocessing import Pool, TimeoutError
@@ -51,7 +52,7 @@ class DataFunction:
 
             # Perform fft without multiprocessing
             if not self.mp[0] or data.array.ndim == 1:
-                data.array = self.process(data.array)
+                data.array = self.process(data.array, (data.verb, data.inc, data.getParam('NDLABEL')))
             else:
                 data.array = self.parallelize(data.array)
 
@@ -101,7 +102,7 @@ class DataFunction:
         return new_array
     
 
-    def process(self, array : np.ndarray) -> np.ndarray:
+    def process(self, array : np.ndarray, verb : tuple[int,int, str] = (0,16,'H')) -> np.ndarray:
         """
         Process is called by function's run, returns modified array when completed.
         Likely attached to multiprocessing for speed
@@ -153,6 +154,34 @@ class DataFunction:
         NULL = subparser.add_parser('NULL', parents=[parent_parser], help='Null Function, does not apply any function')
         # DataFunction.clArgsTail(NULL)
 
+    @staticmethod
+    def verbPrint(func_name : str, index, size, step, verb : tuple[int,str] = (16,'H'), keepIndex : bool = False):
+        """
+        Print out progress through each array using verbosity
+
+        Parameters
+        ----------
+        func_name : str
+            Name of function to display on verbose print
+        index : _type_
+            Current array out of total arrays to print
+        size : _type_
+            Total array count to print
+        step : _type_
+            How many elements are in each array
+        verb : tuple[int,int,str], optional
+            Tuple containing elements for verbose print, by default (16,'H')
+                - Verbosity Increment
+                - Direct Dimension Label
+        keepIndex : bool, optional
+            Whether or not to divide index by step size, by default False
+        """
+        iter_index = index if keepIndex else int(np.floor(index / step) + 1)
+        iter_size = int(size / step)
+        digits = len(str(iter_size))
+        loop_string = f"{{}}\t{{:0{digits}d}} of {{:0{digits}d}}\t{{}}"
+        if (iter_index % verb[0] == 0) or (iter_index == 1):
+            print(loop_string.format(func_name, iter_index, iter_size, verb[1]),end='\r',file=stderr)
 
     # @staticmethod
     # def clArgsTail(parser):

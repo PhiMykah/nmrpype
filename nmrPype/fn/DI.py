@@ -1,5 +1,6 @@
 from .function import DataFunction as Function
 import numpy as np
+from sys import stderr
 
 # Multiprocessing
 from multiprocessing import Pool, TimeoutError
@@ -81,7 +82,7 @@ class DeleteImaginary(Function):
     # Default Processing #
     ######################
     
-    def process(self, array: np.ndarray) -> np.ndarray:
+    def process(self, array: np.ndarray, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         """
         See :py:func:`nmrPype.fn.function.DataFunction.process` for documentation
         """
@@ -97,9 +98,15 @@ class DeleteImaginary(Function):
                 array = np.array(processed_chunk)
         else:
             it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=dataLength, order='C')
+            iter_index = 0
             with it:
                 for x in it:
+                    if verb[0]:
+                        iter_index += 1
+                        Function.verbPrint('DI', iter_index, it.itersize, array.shape[-1], verb[1:], True)
                     x[...] = operation(x)
+                if verb[0]:
+                    print("", file=stderr)
 
         return array
         

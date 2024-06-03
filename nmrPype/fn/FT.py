@@ -1,7 +1,7 @@
 from .function import DataFunction as Function
 import numpy as np
 from scipy import fft
-import sys
+from sys import stderr
 # Multiprocessing
 from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
@@ -62,7 +62,7 @@ class FourierTransform(Function):
 
         # Perform fft without multiprocessing
         if not self.mp[0] or data.array.ndim == 1:
-            data.array = self.process(data.array, ndQuad)
+            data.array = self.process(data.array, ndQuad, (data.verb, data.inc, data.getParam('NDLABEL')))
         else:
             data.array = self.parallelize(data.array, ndQuad)
 
@@ -158,7 +158,7 @@ class FourierTransform(Function):
     # Default Processing #
     ######################
 
-    def process(self, array : np.ndarray, ndQuad : int) -> np.ndarray:
+    def process(self, array : np.ndarray, ndQuad : int, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         """
         See :py:func:`nmrPype.fn.function.DataFunction.process` for documentation
         """
@@ -191,7 +191,11 @@ class FourierTransform(Function):
         it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=array.shape[-1], order='C')
         with it:
             for x in it:
+                if verb[0]:
+                    Function.verbPrint('FT', it.iterindex, it.itersize, array.shape[-1], verb[1:])
                 x[...] = operation(x)
+            if verb[0]:
+                print("", file=stderr)
 
         # Flag operations following operation
 

@@ -148,6 +148,8 @@ def main() -> int:
         data = DataFrame() # Initialize DataFrame
 
         args = parser(sys.argv[1:]) # Parse user command line arguments
+        data.setVerb(args.verb)
+        data.setInc(args.inc)
 
         fileInput(data, args.input) # Determine whether reading from pipeline or not
             
