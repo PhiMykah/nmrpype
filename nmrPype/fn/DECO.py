@@ -254,20 +254,24 @@ class Decomposition(Function):
         approx = []
         beta_planes = []
 
-        # Reshape to iterate over all dimensions greater than basis set
-        basis_shape = bases[0].shape
-        new_shape = (-1,) + basis_shape
-        array = array.reshape(new_shape)
-        for slice_num in range(len(array)):
-            # A represents the len(array) x len(bases) array
+        # Collect number of basis dimensions (n) to form iterator
+        n = len(bases[0].shape)
+
+        it = np.nditer(array[(Ellipsis,) + (0,) * n], flags=['multi_index'], order='C')
+        while not it.finished:
+            # Extract slice based on iteration
+            slice_num = it.iterindex
+            slice_array = array[it.multi_index + (slice(None),) * n]  
+
             if verb[0]:
-                    Function.verbPrint('DECO', slice_num, len(array), 1, verb[1:])
+                    Function.verbPrint('DECO', slice_num, it.itersize, 1, verb[1:])
             if self.deco_mask:
-                x = _decomposition(array[slice_num], bases, self.SIG_ERROR,mask[slice_num])
+                x = _decomposition(slice_array, bases, self.SIG_ERROR,mask[slice_num])
             else:
-                x = _decomposition(array[slice_num], bases, self.SIG_ERROR)
+                x = _decomposition(slice_array, bases, self.SIG_ERROR)
             # approx represents data approximation from beta and bases
             beta_planes.append(x)
+            it.iternext()
         if verb[0]:
             print("", file=sys.stderr)
         
@@ -278,12 +282,12 @@ class Decomposition(Function):
 
         # Check to see if original array should be retained
         if not self.deco_retain:
-            return (approx.T.reshape(array.shape), beta)
+            return (approx.T.reshape(array.shape, order='C'), beta)
         
         if self.deco_mask:
             # Apply elements at mask
             gaps = np.invert(mask.astype(bool))
-            array[gaps] = approx.T.reshape(array.shape)[gaps]
+            array[gaps] = approx.T.reshape(array.shape, order='C')[gaps]
 
         return (array, beta)
         
@@ -552,7 +556,7 @@ def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, ma
     if not np.all(A.imag):
         A = A.real
 
-    A = np.reshape(A, (A.shape[0], -1,)).T
+    A = np.reshape(A, (A.shape[0], -1,), order='C').T
     # b is the vector to approximate
     b = array.flatten(order='C')[:, np.newaxis]
     
