@@ -73,7 +73,7 @@ class DataFrame:
         str
             Returns string description
         """
-        return f"NMR DataFrame @ {self.file} ({" ".join([str(s) for s in reversed(self.array.shape)])})"
+        return f"NMR DataFrame @ {self.file} ({' '.join([str(s) for s in reversed(self.array.shape)])})"
     
     def runFunc(self, targetFunction : str, arguments : dict = {}) -> int:
         """
