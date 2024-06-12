@@ -802,18 +802,27 @@ class pipe_4d(data_nd):
         out = np.empty((len(ach), len(zch), len(ych), len(xch)),
                        dtype=self.dtype)
 
+        readable = True
         # read in the data file by file, trace by trace
         for ai, a in enumerate(ach):
             for zi, z in enumerate(zch):
                 if self.singleindex:   # single index
-                    f = open(self.filemask % (a * lenZ + z + 1), 'rb')
+                    if (a * lenZ + z + 1) <= lenA:
+                        readable = True
+                        f = open(self.filemask % (a * lenZ + z + 1), 'rb')
+                    else:
+                        readable = False
+                        break
                 else:   # two index
                     f = open(self.filemask % (a + 1, z + 1), 'rb')
                 for yi, y in enumerate(ych):
                     ntrace = y
                     trace = get_trace(f, ntrace, lenX, self.bswap, self.cplex)
                     out[ai, zi, yi] = trace[sX]
+
                 f.close()
+            if not readable:
+                break
         return out
 
 

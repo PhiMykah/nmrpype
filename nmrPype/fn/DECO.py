@@ -253,6 +253,11 @@ class Decomposition(Function):
         
         approx = []
         beta_planes = []
+
+        # Reshape to iterate over all dimensions greater than basis set
+        basis_shape = bases[0].shape
+        new_shape = (-1,) + basis_shape
+        array = array.reshape(new_shape)
         for slice_num in range(len(array)):
             # A represents the len(array) x len(bases) array
             if verb[0]:
