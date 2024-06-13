@@ -664,6 +664,57 @@ class Transpose4D(Transpose):
     # Default Processing #
     ######################
 
+    def process(self, array : np.ndarray):
+        """
+        See :py:func:`nmrPype.fn.function.DataFunction.process` for documentation
+        """
+
+        # Ensure that there are at least 3 dimensions
+        if array.ndim < 2:
+            raise IndexError('Attempting to swap out of dimension bounds!')
+
+        return self.TP3D(array)
+    
+    def TP4D(self, array : np.ndarray) -> np.ndarray:
+        """
+        Performs a hypercomplex transposition on 4D Data
+
+        Parameters
+        ----------
+        array : ndarray
+            N-dimensional array to swap first and fourth dimension
+
+        Returns
+        -------
+        new_array : ndarray
+            Transposed array
+        """
+        # Check if directly detected dimension is real
+        if array.dtype == "float32":
+            realA = array[...,::2,:,:,:]
+            imagA = array[...,1::2,:,:,:]
+            return self.matrixTP(realA, self.xDim, self.aDim) \
+                + 1j * self.matrixTP(imagA, self.xDim, self.aDim)
+        
+        # Extrapolate X real and X imaginary
+        realX = array.real
+        imagX = array.imag
+
+        # Prepare to interweave a axis
+        a = realX[...,::2,:,:,:] + 1j*realX[...,1::2,:,:,:]
+        b = imagX[...,::2,:,:,:] + 1j*imagX[...,1::2,:,:,:]
+
+        transposeShape = a.shape[:-4] + (2*a.shape[-1], a.shape[-3], a.shape[-2], a.shape[-4])
+
+        # Prepare new array to interweave real and imaginary indirect dimensions
+        new_array = np.zeros(transposeShape, dtype=a.dtype)
+
+        # Interweave real and imaginary values of former X dimension
+        new_array[...,::2,:,:,:] = self.matrixTP(a, self.xDim, self.aDim)
+        new_array[...,1::2,:,:,:] = self.matrixTP(b, self.xDim, self.aDim)
+
+        return new_array
+
     ##################
     # Static Methods #
     ##################
@@ -690,8 +741,20 @@ class Transpose4D(Transpose):
         data : DataFrame
             Target data frame to initialize
         """
-        super().initialize(data)
+        # Designate proper dimensions based on dim order
+        xDim = 1
+        aDim = 4
 
+        # If the 2Dphase parameter matches magnitude, switch the dimension complexity
+        if data.getParam('FD2DPHASE') == PHASE.FD_MAGNITUDE.value:
+            xID = data.getParam('NDQUADFLAG', xDim)
+            aID = data.getParam('NDQUADFLAG', aDim)
+
+            # Swap the number type of x and y dims
+            data.setParam('NDQUADFLAG', float(aID), xDim)
+            data.setParam('NDQUADFLAG', float(xID), aDim)
+
+        super().initialize(data)
 
     def updateHeader(self, data : DataFrame):
         """
