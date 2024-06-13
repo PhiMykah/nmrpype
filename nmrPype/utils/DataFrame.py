@@ -153,6 +153,7 @@ class DataFrame:
     def updatePipeCount(self, reset : bool = False) -> int:
         """
         Increment the FDPIPECOUNT parameter or reset to zero
+        Modify FDPIPEFLAG, FDCUBEFLAG, and FDFILECOUNT if needed
 
         Parameters
         ----------
@@ -170,6 +171,19 @@ class DataFrame:
             else:
                 pCount = self.getParam('FDPIPECOUNT')
                 self.setParam('FDPIPECOUNT', float(pCount + 1))
+
+            # Set cube flag to 0 if data is from template
+            if self.getParam('FDCUBEFLAG') == 1:
+                self.setParam('FDCUBEFLAG', 0.0)
+
+            # Set pipe flag to 1 if data is from template
+            if self.getParam('FDPIPEFLAG') == 0:
+                self.setParam('FDPIPEFLAG', 1.0)
+
+            # Set file count to 1 if data is from template
+            if self.getParam('FDFILECOUNT') > 1:
+                self.setParam('FDFILECOUNT', 1.0)
+
         except:
             return 1
         return 0
