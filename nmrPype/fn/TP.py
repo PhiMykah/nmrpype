@@ -644,12 +644,12 @@ class Transpose4D(Transpose):
     mp_threads : int
         Number of threads to utilize per process
     """
-    def __init__(self, data, tp_noord: bool = False,
+    def __init__(self, tp_noord: bool = False,
                  tp_exch : bool = False, tp_minMax: bool = False,
                  mp_enable : bool = False, mp_proc : int = 0, mp_threads : int = 0):
         self.mp = [mp_enable, mp_proc, mp_threads]
         tp_axis = 4
-        super().__init__(data, tp_noord, tp_exch, tp_minMax, tp_axis)
+        super().__init__(tp_noord, tp_exch, tp_minMax, tp_axis)
 
 
     ############
@@ -673,7 +673,7 @@ class Transpose4D(Transpose):
         if array.ndim < 2:
             raise IndexError('Attempting to swap out of dimension bounds!')
 
-        return self.TP3D(array)
+        return self.TP4D(array)
     
     def TP4D(self, array : np.ndarray) -> np.ndarray:
         """
@@ -741,6 +741,19 @@ class Transpose4D(Transpose):
         data : DataFrame
             Target data frame to initialize
         """
+        # Designate proper dimensions based on dim order
+        xDim = 1
+        aDim = 4
+
+        # If the 2Dphase parameter matches magnitude, switch the dimension complexity
+        if data.getParam('FD2DPHASE') == PHASE.FD_MAGNITUDE.value:
+            xID = data.getParam('NDQUADFLAG', xDim)
+            aID = data.getParam('NDQUADFLAG', aDim)
+
+            # Swap the number type of x and y dims
+            data.setParam('NDQUADFLAG', float(aID), xDim)
+            data.setParam('NDQUADFLAG', float(xID), aDim)
+
         # Designate proper dimensions based on dim order
         xDim = 1
         aDim = 4
