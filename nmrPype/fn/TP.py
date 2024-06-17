@@ -613,8 +613,7 @@ class Transpose3D(Transpose):
         data: DataFrame
             Data frame containing header that will be updated
         """
-        # Update ndsize here  
-        pass
+        super().updateHeader(data)
 
 
 class Transpose4D(Transpose):
@@ -754,19 +753,6 @@ class Transpose4D(Transpose):
             data.setParam('NDQUADFLAG', float(aID), xDim)
             data.setParam('NDQUADFLAG', float(xID), aDim)
 
-        # Designate proper dimensions based on dim order
-        xDim = 1
-        aDim = 4
-
-        # If the 2Dphase parameter matches magnitude, switch the dimension complexity
-        if data.getParam('FD2DPHASE') == PHASE.FD_MAGNITUDE.value:
-            xID = data.getParam('NDQUADFLAG', xDim)
-            aID = data.getParam('NDQUADFLAG', aDim)
-
-            # Swap the number type of x and y dims
-            data.setParam('NDQUADFLAG', float(aID), xDim)
-            data.setParam('NDQUADFLAG', float(xID), aDim)
-
         super().initialize(data)
 
     def updateHeader(self, data : DataFrame):
@@ -780,4 +766,4 @@ class Transpose4D(Transpose):
             Target data frame containing header to update
         """
         # Update ndsize here  
-        pass
+        super().updateHeader(data)

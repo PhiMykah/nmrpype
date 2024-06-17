@@ -125,7 +125,7 @@ class ZeroFill(Function):
                 new_size = self.zf_size 
             if self.zf_auto:
                 # Reach next power of 2 with auto
-                new_size = ZeroFill.nextPowerOf2(dataLength)
+                new_size = ZeroFill.nextPowerOf2(new_size)
         
         # Obtain new array shape and then create dummy array for data transfer
         new_shape = array.shape[:-1] + (new_size,)
@@ -326,10 +326,9 @@ class ZeroFill(Function):
             target data to manipulate 
         """
         currDim = data.getCurrDim()
-        outSize = data.getParam('NDAPOD', currDim)
+        outSize = data.getParam('NDAPOD', currDim) # Potentially replace with FDSIZE
         currDimSize = outSize
         zfSize = self.zf_size
-        zfCount = 1
 
         # See userproc.c ln453-468 for more information
         if (self.zf_inv):
@@ -343,7 +342,7 @@ class ZeroFill(Function):
                 zfSize = 1 if (zfSize < 1) else zfSize
                 outSize = zfSize
             else:
-                zfSize = data.getParam('NDAPOD',currDim)
+                zfSize = data.getParam('NDAPOD',currDim) # Potentially replace with FDSIZE
                 outSize = zfSize
         else:
             if (self.zf_size):
@@ -394,11 +393,11 @@ class ZeroFill(Function):
             data.setParam('NDXN',     float(ixn),      currDim)
             data.setParam('NDORIG',    orig,           currDim)
     
-        if (currDim == 3 or currDim == 4):
-            data.setParam('NDSIZE', float(outSize), currDim)
-        else:
-            data.setParam('FDSIZE', float(outSize), currDim)
-
+        data.setParam('FDSIZE', float(outSize))
+        
+        if (outSize < currDimSize):
+            data.setParam('NDAPOD', float(outSize), currDim)
+            
         # Update maximum size if size exceeds maximum size (NYI)
         """
         if (outSize > maxSize)
