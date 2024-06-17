@@ -5,6 +5,7 @@ from typing import TypeAlias
 
 # Type declarations
 Array : TypeAlias = np.ndarray | None
+DIMORDER_DEFAULT = [2.0,1.0,3.0,4.0]
 
 class DataFrame:
     """
@@ -175,10 +176,6 @@ class DataFrame:
             # Set cube flag to 0 if data is from template
             if self.getParam('FDCUBEFLAG') == 1:
                 self.setParam('FDCUBEFLAG', 0.0)
-
-            # Set pipe flag to 1 if data is from template
-            if self.getParam('FDPIPEFLAG') == 0:
-                self.setParam('FDPIPEFLAG', 1.0)
 
             # Set file count to 1 if data is from template
             if self.getParam('FDFILECOUNT') > 1:
