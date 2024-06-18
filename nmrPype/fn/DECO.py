@@ -7,6 +7,12 @@ from ..nmrio import writeToFile
 
 # type Imports/Definitions
 from typing import Literal
+
+# Multiprocessing
+from multiprocessing import Pool, TimeoutError
+from concurrent.futures import ThreadPoolExecutor
+
+residual_list = []
 class Decomposition(Function):
     """
     Data Function object for decomposing processed file into coefficients and synthetic
@@ -140,7 +146,10 @@ class Decomposition(Function):
             isAsymmetric = True if len(sample_shape) > len(basis_shape) else False
                 
             if isAsymmetric:
-                synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
+                if not self.mp[0] or array.ndim == 1:
+                    synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
+                else:
+                    synthetic_data, beta = self.parallelize(array, bases)
             else:
                 synthetic_data, beta = self.decomposition(array, bases, verb)
 
@@ -161,7 +170,6 @@ class Decomposition(Function):
             return synthetic_data
         
             
-        
         except la.LinAlgError as e:
             catchError(e, new_e = Exception, 
                        msg="Computation does not converge! Cannot find coefficients!", 
@@ -173,6 +181,48 @@ class Decomposition(Function):
                        msg="Failed to create coefficient file, passing synthetic data", 
                        ePrint = True)
             return synthetic_data
+
+
+    def parallelize(self, array : np.ndarray, bases : list[str]) -> np.ndarray:
+        """
+        The General Multiprocessing implementation for function, utilizing cores and threads. 
+        Parallelize should be overloaded if array_shape changes in processing
+        or process requires more args.
+
+        Parameters
+        ----------
+        array : ndarray
+            Target data array to process with function
+
+        Returns
+        -------
+        new_array : ndarray
+            Updated array after function operation
+        """
+        # Save array shape for reshaping later
+        array_shape = array.shape
+
+        # Split array into manageable chunks
+        chunk_size = int(array_shape[0] / self.mp[1])
+
+        # Assure chunk_size is nonzero
+        chunk_size = array_shape[0] if chunk_size == 0 else chunk_size
+        
+        chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
+
+        # Process each chunk in processing pool
+        args = [(chunks[i], bases) for i in range(len(chunks))]
+        with Pool(processes=self.mp[1]) as pool:
+            output = pool.starmap(self.asymmetricDecomposition, args, chunksize=chunk_size)
+
+        array_output = [arr[0] for arr in output]
+        beta_output = [beta[1] for beta in output]
+
+        # Recombine and reshape data
+        new_array = np.concatenate(array_output).reshape(array_shape)
+        beta = np.concatenate(beta_output, axis=-1)
+        return new_array, beta
+    
 
     def decomposition(self, array : np.ndarray, 
                       bases : list[np.ndarray], verb : tuple[int,int,str] = (0,16,'H')) -> tuple[np.ndarray, np.ndarray] :
