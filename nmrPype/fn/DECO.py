@@ -297,6 +297,17 @@ class Decomposition(Function):
         (approx, beta) : tuple[ndarray,ndarray]
             Approximation matrix and coefficient matrix
         """
+        ########
+        # NOTE #
+        ########
+        """
+        b = array.reshape(-1, A.shape[0],order='C').T
+        Using the line above instead of a separate asymmetric decomposition function may be faster, but 
+        will take up more memory and requires more work to ensure that it works.
+        
+        Currently feasible in notebooks
+        """
+
         # Check if applying the mask is necessary
         if self.deco_mask:
             mask = DataFrame(self.deco_mask).getArray()
