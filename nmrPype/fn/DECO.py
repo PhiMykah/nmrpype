@@ -605,6 +605,26 @@ class Decomposition(Function):
 ######################
 
 def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, mask : np.ndarray | None = None) -> np.ndarray:
+    """
+    private decomposition function
+
+    Parameters
+    ----------
+    array : np.ndarray
+        Target array to decompose
+    bases : list[np.ndarray]
+        List of basis arrays for processing
+    err : float
+        Rounding error for rank determination
+    mask : np.ndarray | None, optional
+        Mask used for decomposition, by default None
+
+    Returns
+    -------
+    beta : np.ndarray
+        Beta array calculated by least squares
+    """
+    
     # A represents the (data length, number of bases) array
     A = np.array(bases)
 

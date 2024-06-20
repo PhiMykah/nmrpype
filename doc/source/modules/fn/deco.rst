@@ -8,8 +8,10 @@ Deco (Decomposition)
 Helper Functions
 ----------------
 
-.. automodule:: nmrPype.fn.DECO.paramSyntax
+.. autofunction:: nmrPype.fn.DECO._decomposition
 
+.. autofunction:: nmrPype.fn.DECO.paramSyntax
+    :no-index:
 
 Decomposition Errors
 --------------------
