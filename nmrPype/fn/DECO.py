@@ -602,10 +602,6 @@ def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, ma
     else:
         A = np.array(bases)
 
-    # Ensure only real is outputted in first dimension if imaginary is empty
-    if not np.all(A.imag):
-        A = A.real
-
     A = np.reshape(A, (A.shape[0], -1,), order='C').T
     # b is the vector to approximate
     b = array.flatten(order='C')[:, np.newaxis]
@@ -613,7 +609,7 @@ def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, ma
     # beta is the coefficient vector multiplied by the A to approximate the result
     # Output rank if necessary
     beta, residuals, rank, singular_values = la.lstsq(A,b, 
-                                                        rcond=err*np.max(A))
+                                                        rcond=err*np.max(A.real))
 
     return beta
     
