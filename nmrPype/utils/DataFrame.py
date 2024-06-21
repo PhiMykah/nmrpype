@@ -176,6 +176,9 @@ class DataFrame:
                 pCount = self.getParam('FDPIPECOUNT')
                 self.setParam('FDPIPECOUNT', float(pCount + 1))
 
+            if self.array.ndim >= 3:
+                self.setParam('FDPIPEFLAG', 1.0)
+
             # Set cube flag to 0 if data is from template
             if self.getParam('FDCUBEFLAG') == 1:
                 self.setParam('FDCUBEFLAG', 0.0)
