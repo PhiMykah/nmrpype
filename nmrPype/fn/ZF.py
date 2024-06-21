@@ -67,7 +67,7 @@ class ZeroFill(Function):
         if not self.mp[0] or data.array.ndim == 1:
             data.array = self.process(data.array, (data.verb, data.inc, data.getParam('NDLABEL')))
         else:
-            data.array = self.parallelize(data.array)
+            data.array = self.parallelize(data.array, (data.verb, data.inc, data.getParam('NDLABEL')))
 
         # Update header once processing is complete
         self.updateHeader(data)
@@ -78,7 +78,7 @@ class ZeroFill(Function):
     # Multiprocessing #
     ###################
 
-    def parallelize(self, array : np.ndarray) -> np.ndarray:
+    def parallelize(self, array : np.ndarray, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         """
         Multiprocessing implementation for function to properly optimize for hardware
 
@@ -86,6 +86,12 @@ class ZeroFill(Function):
         ----------
         array : ndarray
             Target data array to process with function
+
+        verb : tuple[int,int,str], optional
+        Tuple containing elements for verbose print, by default (0, 16,'H')
+            - Verbosity level
+            - Verbosity Increment
+            - Direct Dimension Label
 
         Returns
         -------
@@ -138,6 +144,7 @@ class ZeroFill(Function):
         
         chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
 
+        chunk_num = len(chunks)
         # Pad if size is larger and trim if size is shorter
         if new_size > dataLength:
             padding = new_size - dataLength
@@ -148,22 +155,38 @@ class ZeroFill(Function):
             pad_width[-1][-1] = padding
 
             # Pass the chunk, the pad width, and the padding function
-            args = [(chunks[i], pad_width, operation) for i in range(len(chunks))]
+            args = []
+            for i in range(chunk_num):
+                if i == 0:
+                    args.append((chunks[i], pad_width, operation, verb))
+                else:
+                    args.append((chunks[i], pad_width, operation))
         else:
             operation = ZeroFill.truncate
             # Pass the chunk, the new array size, and the trimming function
-            args = [(chunks[i], new_size, operation) for i in range(len(chunks))]
-            
+            args = []
+            for i in range(chunk_num):
+                if i == 0:
+                    args.append((chunks[i], new_size, operation, verb))
+                else:
+                    args.append((chunks[i], new_size, operation))
+        
+        if verb[0]:
+            Function.mpPrint("ZF", chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
+
         # Process each chunk in processing pool
         with Pool(processes=self.mp[1]) as pool:
             output = pool.starmap(self.processMP, args, chunksize=chunk_size)
+
+        if verb[0]:
+            Function.mpPrint("ZF", chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
 
         # Recombine and reshape data
         new_array = np.concatenate(output).reshape(new_shape)
         return new_array
     
 
-    def processMP(self, array : np.ndarray, arg : tuple, operation) -> np.ndarray:
+    def processMP(self, array : np.ndarray, arg : tuple, operation, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         """
         Process specifically for MP, changes how it performs operation
 

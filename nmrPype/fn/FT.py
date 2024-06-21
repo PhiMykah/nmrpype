@@ -64,7 +64,7 @@ class FourierTransform(Function):
         if not self.mp[0] or data.array.ndim == 1:
             data.array = self.process(data.array, ndQuad, (data.verb, data.inc, data.getParam('NDLABEL')))
         else:
-            data.array = self.parallelize(data.array, ndQuad)
+            data.array = self.parallelize(data.array, ndQuad, (data.verb, data.inc, data.getParam('NDLABEL')))
 
         # Update header once processing is complete
         self.updateHeader(data)
@@ -76,7 +76,7 @@ class FourierTransform(Function):
     # Multiprocessing #
     ###################
 
-    def parallelize(self, array : np.ndarray, ndQuad : int) -> np.ndarray:
+    def parallelize(self, array : np.ndarray, ndQuad : int, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         """
         Multiprocessing implementation for function to properly optimize for hardware
 
@@ -104,10 +104,23 @@ class FourierTransform(Function):
         
         chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
         
+        chunk_num = len(chunks)
         # Process each chunk in processing pool
-        args = [(chunks[i], ndQuad) for i in range(len(chunks))]
+        args = []
+        for i in range(chunk_num):
+            if i == 0:
+                args.append((chunks[i], ndQuad, verb))
+            else:
+                args.append((chunks[i], ndQuad))
+
+        if verb[0]:
+            Function.mpPrint("FT", chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
+
         with Pool(processes=self.mp[1]) as pool:
             output = pool.starmap(self.process, args, chunksize=chunk_size)
+
+        if verb[0]:
+            Function.mpPrint("FT", chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
 
         # Recombine and reshape data
         new_array = np.concatenate(output).reshape(array_shape, order='C')

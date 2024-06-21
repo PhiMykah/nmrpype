@@ -123,7 +123,7 @@ class SineBell(Function):
     # Multiprocessing #
     ###################
 
-    def parallelize(self, array : np.ndarray) -> np.ndarray:
+    def parallelize(self, array : np.ndarray, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         """
         See :py:func:`nmrPype.fn.function.DataFunction.parallelize` for documentation.
         """
@@ -145,7 +145,13 @@ class SineBell(Function):
         df = self.headerParams['DFVAL'] if self.sp_df else 0.0
 
         # Set arguments for function
-        args = ((array[i], a1, a2, a3, firstPointScale, df) for i in range(len(array)))
+        args = []
+        for i in range(len(array)):
+            if i == 0:
+                args.append((array[i], a1, a2, a3, firstPointScale, df, verb))
+            else:
+                args.append((array[i], a1, a2, a3, firstPointScale, df))
+        
         with ThreadPoolExecutor(max_workers=self.mp[2]) as executor:
             processed_chunk = list(executor.map(lambda p: self.applyFunc(*p), args))
             array = np.array(processed_chunk)
@@ -189,7 +195,7 @@ class SineBell(Function):
 
 
     def applyFunc(self, array : np.ndarray, a1 : float, a2 : float,
-                  a3 : float, fps : int, df : float) -> np.ndarray:
+                  a3 : float, fps : int, df : float, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         """
         Apply sine bell to array
 
@@ -208,7 +214,12 @@ class SineBell(Function):
             first point scale to apply
         df : float
             digital filter value
-
+        verb : tuple[int,int,str], optional
+        Tuple containing elements for verbose print, by default (0, 16,'H')
+            - Verbosity level
+            - Verbosity Increment
+            - Direct Dimension Label
+            
         Returns
         -------
         new_array : np.ndarray

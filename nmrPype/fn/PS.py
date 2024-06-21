@@ -80,7 +80,7 @@ class PhaseCorrection(Function):
     # Multiprocessing #
     ###################
     
-    def parallelize(self, array: np.ndarray) -> np.ndarray:
+    def parallelize(self, array: np.ndarray, verb : tuple[int,str] = (16,'H')) -> np.ndarray:
         """
         Multiprocessing implementation for function to properly optimize for hardware
 
@@ -91,6 +91,12 @@ class PhaseCorrection(Function):
 
         ndQuad : int
             NDQUADFLAG header value
+
+        verb : tuple[int,int,str], optional
+        Tuple containing elements for verbose print, by default (0, 16,'H')
+            - Verbosity level
+            - Verbosity Increment
+            - Direct Dimension Label
 
         Returns
         -------
@@ -108,9 +114,23 @@ class PhaseCorrection(Function):
         
         chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
         
+        chunk_num = len(chunks)
         # Process each chunk in processing pool
+        args = []
+        for i in range(chunk_num):
+            if i == 0:
+                args.append((chunks[i], verb))
+            else:
+                args.append((chunks[i]))
+
+        if verb[0]:
+            Function.mpPrint("PS", chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
+
         with Pool(processes=self.mp[1]) as pool:
-            output = pool.map(self.phaseCorrect, chunks, chunksize=chunk_size)
+            output = pool.starmap(self.phaseCorrect, args, chunksize=chunk_size)
+
+        if verb[0]:
+            Function.mpPrint("PS", chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
 
         # Recombine and reshape data
         new_array = np.concatenate(output).reshape(array_shape)
