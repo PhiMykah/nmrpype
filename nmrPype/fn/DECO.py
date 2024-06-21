@@ -242,7 +242,7 @@ class Decomposition(Function):
 
         # Recombine and reshape data
         new_array = np.concatenate(array_output).reshape(array_shape)
-        beta = np.concatenate(beta_output, axis=-1)
+        beta = np.array(beta_output).T
         return new_array, beta
     
 
