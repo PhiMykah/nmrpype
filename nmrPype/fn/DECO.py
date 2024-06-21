@@ -219,16 +219,23 @@ class Decomposition(Function):
         
         chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
 
+        chunk_num = len(chunks)
         # Process each chunk in processing pool
         args = []
-        for i in range(len(chunks)):
+        for i in range(chunk_num):
             if i == 0:
                 args.append((chunks[i], bases, verb))
             else:
                 args.append((chunks[i], bases))
-                
+        
+        if verb[0]:
+            Function.mpPrint("DECO", chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
+
         with Pool(processes=self.mp[1]) as pool:
             output = pool.starmap(self.asymmetricDecomposition, args, chunksize=chunk_size)
+
+        if verb[0]:
+            Function.mpPrint("DECO", chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
 
         array_output = [arr[0] for arr in output]
         beta_output = [beta[1] for beta in output]
