@@ -55,7 +55,7 @@ class DataFunction:
             if not self.mp[0] or data.array.ndim == 1:
                 data.array = self.process(data.array, (data.verb, data.inc, data.getParam('NDLABEL')))
             else:
-                data.array = self.parallelize(data.array)
+                data.array = self.parallelize(data.array, (data.verb, data.inc, data.getParam('NDLABEL')))
 
             # Update header once processing is complete
             self.updateHeader(data)
@@ -67,7 +67,7 @@ class DataFunction:
         return 0
 
 
-    def parallelize(self, array : np.ndarray) -> np.ndarray:
+    def parallelize(self, array : np.ndarray, verb : tuple[int,int, str] = (0,16,'H')) -> np.ndarray:
         """
         The General Multiprocessing implementation for function, utilizing cores and threads. 
         Parallelize should be overloaded if array_shape changes in processing
@@ -77,6 +77,12 @@ class DataFunction:
         ----------
         array : ndarray
             Target data array to process with function
+
+        verb : tuple[int,int,str], optional
+        Tuple containing elements for verbose print, by default (0, 16,'H')
+            - Verbosity level
+            - Verbosity Increment
+            - Direct Dimension Label
 
         Returns
         -------
@@ -94,9 +100,23 @@ class DataFunction:
         
         chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
 
+        chunk_num = len(chunks)
         # Process each chunk in processing pool
+        args = []
+        for i in range(chunk_num):
+            if i == 0:
+                args.append((chunks[i], verb))
+            else:
+                args.append((chunks[i]))
+
+        if verb[0]:
+            self.mpPrint(self.__name__, chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
+
         with Pool(processes=self.mp[1]) as pool:
-            output = pool.map(self.process, chunks, chunksize=chunk_size)
+            output = pool.starmap(self.process, args, chunksize=chunk_size)
+
+        if verb[0]:
+            self.mpPrint(self.__name__, chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
 
         # Recombine and reshape data
         new_array = np.concatenate(output).reshape(array_shape)
@@ -112,6 +132,12 @@ class DataFunction:
         ----------
         array : ndarray
             Target data array to process with function
+
+        verb : tuple[int,int,str], optional
+        Tuple containing elements for verbose print, by default (0, 16,'H')
+            - Verbosity level
+            - Verbosity Increment
+            - Direct Dimension Label
 
         Returns
         -------
@@ -183,6 +209,40 @@ class DataFunction:
         loop_string = f"{{}}\t{{:0{digits}d}} of {{:0{digits}d}}\t{{}}"
         if (iter_index % verb[0] == 0) or (iter_index == 1) or (iter_index == iter_size):
             print(loop_string.format(func_name, iter_index, iter_size, verb[1]),end='\r',file=stderr)
+
+    @staticmethod
+    def mpPrint(func_name : str, chunk_num : int, chunk_sizes : tuple[int,int], type : str = 'start'):
+        """Print out multiprocess information for verbose print
+
+        Parameters
+        ----------
+        func_name : str
+            Name of function to display on verbose print
+        chunk_num : int
+            Number of chunks being processed
+        chunk_sizes : tuple[int,int]
+            Size of majority chunk [0] and outlier chunk [1]
+        type : str, optional
+            Start print or end print type, by default 'start'
+        """
+        if type.lower() == 'end':
+            print("{}: All child processes completed successfully".format(func_name), file=stderr)
+            return
+        
+        print_msg = ""
+        params = ()
+        equal_chunks = "Processing {}: {} chunks ({}x{})"
+        unequal_chunks = "Processing {}: {} chunks ({}x{},{}x{})"
+
+        if chunk_sizes[0] == chunk_sizes[1]:
+            print_msg = equal_chunks
+            params = (func_name, chunk_num, chunk_sizes[0], chunk_num)
+        else:
+            print_msg = unequal_chunks
+            params = (func_name, chunk_num, chunk_sizes[0], chunk_num-1, chunk_sizes[1], 1)
+
+        print(print_msg.format(*params), file=stderr)
+
 
     # @staticmethod
     # def clArgsTail(parser):
