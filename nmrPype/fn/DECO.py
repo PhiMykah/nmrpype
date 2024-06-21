@@ -149,7 +149,7 @@ class Decomposition(Function):
                 if not self.mp[0] or array.ndim == 1:
                     synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
                 else:
-                    synthetic_data, beta = self.parallelize(array, bases)
+                    synthetic_data, beta = self.parallelize(array, bases, verb)
             else:
                 synthetic_data, beta = self.decomposition(array, bases, verb)
 
@@ -183,7 +183,7 @@ class Decomposition(Function):
             return synthetic_data
 
 
-    def parallelize(self, array : np.ndarray, bases : list[str]) -> np.ndarray:
+    def parallelize(self, array : np.ndarray, bases : list[str], verb : tuple[int,int,str] = (0,16,'H')) -> tuple[np.ndarray,np.ndarray]:
         """
         The General Multiprocessing implementation for function, utilizing cores and threads. 
         Parallelize should be overloaded if array_shape changes in processing
@@ -194,10 +194,19 @@ class Decomposition(Function):
         array : ndarray
             Target data array to process with function
 
+        bases : list[ndarray]
+            List of basis vectors/matrices
+        
+        verb : tuple[int,int,str], optional
+            Tuple containing elements for verbose print, by default (0, 16,'H')
+                - Verbosity level
+                - Verbosity Increment
+                - Direct Dimension Label
+
         Returns
         -------
-        new_array : ndarray
-            Updated array after function operation
+        (new_array, beta) : tuple[ndarray,ndarray]
+            Approximation matrix and coefficient matrix
         """
         # Save array shape for reshaping later
         array_shape = array.shape
@@ -211,7 +220,13 @@ class Decomposition(Function):
         chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
 
         # Process each chunk in processing pool
-        args = [(chunks[i], bases) for i in range(len(chunks))]
+        args = []
+        for i in range(len(chunks)):
+            if i == 0:
+                args.append((chunks[i], bases, verb))
+            else:
+                args.append((chunks[i], bases))
+                
         with Pool(processes=self.mp[1]) as pool:
             output = pool.starmap(self.asymmetricDecomposition, args, chunksize=chunk_size)
 
