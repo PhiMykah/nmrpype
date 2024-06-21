@@ -1,5 +1,6 @@
 from .function import DataFunction
 from .FT import FourierTransform as FT
+from .HT import HilbertTransform as HT
 from .ZF import ZeroFill as ZF
 from .DI import DeleteImaginary as DI
 from .SP import SineBell as SP
@@ -13,6 +14,7 @@ fn_list = {
     'function':DataFunction,
     'NULL':DataFunction,
     'FT':FT,
+    'HT':HT,
     'ZF':ZF,
     'DI':DI,
     'SP':SP,
@@ -22,6 +24,6 @@ fn_list = {
     'ATP':ATP, 'XYZA2AYZX':ATP}
 
 
-__all__ = ['DataFunction', 'FT', 'ZF', 
+__all__ = ['DataFunction', 'FT', 'HT', 'ZF', 
            'DI','SP', 'PS', 
            'YTP', 'ZTP', 'ATP']

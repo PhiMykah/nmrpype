@@ -107,7 +107,7 @@ class DataFunction:
             if i == 0:
                 args.append((chunks[i], verb))
             else:
-                args.append((chunks[i]))
+                args.append((chunks[i], verb))
 
         if verb[0]:
             self.mpPrint(self.__name__, chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
