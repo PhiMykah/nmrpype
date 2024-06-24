@@ -107,16 +107,18 @@ class DataFunction:
             if i == 0:
                 args.append((chunks[i], verb))
             else:
-                args.append((chunks[i]))
+                args.append((chunks[i], verb))
 
         if verb[0]:
-            self.mpPrint(self.__name__, chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
+            name = "FN" if not hasattr(self,"name") else self.name
+            self.mpPrint(name, chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
 
         with Pool(processes=self.mp[1]) as pool:
             output = pool.starmap(self.process, args, chunksize=chunk_size)
 
         if verb[0]:
-            self.mpPrint(self.__name__, chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
+            name = "FN" if not hasattr(self,"name") else self.name
+            self.mpPrint(name, chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
 
         # Recombine and reshape data
         new_array = np.concatenate(output).reshape(array_shape)

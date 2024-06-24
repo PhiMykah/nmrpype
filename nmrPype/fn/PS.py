@@ -63,7 +63,8 @@ class PhaseCorrection(Function):
         self.ps_ht = ps_ht
         self.ps_zf = ps_zf
         self.mp = [mp_enable, mp_proc, mp_threads]
-
+        self.name = "PS"
+        
         # initialize array for later
         self.phase = None
         

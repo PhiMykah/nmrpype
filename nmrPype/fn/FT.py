@@ -44,6 +44,8 @@ class FourierTransform(Function):
             self.ft_alt = ft_alt
            
             self.mp = [mp_enable, mp_proc, mp_threads]
+            self.name = "FT"
+            
             params = {'ft_inv':ft_inv, 'ft_real': ft_real, 'ft_neg': ft_neg, 'ft_alt': ft_alt}
             super().__init__(params) 
     
