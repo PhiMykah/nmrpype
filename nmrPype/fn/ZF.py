@@ -48,6 +48,8 @@ class ZeroFill(Function):
         self.zf_auto = zf_auto
         self.zf_inv = zf_inv
         self.mp = [mp_enable, mp_proc, mp_threads]
+        self.name = "ZF"
+
         params = {'zf_count':zf_count, 'zf_pad':zf_pad, 'zf_size':zf_size,
                   'zf_auto':zf_auto, 'zf_inv':zf_inv}
         super().__init__(params)

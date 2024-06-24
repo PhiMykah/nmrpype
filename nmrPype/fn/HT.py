@@ -47,6 +47,8 @@ class HilbertTransform(Function):
         self.ht_nozf = ht_nozf
 
         self.mp = [mp_enable, mp_proc, mp_threads]
+        self.name = "HT"
+        
         params = {'ht_ps90_180':ht_ps90_180, 'ht_zf':ht_zf, 'ht_td':ht_td,
                   'ht_auto':ht_auto, 'ht_ps0_0':ht_ps0_0, 'ht_nozf':ht_nozf}
         super().__init__(params)
@@ -101,6 +103,15 @@ class HilbertTransform(Function):
         ndarray
             Updated array after function operation
         """
+        it = np.nditer(array, flags=['external_loop','buffered'], op_flags=['readwrite'], buffersize=array.shape[-1], order='C')
+        with it:
+            for x in it:
+                if verb[0]:
+                    Function.verbPrint('HT', it.iterindex, it.itersize, array.shape[-1], verb[1:])
+                    x[...] = hilbert(x.real)
+            if verb[0]:
+                print("", file=stderr)
+
         return array
     
     ##################

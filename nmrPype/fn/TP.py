@@ -292,6 +292,9 @@ class Transpose2D(Transpose):
         self.tp_nohdr = tp_nohdr
         self.mp = [mp_enable, mp_proc, mp_threads]
         tp_axis = 2 
+
+        self.name = "YTP"
+
         params = {'tp_hyper':tp_hyper,'tp_auto':tp_auto,
                   'tp_nohdr':tp_nohdr}
         super().__init__(tp_noord, tp_exch, tp_minMax, tp_axis, params)
@@ -488,6 +491,9 @@ class Transpose3D(Transpose):
                  mp_enable : bool = False, mp_proc : int = 0, mp_threads : int = 0):
         self.mp = [mp_enable, mp_proc, mp_threads]
         tp_axis = 3
+
+        self.name = "ZTP"
+
         super().__init__(tp_noord, tp_exch, tp_minMax, tp_axis)
 
     ############
@@ -648,6 +654,8 @@ class Transpose4D(Transpose):
                  mp_enable : bool = False, mp_proc : int = 0, mp_threads : int = 0):
         self.mp = [mp_enable, mp_proc, mp_threads]
         tp_axis = 4
+        self.name = "ATP"
+
         super().__init__(tp_noord, tp_exch, tp_minMax, tp_axis)
 
 

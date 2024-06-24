@@ -86,6 +86,7 @@ class SineBell(Function):
         self.sp_goff = sp_goff
         self.mp = [mp_enable, mp_proc, mp_threads]
         self.headerParams = {}
+        self.name = "SP"
 
         params = {
         'sp_off': sp_off, 'sp_end': sp_end, 'sp_pow': sp_pow,

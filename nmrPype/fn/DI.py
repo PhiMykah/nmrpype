@@ -26,6 +26,8 @@ class DeleteImaginary(Function):
     """
     def __init__(self, mp_enable = False, mp_proc = 0, mp_threads = 0):
         self.mp = [mp_enable, mp_proc, mp_threads]
+        self.name = "DI"
+        
         params = {}
         super().__init__(params)
 
