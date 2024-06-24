@@ -53,7 +53,8 @@ class Draw(Function):
         self.plot = draw_plot
         self.slice = draw_slice
         self.mp = [mp_enable, mp_proc, mp_threads]
-
+        self.name = "DRAW"
+        
         params = { 'draw_file':draw_file, 'draw_fmt':draw_fmt,
                   'draw_plot':draw_plot, 'draw_slice':draw_slice}
         super().__init__(params)

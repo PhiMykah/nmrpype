@@ -51,7 +51,8 @@ class Decomposition(Function):
         self.deco_retain = deco_retain
         self.SIG_ERROR = deco_error
         self.mp = [mp_enable, mp_proc, mp_threads]
-
+        self.name = "DECO"
+        
         params = {'deco_bases':deco_bases, 'deco_cfile':deco_cfile, 
                   'deco_mask':deco_mask, 'deco_retain':deco_retain, 'deco_error':deco_error}
         super().__init__(params)
