@@ -11,7 +11,8 @@ from concurrent.futures import ThreadPoolExecutor
 from ..utils import DataFrame
 
 class HilbertTransform(Function):
-    """_summary_
+    """
+    Data Function object for performing a Hilber Transform on the data.
 
     Parameters
     ----------
