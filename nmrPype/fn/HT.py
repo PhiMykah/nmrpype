@@ -112,8 +112,6 @@ class HilbertTransform(Function):
 
         if (self.ht_ps90_180):
             htSize = 2*htSize
-        elif (self.ht_td):
-            htSize = htSize/2
         
         return hilbert(x, htSize)
 
@@ -195,6 +193,10 @@ class HilbertTransform(Function):
         isReal = all(bool(flag) for flag in qFlags)
 
         data.setParam('FDQUADFLAG', float(1) if isReal else float(0))
+
+        if self.ht_td:
+            size = data.getParam('NDAPOD', currDim)
+            data.setParam('NDAPOD', size/2, currDim)
 
 
         
