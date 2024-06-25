@@ -2,6 +2,7 @@ from .function import DataFunction as Function
 import numpy as np
 import numpy.linalg as la
 import os,sys
+from pathlib import Path
 from ..utils import catchError, DataFrame, FunctionError
 from ..nmrio import writeToFile
 
@@ -227,16 +228,17 @@ class Decomposition(Function):
             if i == 0:
                 args.append((chunks[i], bases, verb))
             else:
-                args.append((chunks[i], bases))
+                args.append((chunks[i], bases, (0,16,'H')))
         
+        mask_msg = " with mask" if self.deco_mask else ""
         if verb[0]:
-            Function.mpPrint("DECO", chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
+            Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
 
         with Pool(processes=self.mp[1]) as pool:
             output = pool.starmap(self.asymmetricDecomposition, args, chunksize=chunk_size)
 
         if verb[0]:
-            Function.mpPrint("DECO", chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
+            Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
 
         array_output = [arr[0] for arr in output]
         beta_output = [beta[1] for beta in output]
@@ -350,7 +352,7 @@ class Decomposition(Function):
             if verb[0]:
                     Function.verbPrint('DECO', slice_num, it.itersize, 1, verb[1:])
             if self.deco_mask:
-                x = _decomposition(slice_array, bases, self.SIG_ERROR,mask[slice_num])
+                x = _decomposition(slice_array, bases, self.SIG_ERROR,mask[it.multi_index + (slice(None),) * n])
             else:
                 x = _decomposition(slice_array, bases, self.SIG_ERROR)
             # approx represents data approximation from beta and bases
@@ -494,10 +496,15 @@ class Decomposition(Function):
             True or false value for whether the file exists
         """
 
-        fpath = os.path.abspath(file)
-        if not os.path.isfile(fpath):
-            return False
+        fpath = Path(file)
+        if (file.count("%") == 1):
+            if not Path(file % 1).is_file(): return False
+            return True
+        if (file.count("%") == 2):
+            if not Path(file % 1).is_file(): return False
+            return True
         
+        if not fpath.is_file(): return False
         return True
 
 
@@ -647,15 +654,12 @@ def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, ma
     beta : np.ndarray
         Beta array calculated by least squares
     """
-    
-    # A represents the (data length, number of bases) array
-    A = np.array(bases)
-
     if type(mask) != type(None):
         A = (np.array(bases) * mask)
     else:
         A = np.array(bases)
 
+    # A represents the (data length, number of bases) array
     A = np.reshape(A, (A.shape[0], -1,), order='C').T
     # b is the vector to approximate
     b = array.flatten(order='C')[:, np.newaxis]
