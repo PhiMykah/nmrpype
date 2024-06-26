@@ -143,6 +143,9 @@ class Decomposition(Function):
                 # bases.append(basis_array.flatten(order='C'))
                 bases.append(basis_array)
             
+            if verb[0]:
+                print("DECO Basis Size: {}".format(len(bases)), file=sys.stderr)
+
             sample_shape = array.shape
 
             isAsymmetric = True if len(sample_shape) > len(basis_shape) else False
@@ -282,6 +285,9 @@ class Decomposition(Function):
 
         A = np.reshape(np.array(bases), (len(bases), -1,)).T
 
+        if verb[0]:
+            print("DECO Rank Condition: <={:.2e}".format(self.SIG_ERROR*np.max(A.real)), file=sys.stderr)
+
         approx = A @ beta
 
         # Check to see if original array should be retained
@@ -363,6 +369,9 @@ class Decomposition(Function):
         
         beta = np.array(beta_planes).squeeze().T
         A = np.reshape(np.array(bases), (len(bases), -1,)).T
+
+        if verb[0]:
+            print("DECO Rank Condition: <={:.2e}".format(self.SIG_ERROR*np.max(A.real)), file=sys.stderr)
 
         approx = A @ beta
 
@@ -654,10 +663,12 @@ def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, ma
     beta : np.ndarray
         Beta array calculated by least squares
     """
+    A = np.array(bases)
+
+    rcond = err*np.max(A.real)
+
     if type(mask) != type(None):
-        A = (np.array(bases) * mask)
-    else:
-        A = np.array(bases)
+        A = (A * mask)
 
     # A represents the (data length, number of bases) array
     A = np.reshape(A, (A.shape[0], -1,), order='C').T
@@ -667,7 +678,7 @@ def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, ma
     # beta is the coefficient vector multiplied by the A to approximate the result
     # Output rank if necessary
     beta, residuals, rank, singular_values = la.lstsq(A,b, 
-                                                        rcond=err*np.max(A.real))
+                                                        rcond=rcond)
 
     return beta
     
