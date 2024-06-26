@@ -241,11 +241,11 @@ class Decomposition(Function):
             Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
 
         array_output = [arr[0] for arr in output]
-        beta_output = [beta[1] for beta in output]
+        beta_output = [beta[1].T for beta in output]
 
         # Recombine and reshape data
         new_array = np.concatenate(array_output).reshape(array_shape)
-        beta = np.array(beta_output).T
+        beta = np.concatenate(beta_output)
         return new_array, beta
     
 
