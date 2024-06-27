@@ -53,7 +53,8 @@ class Decomposition(Function):
         self.SIG_ERROR = deco_error
         self.mp = [mp_enable, mp_proc, mp_threads]
         self.name = "DECO"
-        
+        self.data_mode = 1
+
         params = {'deco_bases':deco_bases, 'deco_cfile':deco_cfile, 
                   'deco_mask':deco_mask, 'deco_retain':deco_retain, 'deco_error':deco_error}
         super().__init__(params)
@@ -96,6 +97,7 @@ class Decomposition(Function):
             #if data.array.ndim > 2:
             #    raise Exception("Dimensionality higher than 2 currently unsupported!")
             
+            self.data_mode = data.getParam('NDQUADFLAG', data.getCurrDim())
             data.array = self.process(data.header, data.array, (data.verb, data.inc, data.getParam('NDLABEL')))
         except Exception as e:
             msg = "Unable to run function {0}!".format(type(self).__name__)
@@ -238,18 +240,25 @@ class Decomposition(Function):
             Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
 
         with Pool(processes=self.mp[1]) as pool:
-            output = pool.starmap(self.asymmetricDecomposition, args, chunksize=chunk_size)
+            output = pool.starmap(self.parallelDecomposition, args, chunksize=chunk_size)
 
         if verb[0]:
             Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
+        
+        beta = np.concatenate([x.T for x in output])
+        A = np.array(bases).reshape(len(bases), -1)
+        approx = beta @ A
 
-        array_output = [arr[0] for arr in output]
-        beta_output = [beta[1].T for beta in output]
+        # Check to see if original array should be retained
+        if not self.deco_retain:
+            return (approx.reshape(array.shape, order='C'), beta.T)
+        
+        if self.deco_mask:
+            # Apply elements at mask
+            gaps = np.invert(DataFrame(self.deco_mask).getArray().astype(bool))
+            array[gaps] = approx.reshape(array.shape, order='C')[gaps]
 
-        # Recombine and reshape data
-        new_array = np.concatenate(array_output).reshape(array_shape)
-        beta = np.concatenate(beta_output)
-        return new_array, beta
+        return approx, beta.T
     
 
     def decomposition(self, array : np.ndarray, 
@@ -301,8 +310,34 @@ class Decomposition(Function):
 
         return (array, beta)
 
-        
+    
+    def parallelDecomposition(self, array : np.ndarray, bases, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
+        # Check if applying the mask is necessary
+        if self.deco_mask:
+            mask = DataFrame(self.deco_mask).getArray()
+        else:
+            mask = np.empty(array.shape)
 
+        if not self.data_mode:
+            bases_real = [basis.real for basis in bases]
+            beta_real = _deco_iter(array.real, bases_real, mask.real, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-R')
+
+            bases_imag = [basis.imag for basis in bases]
+            beta_imag = _deco_iter(array.imag, bases_imag, mask.imag, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-I')
+
+            beta = beta_real + 1j*beta_imag
+        
+        else:
+            beta = _deco_iter(array, bases, mask, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO')
+        
+        A = np.reshape(np.array(bases), (len(bases), -1,)).T
+
+        if verb[0]:
+            print("DECO Rank Condition: <={:.2e}".format(self.SIG_ERROR*np.max(A.real)), file=sys.stderr)
+
+        return beta
+    
+    
     def asymmetricDecomposition(self, array : np.ndarray,
                                 bases : list[np.ndarray], verb : tuple[int,int,str] = (0,16,'H')) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -342,32 +377,20 @@ class Decomposition(Function):
         # Check if applying the mask is necessary
         if self.deco_mask:
             mask = DataFrame(self.deco_mask).getArray()
-        
-        approx = []
-        beta_planes = []
+        else:
+            mask = np.empty(array.shape)
 
-        # Collect number of basis dimensions (n) to form iterator
-        n = len(bases[0].shape)
+        if not self.data_mode:
+            bases_real = [basis.real for basis in bases]
+            beta_real = _deco_iter(array.real, bases_real, mask.real, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-R')
 
-        it = np.nditer(array[(Ellipsis,) + (0,) * n], flags=['multi_index'], order='C')
-        while not it.finished:
-            # Extract slice based on iteration
-            slice_num = it.iterindex
-            slice_array = array[it.multi_index + (slice(None),) * n]  
+            bases_imag = [basis.imag for basis in bases]
+            beta_imag = _deco_iter(array.imag, bases_imag, mask.imag, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-I')
 
-            if verb[0]:
-                    Function.verbPrint('DECO', slice_num, it.itersize, 1, verb[1:])
-            if self.deco_mask:
-                x = _decomposition(slice_array, bases, self.SIG_ERROR,mask[it.multi_index + (slice(None),) * n])
-            else:
-                x = _decomposition(slice_array, bases, self.SIG_ERROR)
-            # approx represents data approximation from beta and bases
-            beta_planes.append(x)
-            it.iternext()
-        if verb[0]:
-            print("", file=sys.stderr)
-        
-        beta = np.array(beta_planes).squeeze().T
+            beta = beta_real + 1j*beta_imag
+        else:
+            beta = _deco_iter(array,bases,mask,self.SIG_ERROR,bool(self.deco_mask), verb, 'DECO')
+
         A = np.reshape(np.array(bases), (len(bases), -1,)).T
 
         if verb[0]:
@@ -681,7 +704,36 @@ def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, ma
                                                         rcond=rcond)
 
     return beta
+
+def _deco_iter(array : np.ndarray, bases : list[np.ndarray], 
+               mask : np.ndarray, error : float = 1e-8, use_mask : bool = False, verb : tuple[int,int,str] = (0,0,'16'), msg : str = 'DECO') -> np.ndarray:
     
+    beta_planes = []
+
+    # Collect number of basis dimensions (n) to form iterator
+    n = len(bases[0].shape)
+
+    it = np.nditer(array[(Ellipsis,) + (0,) * n], flags=['multi_index'], order='C')
+    while not it.finished:
+        # Extract slice based on iteration
+        slice_num = it.iterindex
+        slice_array = array[it.multi_index + (slice(None),) * n]  
+
+        if verb[0]:
+                Function.verbPrint(msg, slice_num, it.itersize, 1, verb[1:])
+        if use_mask:
+            x = _decomposition(slice_array, bases, error,mask[it.multi_index + (slice(None),) * n])
+        else:
+            x = _decomposition(slice_array, bases, error)
+
+        # approx represents data approximation from beta and bases
+        beta_planes.append(x)
+        it.iternext()
+    if verb[0]:
+        print("", file=sys.stderr)
+    
+    return np.array(beta_planes).squeeze().T
+
 def paramSyntax(param : str, dim : int, dim_order : dict = [2,1,3,4]) -> str:
     """
     Local verison of updateHeaderSyntax defined by
