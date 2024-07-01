@@ -153,10 +153,14 @@ class Decomposition(Function):
             isAsymmetric = True if len(sample_shape) > len(basis_shape) else False
                 
             if isAsymmetric:
-                if not self.mp[0] or array.ndim == 1:
-                    synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
-                else:
-                    synthetic_data, beta = self.parallelize(array, bases, verb)
+                synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
+                ############################
+                # Disabled parallelization #
+                ############################
+                # if not self.mp[0] or array.ndim == 1:
+                #     synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
+                # else:
+                #     synthetic_data, beta = self.parallelize(array, bases, verb)
             else:
                 synthetic_data, beta = self.decomposition(array, bases, verb)
 
@@ -245,9 +249,22 @@ class Decomposition(Function):
         if verb[0]:
             Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
         
-        beta = np.concatenate([x.T for x in output])
-        A = np.array(bases).reshape(len(bases), -1)
-        approx = beta @ A
+        if not self.data_mode:
+            beta_real = output[0]
+            beta_imag = output[1]
+
+            A_real = np.reshape(np.array(bases).real, (len(bases), -1,))
+            A_imag = np.reshape(np.array(bases).imag, (len(bases), -1,))
+
+            approx_real = beta_real @ A_real
+            approx_imag = beta_imag @ A_imag
+
+            approx = approx_real + 1j * approx_imag
+            beta = beta_real + 1j * beta_imag
+        else:
+            beta = np.concatenate([x.T for x in output])
+            A = np.array(bases).reshape(len(bases), -1)
+            approx = beta @ A
 
         # Check to see if original array should be retained
         if not self.deco_retain:
@@ -325,7 +342,7 @@ class Decomposition(Function):
             bases_imag = [basis.imag for basis in bases]
             beta_imag = _deco_iter(array.imag, bases_imag, mask.imag, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-I')
 
-            beta = beta_real + 1j*beta_imag
+            beta = (beta_real,beta_imag)
         
         else:
             beta = _deco_iter(array, bases, mask, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO')
@@ -379,24 +396,45 @@ class Decomposition(Function):
             mask = DataFrame(self.deco_mask).getArray()
         else:
             mask = np.empty(array.shape)
-
+        
+        # Checking for complex data, requiring separate processing
         if not self.data_mode:
+            print("DECO: Processing Real and Complex Separately", file=sys.stderr)
             bases_real = [basis.real for basis in bases]
             beta_real = _deco_iter(array.real, bases_real, mask.real, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-R')
 
             bases_imag = [basis.imag for basis in bases]
             beta_imag = _deco_iter(array.imag, bases_imag, mask.imag, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-I')
 
-            beta = beta_real + 1j*beta_imag
+            if verb[0]:
+                print("DECO: Splitting Complex Basis", file=sys.stderr)
+            A_real = np.reshape(np.array(bases).real, (len(bases), -1,)).T
+            A_imag = np.reshape(np.array(bases).imag, (len(bases), -1,)).T
+
+            if verb[0]:
+                print("DECO: Generating Synthetic Real Data", file=sys.stderr)
+            approx_real = A_real @ beta_real
+            if verb[0]:
+                print("DECO: Generating Synthetic Imaginary Data", file=sys.stderr)
+            approx_imag = A_imag @ beta_imag
+
+            if verb[0]:
+                print("DECO: Stitching Synthetic Data", file=sys.stderr)
+            approx = approx_real + 1j * approx_imag
+            beta = beta_real + 1j * beta_imag
+
+            rank = self.SIG_ERROR*np.max(A_real)
         else:
             beta = _deco_iter(array,bases,mask,self.SIG_ERROR,bool(self.deco_mask), verb, 'DECO')
 
-        A = np.reshape(np.array(bases), (len(bases), -1,)).T
+            A = np.reshape(np.array(bases), (len(bases), -1,)).T
+
+            approx = A @ beta
+
+            rank = self.SIG_ERROR*np.max(A.real)
 
         if verb[0]:
-            print("DECO Rank Condition: <={:.2e}".format(self.SIG_ERROR*np.max(A.real)), file=sys.stderr)
-
-        approx = A @ beta
+            print("DECO Rank Condition: <={:.2e}".format(rank), file=sys.stderr)
 
         # Check to see if original array should be retained
         if not self.deco_retain:
