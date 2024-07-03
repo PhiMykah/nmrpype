@@ -153,14 +153,11 @@ class Decomposition(Function):
             isAsymmetric = True if len(sample_shape) > len(basis_shape) else False
                 
             if isAsymmetric:
-                synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
-                ############################
-                # Disabled parallelization #
-                ############################
-                # if not self.mp[0] or array.ndim == 1:
-                #     synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
-                # else:
-                #     synthetic_data, beta = self.parallelize(array, bases, verb)
+                # synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
+                if not self.mp[0] or array.ndim == 1:
+                    synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
+                else:
+                    synthetic_data, beta = self.parallelize(array, bases, verb)
             else:
                 synthetic_data, beta = self.decomposition(array, bases, verb)
 
@@ -228,6 +225,13 @@ class Decomposition(Function):
         # Assure chunk_size is nonzero
         chunk_size = array_shape[0] if chunk_size == 0 else chunk_size
         
+        # Check if applying the mask is necessary
+        if self.deco_mask:
+            mask = DataFrame(self.deco_mask).getArray()
+        else:
+            mask = np.empty(array_shape)
+
+        mask_chunks = [mask[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
         chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
 
         chunk_num = len(chunks)
@@ -235,14 +239,15 @@ class Decomposition(Function):
         args = []
         for i in range(chunk_num):
             if i == 0:
-                args.append((chunks[i], bases, verb))
+                args.append((chunks[i], bases, mask_chunks[i], verb))
             else:
-                args.append((chunks[i], bases, (0,16,'H')))
+                args.append((chunks[i], bases, mask_chunks[i], (0,16,'H')))
         
         mask_msg = " with mask" if self.deco_mask else ""
         if verb[0]:
             Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
-
+        if not self.data_mode and verb[0]:
+            print("DECO: Processing Real and Imaginary Separately", file=sys.stderr)
         with Pool(processes=self.mp[1]) as pool:
             output = pool.starmap(self.parallelDecomposition, args, chunksize=chunk_size)
 
@@ -250,15 +255,23 @@ class Decomposition(Function):
             Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
         
         if not self.data_mode:
-            beta_real = output[0]
-            beta_imag = output[1]
+            beta_real = np.concatenate([beta[0].T for beta in output])
+            beta_imag = np.concatenate([beta[1].T for beta in output])
 
+            if verb[0]:
+                print("DECO: Splitting Complex Basis", file=sys.stderr)
             A_real = np.reshape(np.array(bases).real, (len(bases), -1,))
             A_imag = np.reshape(np.array(bases).imag, (len(bases), -1,))
 
+            if verb[0]:
+                print("DECO: Generating Synthetic Real Data", file=sys.stderr)
             approx_real = beta_real @ A_real
+            if verb[0]:
+                print("DECO: Generating Synthetic Imaginary Data", file=sys.stderr)
             approx_imag = beta_imag @ A_imag
 
+            if verb[0]:
+                print("DECO: Stitching Synthetic Data", file=sys.stderr)
             approx = approx_real + 1j * approx_imag
             beta = beta_real + 1j * beta_imag
         else:
@@ -328,13 +341,7 @@ class Decomposition(Function):
         return (array, beta)
 
     
-    def parallelDecomposition(self, array : np.ndarray, bases, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
-        # Check if applying the mask is necessary
-        if self.deco_mask:
-            mask = DataFrame(self.deco_mask).getArray()
-        else:
-            mask = np.empty(array.shape)
-
+    def parallelDecomposition(self, array : np.ndarray, bases, mask : np.ndarray, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         if not self.data_mode:
             bases_real = [basis.real for basis in bases]
             beta_real = _deco_iter(array.real, bases_real, mask.real, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-R')
@@ -399,7 +406,8 @@ class Decomposition(Function):
         
         # Checking for complex data, requiring separate processing
         if not self.data_mode:
-            print("DECO: Processing Real and Complex Separately", file=sys.stderr)
+            if verb[0]:
+                print("DECO: Processing Real and Imaginary Separately", file=sys.stderr)
             bases_real = [basis.real for basis in bases]
             beta_real = _deco_iter(array.real, bases_real, mask.real, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-R')
 
