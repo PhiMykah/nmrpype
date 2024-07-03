@@ -38,8 +38,10 @@ def parser(input_args : list[str]) -> Namespace:
     parent_parser.add_argument('-inc','--increment', metavar='[16]', type=int, default=16, dest='inc',
                         help='Verbose loop print increment')
     # Add parsers for multiprocessing
-    parent_parser.add_argument('-mp', '--multi-processing', action='store_true', dest='mp_enable',
-                                help='Enable Multiprocessing')
+    parent_parser.add_argument('-mp', '--multi-processing', action='store_const', dest='mp_enable', const=True,
+                                default=False, help='Enable Multiprocessing')
+    parent_parser.add_argument('-nomp', '--no-multi-processing', action='store_const', dest='mp_enable', const=False,
+                                help='Disable Multiprocessing')
     parent_parser.add_argument('-proc', '--processors', nargs='?', metavar='#', type=int, 
                             default=os.cpu_count(), dest='mp_proc',
                             help='Number of processors to use for multiprocessing')
