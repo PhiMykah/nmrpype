@@ -258,22 +258,8 @@ class Decomposition(Function):
             beta_real = np.concatenate([beta[0].T for beta in output])
             beta_imag = np.concatenate([beta[1].T for beta in output])
 
-            if verb[0]:
-                print("DECO: Splitting Complex Basis", file=sys.stderr)
-            A_real = np.reshape(np.array(bases).real, (len(bases), -1,))
-            A_imag = np.reshape(np.array(bases).imag, (len(bases), -1,))
+            approx, beta = _stitch_ri(beta_real, beta_imag, bases, verb[0])
 
-            if verb[0]:
-                print("DECO: Generating Synthetic Real Data", file=sys.stderr)
-            approx_real = beta_real @ A_real
-            if verb[0]:
-                print("DECO: Generating Synthetic Imaginary Data", file=sys.stderr)
-            approx_imag = beta_imag @ A_imag
-
-            if verb[0]:
-                print("DECO: Stitching Synthetic Data", file=sys.stderr)
-            approx = approx_real + 1j * approx_imag
-            beta = beta_real + 1j * beta_imag
         else:
             beta = np.concatenate([x.T for x in output])
             A = np.array(bases).reshape(len(bases), -1)
@@ -315,19 +301,31 @@ class Decomposition(Function):
         (approx, beta) : tuple[ndarray,ndarray]
             Approximation matrix and coefficient matrix
         """
-        # Check if applying the mask is necessary
-        if self.deco_mask:
-            mask = DataFrame(self.deco_mask).getArray()
-            beta = _decomposition(array, bases, self.SIG_ERROR, mask)
-        else:
-            beta = _decomposition(array,bases, self.SIG_ERROR)
-
         A = np.reshape(np.array(bases), (len(bases), -1,)).T
+        if not self.data_mode:
+            bases_real = [basis.real for basis in bases]
+            bases_imag = [basis.imag for basis in bases]
+            if self.deco_mask:
+                mask = DataFrame(self.deco_mask).getArray()
+                beta_real = _decomposition(array.real, bases_real, self.SIG_ERROR, mask.real)           
+                beta_imag = _decomposition(array.imag, bases_imag, self.SIG_ERROR, mask.imag)
+            else:
+                beta_real = _decomposition(array.real, bases_real, self.SIG_ERROR)           
+                beta_imag = _decomposition(array.imag, bases_imag, self.SIG_ERROR)
+            
+            approx, beta = _stitch_ri(beta_real, beta_imag, bases, False)
+        else:
+            # Check if applying the mask is necessary
+            if self.deco_mask:
+                mask = DataFrame(self.deco_mask).getArray()
+                beta = _decomposition(array, bases, self.SIG_ERROR, mask)
+            else:
+                beta = _decomposition(array,bases, self.SIG_ERROR)
+
+            approx = A @ beta
 
         if verb[0]:
-            print("DECO Rank Condition: <={:.2e}".format(self.SIG_ERROR*np.max(A.real)), file=sys.stderr)
-
-        approx = A @ beta
+                print("DECO Rank Condition: <={:.2e}".format(self.SIG_ERROR*np.max(A.real)), file=sys.stderr)
 
         # Check to see if original array should be retained
         if not self.deco_retain:
@@ -414,24 +412,9 @@ class Decomposition(Function):
             bases_imag = [basis.imag for basis in bases]
             beta_imag = _deco_iter(array.imag, bases_imag, mask.imag, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-I')
 
-            if verb[0]:
-                print("DECO: Splitting Complex Basis", file=sys.stderr)
-            A_real = np.reshape(np.array(bases).real, (len(bases), -1,)).T
-            A_imag = np.reshape(np.array(bases).imag, (len(bases), -1,)).T
+            approx, beta = _stitch_ri(beta_real, beta_imag, bases, verb[0])
 
-            if verb[0]:
-                print("DECO: Generating Synthetic Real Data", file=sys.stderr)
-            approx_real = A_real @ beta_real
-            if verb[0]:
-                print("DECO: Generating Synthetic Imaginary Data", file=sys.stderr)
-            approx_imag = A_imag @ beta_imag
-
-            if verb[0]:
-                print("DECO: Stitching Synthetic Data", file=sys.stderr)
-            approx = approx_real + 1j * approx_imag
-            beta = beta_real + 1j * beta_imag
-
-            rank = self.SIG_ERROR*np.max(A_real)
+            rank = self.SIG_ERROR*np.max(np.reshape(np.array(bases).real, (len(bases), -1,)).T)
         else:
             beta = _deco_iter(array,bases,mask,self.SIG_ERROR,bool(self.deco_mask), verb, 'DECO')
 
@@ -739,6 +722,9 @@ def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, ma
     if type(mask) != type(None):
         A = (A * mask)
 
+        if not np.any(A):
+            return np.zeros((len(bases), 1), dtype='float32', order='C')
+
     # A represents the (data length, number of bases) array
     A = np.reshape(A, (A.shape[0], -1,), order='C').T
     # b is the vector to approximate
@@ -779,6 +765,25 @@ def _deco_iter(array : np.ndarray, bases : list[np.ndarray],
         print("", file=sys.stderr)
     
     return np.array(beta_planes).squeeze().T
+
+def _stitch_ri(beta_real : np.ndarray, beta_imag : np.ndarray, bases : list[np.ndarray], verb : bool) -> tuple[np.ndarray, np.ndarray]:
+    if verb:
+        print("DECO: Splitting Complex Basis", file=sys.stderr)
+    A_real = np.reshape(np.array(bases).real, (len(bases), -1,)).T
+    A_imag = np.reshape(np.array(bases).imag, (len(bases), -1,)).T
+
+    if verb:
+        print("DECO: Generating Synthetic Real Data", file=sys.stderr)
+    approx_real = A_real @ beta_real
+    if verb:
+        print("DECO: Generating Synthetic Imaginary Data", file=sys.stderr)
+    approx_imag = A_imag @ beta_imag
+
+    if verb:
+        print("DECO: Stitching Synthetic Data", file=sys.stderr)
+    approx = approx_real + 1j * approx_imag
+    beta = beta_real + 1j * beta_imag
+    return approx, beta
 
 def paramSyntax(param : str, dim : int, dim_order : dict = [2,1,3,4]) -> str:
     """
