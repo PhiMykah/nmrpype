@@ -13,7 +13,6 @@ from typing import Literal
 from multiprocessing import Pool, TimeoutError
 from concurrent.futures import ThreadPoolExecutor
 
-residual_list = []
 class Decomposition(Function):
     """
     Data Function object for decomposing processed file into coefficients and synthetic
@@ -58,7 +57,7 @@ class Decomposition(Function):
         params = {'deco_bases':deco_bases, 'deco_cfile':deco_cfile, 
                   'deco_mask':deco_mask, 'deco_retain':deco_retain, 'deco_error':deco_error}
         super().__init__(params)
-
+    
     ############
     # Function #
     ############
@@ -82,11 +81,11 @@ class Decomposition(Function):
         int
             Integer exit code (e.g. 0 success, non-zero fail)
         """
-        try: 
+        try:
             for file in self.deco_bases:
                 if not Decomposition.isValidFile(file):
-                    raise OSError("One or more basis files were not properly found!")
-                
+                    raise OSError("One or more basis files were not properly found")
+            
             # Check if there is a mask to be used with the data
             if self.deco_mask:
                 # Return error if mask file is unable to be found
@@ -94,6 +93,11 @@ class Decomposition(Function):
                     print("Mask file was not properly found, ignoring", file=sys.stderr)
                     self.deco_mask = ""
                 
+                
+            #if data.array.ndim > 2:
+            #    raise Exception("Dimensionality higher than 2 currently unsupported!")
+            
+
             #if data.array.ndim > 2:
             #    raise Exception("Dimensionality higher than 2 currently unsupported!")
             
@@ -104,8 +108,8 @@ class Decomposition(Function):
             catchError(e, new_e=FunctionError, msg=msg)
 
         return 0
-            
-        
+
+
     ##############
     # Processing #
     ##############
@@ -130,53 +134,35 @@ class Decomposition(Function):
             modified array post-process
         """
         try:
-            # Obtain basis and the basis shape
-            bases = []
-            basis_shape = None
-            # Format matrix multiplication as A @ beta = b
-            for basis in sorted(self.deco_bases):
-                basis_array = DataFrame(basis).getArray()
-                
-                # Get the shape from the basis once
-                if not basis_shape:
-                    basis_shape = basis_array.shape
+            bases, basis_shape = self.collect_bases()
 
-                # add flattened array to list since dimensions are not significant to calculation
-                # bases.append(basis_array.flatten(order='C'))
-                bases.append(basis_array)
-            
             if verb[0]:
                 print("DECO Basis Size: {}".format(len(bases)), file=sys.stderr)
 
-            sample_shape = array.shape
+            array_shape = array.shape
 
-            isAsymmetric = True if len(sample_shape) > len(basis_shape) else False
-                
+            isAsymmetric = True if len(array_shape) > len(basis_shape) else False
+
             if isAsymmetric:
-                # synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
                 if not self.mp[0] or array.ndim == 1:
                     synthetic_data, beta = self.asymmetricDecomposition(array, bases, verb)
                 else:
                     synthetic_data, beta = self.parallelize(array, bases, verb)
             else:
                 synthetic_data, beta = self.decomposition(array, bases, verb)
-
-            # Identify directory for saving file
-            directory = os.path.split(self.deco_cfile)[0]
-
-            # Make the missing directories if there are any
-            if directory and not os.path.exists(directory):
-                os.makedirs(directory)
-
+            
             if self.deco_cfile.lower() != "none":
                 # Save the coefficients to the file given by user
-                if self.generateCoeffFile(beta.T.real, data_dic=dic, isAsymmetric=isAsymmetric,
-                                        basis_dim=len(basis_shape), sample_dim=len(sample_shape)) != 0:
+                if self.generateCoeffFile(beta, array_shape, data_dic=dic, isAsymmetric=isAsymmetric,
+                                        basis_dim=len(basis_shape), sample_dim=len(array_shape)) != 0:
                     raise CoeffWriteError
         
+        
+
+                
 
             return synthetic_data
-        
+            
             
         except la.LinAlgError as e:
             catchError(e, new_e = Exception, 
@@ -189,7 +175,6 @@ class Decomposition(Function):
                        msg="Failed to create coefficient file, passing synthetic data", 
                        ePrint = True)
             return synthetic_data
-
 
     def parallelize(self, array : np.ndarray, bases : list[str], verb : tuple[int,int,str] = (0,16,'H')) -> tuple[np.ndarray,np.ndarray]:
         """
@@ -216,69 +201,10 @@ class Decomposition(Function):
         (new_array, beta) : tuple[ndarray,ndarray]
             Approximation matrix and coefficient matrix
         """
-        # Save array shape for reshaping later
-        array_shape = array.shape
-
-        # Split array into manageable chunks
-        chunk_size = int(array_shape[0] / self.mp[1])
-
-        # Assure chunk_size is nonzero
-        chunk_size = array_shape[0] if chunk_size == 0 else chunk_size
-        
-        # Check if applying the mask is necessary
-        if self.deco_mask:
-            mask = DataFrame(self.deco_mask).getArray()
-        else:
-            mask = np.empty(array_shape)
-
-        mask_chunks = [mask[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
-        chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
-
-        chunk_num = len(chunks)
-        # Process each chunk in processing pool
-        args = []
-        for i in range(chunk_num):
-            if i == 0:
-                args.append((chunks[i], bases, mask_chunks[i], verb))
-            else:
-                args.append((chunks[i], bases, mask_chunks[i], (0,16,'H')))
-        
-        mask_msg = " with mask" if self.deco_mask else ""
-        if verb[0]:
-            Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
-        if not self.data_mode and verb[0]:
-            print("DECO: Processing Real and Imaginary Separately", file=sys.stderr)
-        with Pool(processes=self.mp[1]) as pool:
-            output = pool.starmap(self.parallelDecomposition, args, chunksize=chunk_size)
-
-        if verb[0]:
-            Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
-        
-        if not self.data_mode:
-            beta_real = np.concatenate([beta[0].T for beta in output])
-            beta_imag = np.concatenate([beta[1].T for beta in output])
-
-            approx, beta = _stitch_ri(beta_real, beta_imag, bases, verb[0])
-
-        else:
-            beta = np.concatenate([x.T for x in output])
-            A = np.array(bases).reshape(len(bases), -1)
-            approx = beta @ A
-
-        # Check to see if original array should be retained
-        if not self.deco_retain:
-            return (approx.reshape(array.shape, order='C'), beta.T)
-        
-        if self.deco_mask:
-            # Apply elements at mask
-            gaps = np.invert(DataFrame(self.deco_mask).getArray().astype(bool))
-            array[gaps] = approx.reshape(array.shape, order='C')[gaps]
-
-        return approx, beta.T
-    
+        pass
 
     def decomposition(self, array : np.ndarray, 
-                      bases : list[np.ndarray], verb : tuple[int,int,str] = (0,16,'H')) -> tuple[np.ndarray, np.ndarray] :
+                      bases : list[np.ndarray], verb : tuple[int,int,str] = (0,16,'H')) -> tuple[np.ndarray, np.ndarray]:
         """
         Use A and b to solve for the x that minimizes Ax-b = 0
 
@@ -301,31 +227,33 @@ class Decomposition(Function):
         (approx, beta) : tuple[ndarray,ndarray]
             Approximation matrix and coefficient matrix
         """
-        A = np.reshape(np.array(bases), (len(bases), -1,)).T
-        if not self.data_mode:
-            bases_real = [basis.real for basis in bases]
-            bases_imag = [basis.imag for basis in bases]
-            if self.deco_mask:
-                mask = DataFrame(self.deco_mask).getArray()
-                beta_real = _decomposition(array.real, bases_real, self.SIG_ERROR, mask.real)           
-                beta_imag = _decomposition(array.imag, bases_imag, self.SIG_ERROR, mask.imag)
-            else:
-                beta_real = _decomposition(array.real, bases_real, self.SIG_ERROR)           
-                beta_imag = _decomposition(array.imag, bases_imag, self.SIG_ERROR)
-            
-            approx, beta = _stitch_ri(beta_real, beta_imag, bases, False)
+        # Check if applying the mask is necessary
+        # if self.deco_mask:
+        #     mask = DataFrame(self.deco_mask).getArray()
+        #     beta = _deco(array, np.array(bases), self.SIG_ERROR, True, mask)
+        # else:
+        #     beta = _deco(array, np.array(bases), self.SIG_ERROR)
+        # A = np.reshape(np.array(bases), (len(bases), -1,)).T
+        # approx = A @ beta
+        
+        if self.deco_mask:
+            mask = DataFrame(self.deco_mask).getArray()
+            beta_real = _deco(array.real, np.array(bases).real, self.SIG_ERROR, True, mask.real)
+            beta_imag = _deco(array.imag, np.array(bases).imag, self.SIG_ERROR, True, mask.imag)
         else:
-            # Check if applying the mask is necessary
-            if self.deco_mask:
-                mask = DataFrame(self.deco_mask).getArray()
-                beta = _decomposition(array, bases, self.SIG_ERROR, mask)
-            else:
-                beta = _decomposition(array,bases, self.SIG_ERROR)
+            beta_real = _deco(array.real, np.array(bases).real, self.SIG_ERROR)
+            beta_imag = _deco(array.imag, np.array(bases).imag, self.SIG_ERROR)
 
-            approx = A @ beta
+        A = np.reshape(np.array(bases), (len(bases), -1)).T
+        beta = beta_real + 1j*beta_imag
+
+        approx_real = A.real @ beta_real
+        approx_imag = A.imag @ beta_imag
+
+        approx = approx_real + 1j*approx_imag
 
         if verb[0]:
-                print("DECO Rank Condition: <={:.2e}".format(self.SIG_ERROR*np.max(A.real)), file=sys.stderr)
+            print("DECO Rank Condition: <={:.2e}".format(self.SIG_ERROR*np.max(A.real)), file=sys.stderr)
 
         # Check to see if original array should be retained
         if not self.deco_retain:
@@ -338,28 +266,13 @@ class Decomposition(Function):
 
         return (array, beta)
 
+
+    
+     
     
     def parallelDecomposition(self, array : np.ndarray, bases, mask : np.ndarray, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
-        if not self.data_mode:
-            bases_real = [basis.real for basis in bases]
-            beta_real = _deco_iter(array.real, bases_real, mask.real, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-R')
+        pass
 
-            bases_imag = [basis.imag for basis in bases]
-            beta_imag = _deco_iter(array.imag, bases_imag, mask.imag, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-I')
-
-            beta = (beta_real,beta_imag)
-        
-        else:
-            beta = _deco_iter(array, bases, mask, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO')
-        
-        A = np.reshape(np.array(bases), (len(bases), -1,)).T
-
-        if verb[0]:
-            print("DECO Rank Condition: <={:.2e}".format(self.SIG_ERROR*np.max(A.real)), file=sys.stderr)
-
-        return beta
-    
-    
     def asymmetricDecomposition(self, array : np.ndarray,
                                 bases : list[np.ndarray], verb : tuple[int,int,str] = (0,16,'H')) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -389,38 +302,42 @@ class Decomposition(Function):
         # NOTE #
         ########
         """
-        b = array.reshape(-1, A.shape[0],order='C').T
-        Using the line above instead of a separate asymmetric decomposition function may be faster, but 
+        Using the line `b = array.reshape(-1, A.shape[0],order='C').T` 
+        instead of a separate asymmetric decomposition function may be faster, but 
         will take up more memory and requires more work to ensure that it works.
         
         Currently feasible in notebooks
         """
-
-        # Check if applying the mask is necessary
-        if self.deco_mask:
-            mask = DataFrame(self.deco_mask).getArray()
-        else:
-            mask = np.empty(array.shape)
-        
-        # Checking for complex data, requiring separate processing
-        if not self.data_mode:
-            if verb[0]:
-                print("DECO: Processing Real and Imaginary Separately", file=sys.stderr)
-            bases_real = [basis.real for basis in bases]
-            beta_real = _deco_iter(array.real, bases_real, mask.real, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-R')
-
-            bases_imag = [basis.imag for basis in bases]
-            beta_imag = _deco_iter(array.imag, bases_imag, mask.imag, self.SIG_ERROR, bool(self.deco_mask), verb, 'DECO-I')
-
-            approx, beta = _stitch_ri(beta_real, beta_imag, bases, verb[0])
-
-            rank = self.SIG_ERROR*np.max(np.reshape(np.array(bases).real, (len(bases), -1,)).T)
-        else:
-            beta = _deco_iter(array,bases,mask,self.SIG_ERROR,bool(self.deco_mask), verb, 'DECO')
-
-            A = np.reshape(np.array(bases), (len(bases), -1,)).T
+        A = np.reshape(np.array(bases), (len(bases), -1)).T
+        if self.data_mode: 
+            # Check if applying the mask is necessary
+            if self.deco_mask:
+                mask = DataFrame(self.deco_mask).getArray()
+            else:
+                mask = np.empty(array.shape)
+            beta = self.deco_iter(array, np.array(bases), self.SIG_ERROR, mask, bool(self.deco_mask), verb)
 
             approx = A @ beta
+
+            rank = self.SIG_ERROR*np.max(A.real)
+        else:
+            if self.deco_mask:
+                mask = DataFrame(self.deco_mask).getArray()
+                beta_real = self.deco_iter(array.real, np.array(bases).real, self.SIG_ERROR,
+                                            mask.real, bool(self.deco_mask), verb, 'DECO-R')
+                beta_imag = self.deco_iter(array.imag, np.array(bases).imag, self.SIG_ERROR,
+                                            mask.imag, bool(self.deco_mask), verb, 'DECO-I')
+            else:
+                beta_real = self.deco_iter(array.real, np.array(bases).real, self.SIG_ERROR,
+                                           verb=verb, msg='DECO-R')
+                beta_imag = self.deco_iter(array.imag, np.array(bases).imag, self.SIG_ERROR,
+                                           verb=verb, msg='DECO-I')
+
+            approx_real = A.real @ beta_real
+            approx_imag = A.imag @ beta_imag
+
+            approx = approx_real + 1j*approx_imag
+            beta = beta_real + 1j*beta_imag
 
             rank = self.SIG_ERROR*np.max(A.real)
 
@@ -437,9 +354,10 @@ class Decomposition(Function):
             array[gaps] = approx.T.reshape(array.shape, order='C')[gaps]
 
         return (array, beta)
-        
 
-    def generateCoeffFile(self, beta : np.ndarray, 
+            
+
+    def generateCoeffFile(self, beta : np.ndarray, array_shape : tuple,
                           fmt : Literal['nmr','txt'] = 'nmr', data_dic : dict = {}, 
                           isAsymmetric : bool = False, 
                           basis_dim : int = 0, sample_dim : int = 0) -> int:
@@ -449,7 +367,7 @@ class Decomposition(Function):
         Parameters
         ----------
         beta : np.ndarray
-            coefficient 1D vector array (1 row)
+            coefficient vector array (1 row, 1+ col)
 
         fmt : Literal['nmr','txt']
             Output type for the coefficient data (NMR Data or text)
@@ -471,26 +389,32 @@ class Decomposition(Function):
         int
             Integer exit code (e.g. 0 success, non-zero fail)
         """
+        # Identify directory for saving file
+        directory = os.path.split(self.deco_cfile)[0]
+
+        # Make the missing directories if there are any
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory)
+
         if fmt == 'txt':
+            if beta.ndim >= 2:
+                raise CoeffWriteError("Too many dimensions for text output! Dimensions: {}".format(beta.ndim))
             np.savetxt(self.deco_cfile, beta.T)
             return 0
         if fmt != 'nmr':
             return 1
         
         try:
-
             # Initialize header from template
             dic = HEADER_TEMPLATE
             if isAsymmetric:
                 dic = {key: value for key, value in data_dic.items()}
-                if basis_dim != 1:
-                    # Change the dimensions to be the indirect dimensions
-                    asymmetric_diff = sample_dim - basis_dim
-                    Decomposition.truncateHeader(asymmetric_diff, basis_dim, dic)
-            else: 
-                # Flatten beta if the basis and sample set are symmetrical in dimension
-                beta = beta.flatten(order='C')
-                
+                Decomposition.genCoeffHeader(dic, sample_dim, basis_dim)
+            else:
+                beta = beta.squeeze()
+
+            beta = beta.T.reshape((array_shape[:-1*basis_dim] + (-1,)), order='C')
+
             dim = 1
                 
             # NOTE: This code is almost identical to ccp4 header formation
@@ -529,18 +453,100 @@ class Decomposition(Function):
             coeffDF = DataFrame(header=dic, array=beta)
 
             writeToFile(coeffDF, self.deco_cfile, overwrite=True)
-
+            
         except:
             return 2
 
         return 0
+
+
     
-        
-        
     ####################
     # Helper Functions #
     ####################
-        
+
+    def collect_bases(self) -> tuple[list[np.ndarray], tuple]:
+        """Obtain bases from deco basis file list and collect the shape of each basis
+
+        Returns
+        -------
+        tuple[list[np.ndarray], tuple]
+            bases : list[np.ndarray]
+                List of all basis sets
+            basis_shape : tuple
+                Shape of each basis set
+        """
+        bases = []
+        basis_shape = None
+        for basis in sorted(self.deco_bases):
+            basis_array = DataFrame(basis).getArray()
+
+            # Obtain shape only once
+            if not basis_shape:
+                basis_shape = basis_array.shape
+
+            bases.append(basis_array)
+
+        return (bases, basis_shape)
+
+    def deco_iter(self, array : np.ndarray, A : np.ndarray, err : float, 
+                   mask : np.ndarray | None = None, use_mask : bool = False, 
+                   verb : tuple[int,int,str] = (0,0,'16'), msg : str = 'DECO') -> np.ndarray:
+        """
+        private decomposition function
+
+        Parameters
+        ----------
+        array : np.ndarray
+            Target array to decompose
+        A : np.ndarray
+            basis array for processing
+        err : float
+            Rounding error for rank determination
+        mask : np.ndarray | None, optional
+            Mask used for decomposition, by default None
+        verb : tuple[int,int,str], optional
+            Tuple containing elements for verbose print, by default (0, 16,'H')
+                - Verbosity level
+                - Verbosity Increment
+                - Direct Dimension Label
+
+        Returns
+        -------
+        beta : np.ndarray
+            Beta array calculated by least squares
+        """
+
+        beta_planes = []
+
+        # Collect number of basis dimensions (n) to form iterator
+        n = len(A[0].shape)
+
+        it = np.nditer(array[(Ellipsis,) + (0,) * n], flags=['multi_index'], order='C')
+        while not it.finished:
+            # Extract slice based on iteration
+            slice_num = it.iterindex
+            slice_array = array[it.multi_index + (slice(None),) * n]
+            
+            if verb[0]:
+                    Function.verbPrint(msg, slice_num, it.itersize, 1, verb[1:])
+            if use_mask:
+                x = _deco(slice_array, A, err, use_mask, mask[it.multi_index + (slice(None),) * n])
+            else:
+                x = _deco(slice_array, A, err)
+
+            # approx represents data approximation from beta and bases
+            beta_planes.append(x)
+            it.iternext()
+        if verb[0]:
+            print("", file=sys.stderr)
+
+        return np.array(beta_planes).squeeze().T
+    
+    ##################
+    # Static Methods #
+    ##################
+
     @staticmethod
     def isValidFile(file : str) -> bool:
         """
@@ -568,82 +574,52 @@ class Decomposition(Function):
         if not fpath.is_file(): return False
         return True
 
-
     @staticmethod
-    def truncateHeader(asymmetric_diff : int, basis_dim : int, dic : dict):
-        """
-        Modify header to become coefficient data,
-            using the unmeasured dimensions and the coefficient dimension only
-
-        asymmetric_diff : int
-            gap between basis set and sample data
-
-        basis_dim : int
-            The last dimension of the basis
-        
-        dic : dict
-            Dictionary to modify
-        """
+    def genCoeffHeader(dic : dict, sample_dim : int, basis_dim : int):
+        dim1 = 2
+        dim2 = basis_dim+1
         dim_order = dic["FDDIMORDER"]
-        for diff in range(asymmetric_diff):
-            dim1 = basis_dim + diff
-            dim2 = basis_dim + diff + 1
 
-            # Swap ndsizes
-            Decomposition.swapDictVals(
-                dic,
-                key1=paramSyntax("NDSIZE", dim1, dim_order),
-                key2=paramSyntax("NDSIZE", dim2, dim_order),
-            )
-
+        # Don't update headers if dim1 and dim2 are equal
+        if dim1 == dim2:
+            return
+        while dim2 < sample_dim:
+            Decomposition.setNewDimVals(dic, "NDSIZE", dim1, dim2)
+            
             # Half the data size if complex
             if dic[paramSyntax('NDQUADFLAG', dim2, dim_order)] == 0:
                 dic[paramSyntax("NDSIZE", dim1, dim_order)] /= 2
-            
-            # Swap FT flags
-            Decomposition.swapDictVals(
-                dic,
-                key1=paramSyntax("NDFTFLAG", dim1, dim_order),
-                key2=paramSyntax("NDFTFLAG", dim2, dim_order),
-            )
 
-            # Swap apod sizes
-            Decomposition.swapDictVals(
-                dic,
-                key1=paramSyntax("NDAPOD", dim1, dim_order),
-                key2=paramSyntax("NDAPOD", dim2, dim_order),
-            )
+            Decomposition.setNewDimVals(dic, "NDFTFLAG", dim1, dim2)
 
-            # Swap labels
-            Decomposition.swapDictVals(
-                dic,
-                key1=paramSyntax("NDLABEL", dim1, dim_order),
-                key2=paramSyntax("NDLABEL", dim2, dim_order),
-            )
+            Decomposition.setNewDimVals(dic, "NDAPOD", dim1, dim2)
+
+            Decomposition.setNewDimVals(dic, "NDLABEL", dim1, dim2)
+
+            i += 1
+            dim += 1
 
     @staticmethod
-    def swapDictVals(dic : dict, key1 : str, key2 : str):
-        """
-        Swaps the values between the two keys of the same dictionary
+    def setNewDimVals(dic : dict, flag : str, dim1 : int, dim2 : int):
+        """Set the value at dim1 to the value at dim 2
 
         Parameters
         ----------
         dic : dict
-            Dictionary that holds key1 and key2
-        key1 : str 
-            The first key to swap values with in the dict
-        key2 : str
-            The second key to swap values with in the dict
+            Target dictionary to update
+        flag : str
+            Target flag to update in dim1
+        dim1 : int
+            First dimension, the dimension to change
+        dim2 : int
+            Second dimension, the dimension to obtain the value from
         """
-        if key1 in dic and key2 in dic:
-            temp = dic[key1]
-            dic[key1] = dic[key2]
-            dic[key2] = temp
+        dim_order = dic["FDDIMORDER"]
+        key1 = paramSyntax(flag, dim1, dim_order)
+        key2 = paramSyntax(flag, dim2, dim_order)
 
-    ##################
-    # Static Methods #
-    ##################
-
+        dic[key1] = dic[key2]
+    
     @staticmethod
     def clArgs(subparser, parent_parser):
         """
@@ -672,30 +648,11 @@ class Decomposition(Function):
         # Include universal commands proceeding function call
         # Function.clArgsTail(DECO)
 
+####################
+# Helper Functions #
+####################
 
-        ####################
-        #  Proc Functions  #
-        ####################
-        def updateHeader(self, data):
-            """
-            fn updateHeader
-
-            Update the header following the main function's calculations.
-                Typically this includes header fields that relate to data size.
-
-            Parameters
-            ----------
-            None
-            """
-            # Update ndsize here 
-            pass
-
-
-######################
-#  Helper Functions  #
-######################
-
-def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, mask : np.ndarray | None = None) -> np.ndarray:
+def _deco(array : np.ndarray, A : np.ndarray, err : float, use_mask : bool = False, mask : np.ndarray | None = None) -> np.ndarray:
     """
     private decomposition function
 
@@ -703,10 +660,12 @@ def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, ma
     ----------
     array : np.ndarray
         Target array to decompose
-    bases : list[np.ndarray]
-        List of basis arrays for processing
+    A : np.ndarray
+        basis array for processing
     err : float
         Rounding error for rank determination
+    use_mask : bool, optional
+            Whether to use mask or not, by default False
     mask : np.ndarray | None, optional
         Mask used for decomposition, by default None
 
@@ -715,16 +674,16 @@ def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, ma
     beta : np.ndarray
         Beta array calculated by least squares
     """
-    A = np.array(bases)
+    max_val = max(np.max(np.abs(A.real)), np.max(np.abs(A.imag)))
 
-    rcond = err*np.max(A.real)
+    rcond = err*max_val
 
-    if type(mask) != type(None):
+    if use_mask:
         A = (A * mask)
-
-        if not np.any(A):
-            return np.zeros((len(bases), 1), dtype='float32', order='C')
-
+    
+    if not np.any(A):
+        return np.zeros((len(A), 1), dtype='float32', order='C')
+    
     # A represents the (data length, number of bases) array
     A = np.reshape(A, (A.shape[0], -1,), order='C').T
     # b is the vector to approximate
@@ -736,54 +695,6 @@ def _decomposition(array : np.ndarray, bases : list[np.ndarray], err : float, ma
                                                         rcond=rcond)
 
     return beta
-
-def _deco_iter(array : np.ndarray, bases : list[np.ndarray], 
-               mask : np.ndarray, error : float = 1e-8, use_mask : bool = False, verb : tuple[int,int,str] = (0,0,'16'), msg : str = 'DECO') -> np.ndarray:
-    
-    beta_planes = []
-
-    # Collect number of basis dimensions (n) to form iterator
-    n = len(bases[0].shape)
-
-    it = np.nditer(array[(Ellipsis,) + (0,) * n], flags=['multi_index'], order='C')
-    while not it.finished:
-        # Extract slice based on iteration
-        slice_num = it.iterindex
-        slice_array = array[it.multi_index + (slice(None),) * n]  
-
-        if verb[0]:
-                Function.verbPrint(msg, slice_num, it.itersize, 1, verb[1:])
-        if use_mask:
-            x = _decomposition(slice_array, bases, error,mask[it.multi_index + (slice(None),) * n])
-        else:
-            x = _decomposition(slice_array, bases, error)
-
-        # approx represents data approximation from beta and bases
-        beta_planes.append(x)
-        it.iternext()
-    if verb[0]:
-        print("", file=sys.stderr)
-    
-    return np.array(beta_planes).squeeze().T
-
-def _stitch_ri(beta_real : np.ndarray, beta_imag : np.ndarray, bases : list[np.ndarray], verb : bool) -> tuple[np.ndarray, np.ndarray]:
-    if verb:
-        print("DECO: Splitting Complex Basis", file=sys.stderr)
-    A_real = np.reshape(np.array(bases).real, (len(bases), -1,)).T
-    A_imag = np.reshape(np.array(bases).imag, (len(bases), -1,)).T
-
-    if verb:
-        print("DECO: Generating Synthetic Real Data", file=sys.stderr)
-    approx_real = A_real @ beta_real
-    if verb:
-        print("DECO: Generating Synthetic Imaginary Data", file=sys.stderr)
-    approx_imag = A_imag @ beta_imag
-
-    if verb:
-        print("DECO: Stitching Synthetic Data", file=sys.stderr)
-    approx = approx_real + 1j * approx_imag
-    beta = beta_real + 1j * beta_imag
-    return approx, beta
 
 def paramSyntax(param : str, dim : int, dim_order : dict = [2,1,3,4]) -> str:
     """
@@ -842,8 +753,6 @@ class CoeffWriteError(Exception):
     Exception called when unable to write coefficients to a file
     """
     pass
-
-#FDDIMORDER = [2,1,3,4]
 
 # Originally I was going to load with json, but I am unsure which is better to itilize
 # Snce this appears in both the deco and ccp4 files, json might be better
