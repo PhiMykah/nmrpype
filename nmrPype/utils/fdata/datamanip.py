@@ -804,17 +804,22 @@ class pipe_4d(data_nd):
 
         readable = True
         # read in the data file by file, trace by trace
+        # Single index, each file is a singular cube
+        if self.singleindex:
+            for ai, a in enumerate(ach):
+                f = open(self.filemask % (a + 1), 'rb')
+                for zi, z in enumerate(zch):
+                    for yi, y in enumerate(ych):
+                        ntrace = y
+                        trace = get_trace(f, (ntrace + z * lenY), lenX, self.bswap, self.cplex)
+                        out[ai, zi, yi] = trace[sX]
+                f.close()
+            return out 
+        
+        # Multi-index, every file is a 2d plane
         for ai, a in enumerate(ach):
             for zi, z in enumerate(zch):
-                if self.singleindex:   # single index
-                    if (a * lenZ + z + 1) <= lenA:
-                        readable = True
-                        f = open(self.filemask % (a * lenZ + z + 1), 'rb')
-                    else:
-                        readable = False
-                        break
-                else:   # two index
-                    f = open(self.filemask % (a + 1, z + 1), 'rb')
+                f = open(self.filemask % (a + 1, z + 1), 'rb')
                 for yi, y in enumerate(ych):
                     ntrace = y
                     trace = get_trace(f, ntrace, lenX, self.bswap, self.cplex)
@@ -885,7 +890,7 @@ class pipestream_4d(data_nd):
         n = pipestream_4d(self.filename, order)
         return n
 
-    def __fgetitem__(self, slices):
+    def __fgetitem__(self, slices): # Potential issue for 4D Decomp
         """
         Return ndarray of selected values
 
