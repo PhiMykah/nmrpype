@@ -156,10 +156,6 @@ class Decomposition(Function):
                 if self.generateCoeffFile(beta, array_shape, data_dic=dic, isAsymmetric=isAsymmetric,
                                         basis_dim=len(basis_shape), sample_dim=len(array_shape)) != 0:
                     raise CoeffWriteError
-        
-        
-
-                
 
             return synthetic_data
             
@@ -201,7 +197,57 @@ class Decomposition(Function):
         (new_array, beta) : tuple[ndarray,ndarray]
             Approximation matrix and coefficient matrix
         """
-        pass
+        # Save array shape for reshape later
+        array_shape = array.shape
+
+        # Split array into manageable chunks
+        chunk_size = int(array_shape[0]/ self.mp[1])
+
+        # Assure chunksize is nonzero
+        chunk_size = array_shape[0] if chunk_size == 0 else chunk_size
+
+        # Check if applying the mask is necessary
+        if self.deco_mask:
+            mask = DataFrame(self.deco_mask).getArray()
+        else:
+            mask = np.empty(array_shape)
+
+        mask_chunks = [mask[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
+        chunks = [array[i:i+chunk_size] for i in range(0, array_shape[0], chunk_size)]
+
+        chunk_num = len(chunks)
+        # Process each chunk in processing pool
+        args = []
+        for i in range(chunk_num):
+            if i == 0:
+                args.append((chunks[i], bases, mask_chunks[i], verb))
+            else:
+                args.append((chunks[i], bases, mask_chunks[i], (0,16,'H')))
+        
+        mask_msg = " with mask" if self.deco_mask else ""
+
+        if verb[0]:
+            Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'start')
+
+        with Pool(processes=self.mp[1]) as pool:
+            output = pool.starmap(self.parallelDecomposition, args, chunksize=chunk_size)
+        
+        approx = np.concatenate([chunk[0] for chunk in output])
+        beta = np.concatenate([chunk[1] for chunk in output]).reshape((len(bases), -1), order='C')
+
+        if verb[0]:
+            Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
+
+        # Check to see if original array should be retained
+        if not self.deco_retain:
+            return (approx.T.reshape(array.shape, order='C'), beta)
+        
+        if self.deco_mask:
+            # Apply elements at mask
+            gaps = np.invert(mask.astype(bool))
+            array[gaps] = approx.T.reshape(array.shape, order='C')[gaps]
+
+        return (array, beta)
 
     def decomposition(self, array : np.ndarray, 
                       bases : list[np.ndarray], verb : tuple[int,int,str] = (0,16,'H')) -> tuple[np.ndarray, np.ndarray]:
@@ -265,13 +311,59 @@ class Decomposition(Function):
             array[gaps] = approx.squeeze().reshape(array.shape)[gaps]
 
         return (array, beta)
-
-
-    
-     
     
     def parallelDecomposition(self, array : np.ndarray, bases, mask : np.ndarray, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
-        pass
+        A = np.reshape(np.array(bases), (len(bases), -1)).T
+        if self.data_mode: 
+            # Check if applying the mask is necessary
+            if self.deco_mask:
+                mask = DataFrame(self.deco_mask).getArray()
+            else:
+                mask = np.empty(array.shape)
+            beta = self.deco_iter(array, np.array(bases), self.SIG_ERROR, mask, bool(self.deco_mask), verb)
+
+            approx = A @ beta
+
+            rank = self.SIG_ERROR*np.max(A.real)
+        else:
+            real_args = ()
+            imag_args = ()
+            if self.deco_mask:
+                real_args = (array.real, np.array(bases).real, self.SIG_ERROR, mask.real, bool(self.deco_mask), verb, 'DECO-R')
+                imag_args = (array.imag, np.array(bases).imag, self.SIG_ERROR, mask.imag, bool(self.deco_mask), (0,0,'HN'), 'DECO-I')
+            else:
+                real_args = (array.real, np.array(bases).real, self.SIG_ERROR, np.empty(array.shape), False, verb, 'DECO-R')
+                imag_args = (array.imag, np.array(bases).imag, self.SIG_ERROR, np.empty(array.shape), False, (0,0,'HN'), 'DECO-I')
+            
+            with ThreadPoolExecutor() as executor:
+                real_thread = executor.submit(self.deco_iter, *real_args)
+                imag_thread = executor.submit(self.deco_iter, *imag_args)
+
+                beta_real = real_thread.result()
+                beta_imag = imag_thread.result()
+
+            approx_real = A.real @ beta_real
+            approx_imag = A.imag @ beta_imag
+
+            approx = approx_real + 1j*approx_imag
+            beta = beta_real + 1j*beta_imag
+
+            rank = self.SIG_ERROR*np.max(A.real)
+
+        if verb[0]:
+            print("DECO Rank Condition: <={:.2e}".format(rank), file=sys.stderr)
+
+        # Check to see if original array should be retained
+        if not self.deco_retain:
+            return (approx.T.reshape(array.shape, order='C'), beta)
+        
+        if self.deco_mask:
+            # Apply elements at mask
+            gaps = np.invert(mask.astype(bool))
+            array[gaps] = approx.T.reshape(array.shape, order='C')[gaps]
+
+        return (array, beta)
+
 
     def asymmetricDecomposition(self, array : np.ndarray,
                                 bases : list[np.ndarray], verb : tuple[int,int,str] = (0,16,'H')) -> tuple[np.ndarray, np.ndarray]:
