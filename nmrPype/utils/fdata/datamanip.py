@@ -521,10 +521,10 @@ class pipe_3d(data_nd):
         #Checking whether "nmrPipe -fn EXT ..." has been applied to z-dim or not.
         #If EXT has been applied, FDF*XN is not zero.
         #If z-dim is in time-domain, data-size given by FDF*X1 and FDF*XN has to be doubled.
-        if dic[f3 + 'FTFLAG']:
+        if dic[f3 + 'QUADFLAG']:
 
             if int(dic[f3 + 'XN']) == 0:
-                lenZ = int(dic[f3 + 'FTSIZE'] * quadrature_factor)
+                lenZ = int(dic[f3 + 'SIZE'] * quadrature_factor)
             else:
                 lenZ = int(dic[f3 + 'XN']) - int(dic[f3 + 'X1']) + 1
 
@@ -544,7 +544,7 @@ class pipe_3d(data_nd):
 
         # check last axis quadrature
         fn = "FDF" + str(int(dic["FDDIMORDER1"]))
-        if dic[fn + "FTFLAG"] == 1.0:
+        if dic[fn + "QUADFLAG"] == 1.0:
             self.cplex = False
             self.dtype = np.dtype('float32')
         else:
@@ -735,7 +735,7 @@ class pipe_4d(data_nd):
         f3 = "FDF" + str(int(dic["FDDIMORDER3"]))
         quadrature_factor = [2, 1][int(dic[f3 + 'QUADFLAG'])]
         if dic[f3 + 'QUADFLAG']:
-            lenZ = int(dic[f3 + 'FTSIZE'] * quadrature_factor)
+            lenZ = int(dic[f3 + 'SIZE'] * quadrature_factor)
         else:
             lenZ = int(dic[f3 + 'TDSIZE'] * quadrature_factor)
         fshape.insert(0, lenZ)   # insert as leading size of fshape
@@ -744,7 +744,7 @@ class pipe_4d(data_nd):
         f4 = "FDF" + str(int(dic["FDDIMORDER4"]))
         quadrature_factor = [2, 1][int(dic[f4 + 'QUADFLAG'])]
         if dic[f4 + 'QUADFLAG']:
-            lenA = int(dic[f4 + 'FTSIZE'] * quadrature_factor)
+            lenA = int(dic[f4 + 'SIZE'] * quadrature_factor)
         else:
             lenA = int(dic[f4 + 'TDSIZE'] * quadrature_factor)
         fshape.insert(0, lenA)   # insert as leading size of fshape
@@ -803,16 +803,27 @@ class pipe_4d(data_nd):
                        dtype=self.dtype)
 
         # read in the data file by file, trace by trace
+        # Single index, each file is a singular cube
+        if self.singleindex:
+            for ai, a in enumerate(ach):
+                f = open(self.filemask % (a + 1), 'rb')
+                for zi, z in enumerate(zch):
+                    for yi, y in enumerate(ych):
+                        ntrace = y
+                        trace = get_trace(f, (ntrace + z * lenY), lenX, self.bswap, self.cplex)
+                        out[ai, zi, yi] = trace[sX]
+                f.close()
+            return out 
+        
+        # Multi-index, every file is a 2d plane
         for ai, a in enumerate(ach):
             for zi, z in enumerate(zch):
-                if self.singleindex:   # single index
-                    f = open(self.filemask % (a * lenZ + z + 1), 'rb')
-                else:   # two index
-                    f = open(self.filemask % (a + 1, z + 1), 'rb')
+                f = open(self.filemask % (a + 1, z + 1), 'rb')
                 for yi, y in enumerate(ych):
                     ntrace = y
                     trace = get_trace(f, ntrace, lenX, self.bswap, self.cplex)
                     out[ai, zi, yi] = trace[sX]
+
                 f.close()
         return out
 
@@ -876,7 +887,7 @@ class pipestream_4d(data_nd):
         n = pipestream_4d(self.filename, order)
         return n
 
-    def __fgetitem__(self, slices):
+    def __fgetitem__(self, slices): # Potential issue for 4D Decomp
         """
         Return ndarray of selected values
 

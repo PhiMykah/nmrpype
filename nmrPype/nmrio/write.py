@@ -115,7 +115,7 @@ def write_4D(filemask, dic, data, overwrite=False):
             if filemask.count("%") == 2:
                 fn = filemask % (ai + 1, zi + 1)
             else:
-                fn = filemask % (ai * lenZ + zi + 1)
+                fn = filemask % (ai + 1)
 
             plane = data[ai, zi]
 
