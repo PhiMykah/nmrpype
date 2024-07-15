@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Data Function &#8212; nmrPype 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Fourier Transform" href="ft.html" />
+    <link rel="prev" title="Functions" href="main.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="data-function">
+<h1>Data Function<a class="headerlink" href="#data-function" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="nmrPype.fn.function.DataFunction">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nmrPype.fn.function.</span></span><span class="sig-name descname"><span class="pre">DataFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.function.DataFunction" title="Link to this definition">¶</a></dt>
+<dd><p>Data Function is a template class for all types of functions to run on
+the NMR data. New user functions should copy format laid out by this
+class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>params</strong> (<em>dict</em>) – Dictionary of parameters associated with the designated function</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.function.DataFunction.clArgs">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">clArgs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_parser</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.function.DataFunction.clArgs" title="Link to this definition">¶</a></dt>
+<dd><p>Command-line arguments template</p>
+<p>clArgs adds function parser to the subparser, with its corresponding default args
+called by <a class="reference internal" href="../parse.html#nmrPype.parse.parser" title="nmrPype.parse.parser"><code class="xref py py-func docutils literal notranslate"><span class="pre">nmrPype.parse.parser()</span></code></a>.
+The Destinations are formatted typically by {function}_{argument},
+e.g. the zf_pad destination stores the pad argument for the zf function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparser</strong> (<em>_SubParsersAction</em><em>[</em><em>ArgumentParser</em><em>]</em>) – Subparser object that will receive function and its arguments</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.function.DataFunction.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../utils/main.html#nmrPype.utils.DataFrame.DataFrame" title="nmrPype.utils.DataFrame.DataFrame"><span class="pre">DataFrame</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.function.DataFunction.initialize" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Initialization follows the following steps:</dt><dd><ul class="simple">
+<li><p>Handle function specific arguments</p></li>
+<li><p>Update any header values before any calculations occur
+that are independent of the data, such as flags and parameter storage</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference internal" href="../utils/main.html#nmrPype.utils.DataFrame.DataFrame" title="nmrPype.utils.DataFrame.DataFrame"><em>DataFrame</em></a>) – Target data to manipulate</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.function.DataFunction.mpPrint">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mpPrint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_sizes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'start'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.function.DataFunction.mpPrint" title="Link to this definition">¶</a></dt>
+<dd><p>Print out multiprocess information for verbose print</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func_name</strong> (<em>str</em>) – Name of function to display on verbose print</p></li>
+<li><p><strong>chunk_num</strong> (<em>int</em>) – Number of chunks being processed</p></li>
+<li><p><strong>chunk_sizes</strong> (<em>tuple</em><em>[</em><em>int</em><em>,</em><em>int</em><em>]</em>) – Size of majority chunk [0] and outlier chunk [1]</p></li>
+<li><p><strong>type</strong> (<em>str</em><em>, </em><em>optional</em>) – Start print or end print type, by default ‘start’</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.function.DataFunction.nullDeclare">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nullDeclare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_parser</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.function.DataFunction.nullDeclare" title="Link to this definition">¶</a></dt>
+<dd><p>Null Function declaration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparser</strong> (<em>_SubParsersAction</em><em>[</em><em>ArgumentParser</em><em>]</em>) – Subparser object that will receive null function</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.function.DataFunction.parallelize">
+<span class="sig-name descname"><span class="pre">parallelize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0,</span> <span class="pre">16,</span> <span class="pre">'H')</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#nmrPype.fn.function.DataFunction.parallelize" title="Link to this definition">¶</a></dt>
+<dd><p>The General Multiprocessing implementation for function, utilizing cores and threads.
+Parallelize should be overloaded if array_shape changes in processing
+or process requires more args.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>array</strong> (<em>ndarray</em>) – Target data array to process with function</p></li>
+<li><p><strong>verb</strong> (<em>tuple</em><em>[</em><em>int</em><em>,</em><em>int</em><em>,</em><em>str</em><em>]</em><em>, </em><em>optional</em>)</p></li>
+<li><p><strong>print</strong> (<em>Tuple containing elements for verbose</em>) – <ul>
+<li><p>Verbosity level</p></li>
+<li><p>Verbosity Increment</p></li>
+<li><p>Direct Dimension Label</p></li>
+</ul>
+</p></li>
+<li><p><strong>(</strong><strong>0</strong> (<em>by default</em>) – <ul>
+<li><p>Verbosity level</p></li>
+<li><p>Verbosity Increment</p></li>
+<li><p>Direct Dimension Label</p></li>
+</ul>
+</p></li>
+<li><p><strong>16</strong> – <ul>
+<li><p>Verbosity level</p></li>
+<li><p>Verbosity Increment</p></li>
+<li><p>Direct Dimension Label</p></li>
+</ul>
+</p></li>
+<li><p><strong>'H'</strong><strong>)</strong> – <ul>
+<li><p>Verbosity level</p></li>
+<li><p>Verbosity Increment</p></li>
+<li><p>Direct Dimension Label</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>new_array</strong> – Updated array after function operation</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.function.DataFunction.process">
+<span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0,</span> <span class="pre">16,</span> <span class="pre">'H')</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#nmrPype.fn.function.DataFunction.process" title="Link to this definition">¶</a></dt>
+<dd><p>Process is called by function’s run, returns modified array when completed.
+Likely attached to multiprocessing for speed</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>array</strong> (<em>ndarray</em>) – Target data array to process with function</p></li>
+<li><p><strong>verb</strong> (<em>tuple</em><em>[</em><em>int</em><em>,</em><em>int</em><em>,</em><em>str</em><em>]</em><em>, </em><em>optional</em>)</p></li>
+<li><p><strong>print</strong> (<em>Tuple containing elements for verbose</em>) – <ul>
+<li><p>Verbosity level</p></li>
+<li><p>Verbosity Increment</p></li>
+<li><p>Direct Dimension Label</p></li>
+</ul>
+</p></li>
+<li><p><strong>(</strong><strong>0</strong> (<em>by default</em>) – <ul>
+<li><p>Verbosity level</p></li>
+<li><p>Verbosity Increment</p></li>
+<li><p>Direct Dimension Label</p></li>
+</ul>
+</p></li>
+<li><p><strong>16</strong> – <ul>
+<li><p>Verbosity level</p></li>
+<li><p>Verbosity Increment</p></li>
+<li><p>Direct Dimension Label</p></li>
+</ul>
+</p></li>
+<li><p><strong>'H'</strong><strong>)</strong> – <ul>
+<li><p>Verbosity level</p></li>
+<li><p>Verbosity Increment</p></li>
+<li><p>Direct Dimension Label</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Updated array after function operation</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.function.DataFunction.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../utils/main.html#nmrPype.utils.DataFrame.DataFrame" title="nmrPype.utils.DataFrame.DataFrame"><span class="pre">DataFrame</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#nmrPype.fn.function.DataFunction.run" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Main body of function code.</dt><dd><ul class="simple">
+<li><p>Initializes Header</p></li>
+<li><p>Start Process (process data vector by vector in multiprocess)</p></li>
+<li><p>Update Header</p></li>
+<li><p>Return information if necessary</p></li>
+</ul>
+</dd>
+</dl>
+<p>Overload run for function specific operations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference internal" href="../utils/main.html#nmrPype.utils.DataFrame.DataFrame" title="nmrPype.utils.DataFrame.DataFrame"><em>DataFrame</em></a>) – Target data to to run function on</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Integer exit code (e.g. 0 success 1 fail)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.function.DataFunction.updateHeader">
+<span class="sig-name descname"><span class="pre">updateHeader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../utils/main.html#nmrPype.utils.DataFrame.DataFrame" title="nmrPype.utils.DataFrame.DataFrame"><span class="pre">DataFrame</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.function.DataFunction.updateHeader" title="Link to this definition">¶</a></dt>
+<dd><p>Update the header following the main function’s calculations.
+Typically this includes header fields that relate to data size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference internal" href="../utils/main.html#nmrPype.utils.DataFrame.DataFrame" title="nmrPype.utils.DataFrame.DataFrame"><em>DataFrame</em></a>) – Target data frame containing header to update</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.function.DataFunction.verbPrint">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">verbPrint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(16,</span> <span class="pre">'H')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepIndex</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.function.DataFunction.verbPrint" title="Link to this definition">¶</a></dt>
+<dd><p>Print out progress through each array using verbosity</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func_name</strong> (<em>str</em>) – Name of function to display on verbose print</p></li>
+<li><p><strong>index</strong> (<em>_type_</em>) – Current array out of total arrays to print</p></li>
+<li><p><strong>size</strong> (<em>_type_</em>) – Total array count to print</p></li>
+<li><p><strong>step</strong> (<em>_type_</em>) – How many elements are in each array</p></li>
+<li><p><strong>verb</strong> (<em>tuple</em><em>[</em><em>int</em><em>,</em><em>int</em><em>,</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – <dl class="simple">
+<dt>Tuple containing elements for verbose print, by default (16,’H’)</dt><dd><ul>
+<li><p>Verbosity Increment</p></li>
+<li><p>Direct Dimension Label</p></li>
+</ul>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>keepIndex</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to divide index by step size, by default False</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="transpose-template">
+<span id="id1"></span><h1>Transpose Template<a class="headerlink" href="#transpose-template" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="nmrPype.fn.TP.Transpose">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nmrPype.fn.TP.</span></span><span class="sig-name descname"><span class="pre">Transpose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tp_noord</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tp_exch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tp_minMax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tp_axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.TP.Transpose" title="Link to this definition">¶</a></dt>
+<dd><p>Template Data Function object for transposition operations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tp_noord</strong> (<em>bool</em>) – Do not change header FDORDER1 and 2.</p></li>
+<li><p><strong>tp_exch</strong> (<em>bool</em>) – Exchange header parameters for the two dimensions.</p></li>
+<li><p><strong>tp_minMax</strong> (<em>bool</em>) – Update FDMIN and FDMAX.</p></li>
+<li><p><strong>tp_axis</strong> (<em>int</em>) – Indirect dimension axis to be swapped with direct dimension</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.TP.Transpose.clArgs">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">clArgs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_parser</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.TP.Transpose.clArgs" title="Link to this definition">¶</a></dt>
+<dd><p>Transpose command-line arguments</p>
+<p>Adds Transpose parser to the subparser, with its corresponding default args.
+Called by <a class="reference internal" href="../parse.html#nmrPype.parse.parser" title="nmrPype.parse.parser"><code class="xref py py-func docutils literal notranslate"><span class="pre">nmrPype.parse.parser()</span></code></a></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Command-line arguments function is only called once for all transpose types</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparser</strong> (<em>_SubParsersAction</em><em>[</em><em>ArgumentParser</em><em>]</em>) – Subparser object that will receive function and its arguments</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.TP.Transpose.headerArgsTP">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">headerArgsTP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.TP.Transpose.headerArgsTP" title="Link to this definition">¶</a></dt>
+<dd><p>Helper function to parse commands related to header adjustment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.TP.Transpose.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../utils/main.html#nmrPype.utils.DataFrame.DataFrame" title="nmrPype.utils.DataFrame.DataFrame"><span class="pre">DataFrame</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.TP.Transpose.initialize" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Initialization follows the following steps:</dt><dd><ul class="simple">
+<li><p>Handle function specific arguments</p></li>
+<li><p>Update any header values before any calculations occur
+that are independent of the data, such as flags and parameter storage</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference internal" href="../utils/main.html#nmrPype.utils.DataFrame.DataFrame" title="nmrPype.utils.DataFrame.DataFrame"><em>DataFrame</em></a>) – Target data frame to initialize</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.TP.Transpose.matrixTP">
+<span class="sig-name descname"><span class="pre">matrixTP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.TP.Transpose.matrixTP" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.TP.Transpose.parallelize">
+<span class="sig-name descname"><span class="pre">parallelize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#nmrPype.fn.TP.Transpose.parallelize" title="Link to this definition">¶</a></dt>
+<dd><p>Blanket transpose parralelize implementation for function, utilizing cores and threads.
+Function Should be overloaded if array_shape changes in processing or process requires more args.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Multiprocessing and mulithreading transpose is likely slower due to stitching.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>array</strong> (<em>ndarray</em>) – Target data array to process with function</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>new_array</strong> – Updated array after function operation</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.TP.Transpose.process">
+<span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#nmrPype.fn.TP.Transpose.process" title="Link to this definition">¶</a></dt>
+<dd><p>Process is called by function’s run, returns modified array when completed.
+Likely attached to multiprocessing for speed</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>array</strong> (<em>ndarray</em>) – array to process</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>modified array post-process</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nmrPype.fn.TP.Transpose.updateHeader">
+<span class="sig-name descname"><span class="pre">updateHeader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../utils/main.html#nmrPype.utils.DataFrame.DataFrame" title="nmrPype.utils.DataFrame.DataFrame"><span class="pre">DataFrame</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.fn.TP.Transpose.updateHeader" title="Link to this definition">¶</a></dt>
+<dd><p>Update the header following the main function’s calculations.
+Typically this includes header fields that relate to data size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference internal" href="../utils/main.html#nmrPype.utils.DataFrame.DataFrame" title="nmrPype.utils.DataFrame.DataFrame"><em>DataFrame</em></a>) – Data frame containing header that will be updated</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">nmrPype</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../pype.html">Main Entry-Point</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/main.html">Utility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/main.html#error-handling">Error Handling</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="main.html">Functions</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Data Function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#transpose-template">Transpose Template</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ft.html">Fourier Transform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zf.html">Zero Fill</a></li>
+<li class="toctree-l2"><a class="reference internal" href="di.html">Delete Imaginary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sp.html">Sine Bell</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ps.html">Phase Correction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tp.html">Transpose 2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tp.html#transpose-3d">Transpose 3D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tp.html#transpose-4d">Transpose 4D</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../parse.html">Argument Parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nmrio/main.html">File I/O</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/fdata.html">NMR Input Utility</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="main.html">Functions</a><ul>
+      <li>Previous: <a href="main.html" title="previous chapter">Functions</a></li>
+      <li>Next: <a href="ft.html" title="next chapter">Fourier Transform</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Micah Smith and Frank Delaglio.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.4</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../_sources/modules/fn/template.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>NMR Input Utility &#8212; nmrPype 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="prev" title="Writing" href="../nmrio/write.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="nmr-input-utility">
+<h1>NMR Input Utility<a class="headerlink" href="#nmr-input-utility" title="Link to this heading">¶</a></h1>
+<p><strong>Functions tasked with handling input properly</strong></p>
+<p><em>Adopted from nmrglue’s source code for use in nmrPype</em></p>
+<section id="module-nmrPype.utils.fdata">
+<span id="data-conversion"></span><h2>Data Conversion<a class="headerlink" href="#module-nmrPype.utils.fdata" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.dic2fdata">
+<span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">dic2fdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#nmrPype.utils.fdata.dic2fdata" title="Link to this definition">¶</a></dt>
+<dd><p>Converts a NMRPipe dictionary into an array.
+See <a class="reference internal" href="#nmrPype.utils.fdata.fdata2dic" title="nmrPype.utils.fdata.fdata2dic"><code class="xref py py-func docutils literal notranslate"><span class="pre">fdata2dic()</span></code></a> for the inverse function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dic</strong> (<em>dict</em>) – python dictionary representation of NMRPipe header</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>fdata</strong> – 512x4-byte array header</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.fdata2dic">
+<span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">fdata2dic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#nmrPype.utils.fdata.fdata2dic" title="Link to this definition">¶</a></dt>
+<dd><p>Convert a fdata array to fdata dictionary.</p>
+<p>Converts the raw 512x4-byte NMRPipe header into a python dictionary
+with keys as given in fdatap.h</p>
+<p>See <a class="reference internal" href="#nmrPype.utils.fdata.dic2fdata" title="nmrPype.utils.fdata.dic2fdata"><code class="xref py py-func docutils literal notranslate"><span class="pre">dic2fdata()</span></code></a> for the inverse function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fdata</strong> (<em>ndarray</em>) – 512x4-byte array header</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>dic</strong> – python dictionary representation of NMRPipe header</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.get_fdata">
+<span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">get_fdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">PathLike</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">BytesIO</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#nmrPype.utils.fdata.get_fdata" title="Link to this definition">¶</a></dt>
+<dd><p>Get an array of length 512-bytes holding NMRPipe header.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>InputFile</em><em> [</em><em>bytes/string/path-like</em><em>]</em>) – Input stream to read fdata from</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>fdata</strong> – 512x4-byte numpy array for header</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.get_fdata_data">
+<span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">get_fdata_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">PathLike</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">BytesIO</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#nmrPype.utils.fdata.get_fdata_data" title="Link to this definition">¶</a></dt>
+<dd><p>Get fdata and data array one after another</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>InputFile</em><em> [</em><em>bytes/string/path-like</em><em>]</em>) – Input stream to read fdata from</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fdata</strong> (<em>ndarray</em>) – 512x4-byte header array</p></li>
+<li><p><strong>data</strong> (<em>ndarray</em>) – 1D array representation of NMR data</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-0">
+<span id="data-handling"></span><h2>Data Handling<a class="headerlink" href="#module-0" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.append_data">
+<span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">append_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#nmrPype.utils.fdata.append_data" title="Link to this definition">¶</a></dt>
+<dd><p>Return data with last axis (-1) appended.</p>
+<p>Data should be complex</p>
+<p>See <a class="reference internal" href="#nmrPype.utils.fdata.unappend_data" title="nmrPype.utils.fdata.unappend_data"><code class="xref py py-func docutils literal notranslate"><span class="pre">unappend_data()</span></code></a> for the inverse operation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>np.ndarray</em>) – NMR data with complex direct dimension represented as complex numpy values</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>NMR data with complex direct dimension concatenating real and imaginary points</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.find_shape">
+<span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">find_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="headerlink" href="#nmrPype.utils.fdata.find_shape" title="Link to this definition">¶</a></dt>
+<dd><p>Find the shape (tuple) of data in a NMRPipe file from parameters.</p>
+<p>The last dimension of the tuple is length of the data in the file, the
+actual length of the data matrix may be half of this if the data is
+complex.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dic</strong> (<em>dict</em>) – NMR data header as python dictionary for obtaining correct shape</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>1-tuple is returned for 1D data,
+2-tuple for 2D and non-stream 3D/4D data,
+3-tuple or 4-tuple for stream 3D/4D data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.reshape_data">
+<span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">reshape_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#nmrPype.utils.fdata.reshape_data" title="Link to this definition">¶</a></dt>
+<dd><p>Reshape data or return 1D data after warning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>ndarray</em>) – 1D numpy array data</p></li>
+<li><p><strong>shape</strong> (<em>tuple</em>) – Target reshape</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Data shaped to match input shape</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.unappend_data">
+<span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">unappend_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#nmrPype.utils.fdata.unappend_data" title="Link to this definition">¶</a></dt>
+<dd><p>Return complex data with last axis (-1) unappended.</p>
+<p>Data should have imaginary data vector appended to real data vector</p>
+<p>See <a class="reference internal" href="#nmrPype.utils.fdata.append_data" title="nmrPype.utils.fdata.append_data"><code class="xref py py-func docutils literal notranslate"><span class="pre">append_data()</span></code></a> for the inverse operation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>np.ndarray</em>) – NMR data with complex direct dimension concatenating real and imaginary points</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>NMR data with direct dimension represented as complex numpy values</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.unshape_data">
+<span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">unshape_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#nmrPype.utils.fdata.unshape_data" title="Link to this definition">¶</a></dt>
+<dd><p>Return 1D version of data.</p>
+</dd></dl>
+
+</section>
+<section id="module-1">
+<span id="put-to-disk"></span><h2>Put To Disk<a class="headerlink" href="#module-1" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.put_data">
+<span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">put_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.utils.fdata.put_data" title="Link to this definition">¶</a></dt>
+<dd><p>Put fdata and data to 2D NMRPipe.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.put_fdata">
+<span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">put_fdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.utils.fdata.put_fdata" title="Link to this definition">¶</a></dt>
+<dd><p>Put NMR data, fdata, to a NMRPipe file described by file object fh.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.put_trace">
+<span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">put_trace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.utils.fdata.put_trace" title="Link to this definition">¶</a></dt>
+<dd><p>Put a trace (real or complex) to NMRPipe file described by file object fh.</p>
+</dd></dl>
+
+</section>
+<section id="data-manipulation-classes">
+<h2>Data Manipulation Classes<a class="headerlink" href="#data-manipulation-classes" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.pipe_2d">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">pipe_2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.utils.fdata.pipe_2d" title="Link to this definition">¶</a></dt>
+<dd><p>Emulate a ndarray objects without loading data into memory for low memory
+reading of 2D NMRPipe files.</p>
+<ul class="simple">
+<li><p>slicing operations return ndarray objects.</p></li>
+<li><p>can iterate over with expected results.</p></li>
+<li><p>transpose and swapaxes methods create a new objects with correct axes
+ordering.</p></li>
+<li><p>has ndim, shape, and dtype attributes.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – Filename of 2D NMRPipe file.</p></li>
+<li><p><strong>order</strong> (<em>tuple</em>) – Ordering of axes against file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.pipe_3d">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">pipe_3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filemask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1,</span> <span class="pre">2)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fcheck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.utils.fdata.pipe_3d" title="Link to this definition">¶</a></dt>
+<dd><p>Emulate a ndarray objects without loading data into memory for low memory
+reading of 3D NMRPipe files (multiple file data sets).</p>
+<ul class="simple">
+<li><p>slicing operations return ndarray objects.</p></li>
+<li><p>can iterate over with expected results.</p></li>
+<li><p>transpose and swapaxes methods create a new objects with correct axes
+ordering.</p></li>
+<li><p>has ndim, shape, and dtype attributes.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filemask</strong> (<em>str</em>) – Filename of 3D NMRPipe file. Should contain one formatter ‘%’
+operator.</p></li>
+<li><p><strong>order</strong> (<em>tuple</em>) – Ordering of axes against file.</p></li>
+<li><p><strong>fcheck</strong> (<em>bool</em><em>, </em><em>optional.</em>) – True to perform a basic check to see if all files expected for the data
+set exist.  Raises a IOError if files are missing. Default is False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.pipe_4d">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">pipe_4d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filemask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1,</span> <span class="pre">2,</span> <span class="pre">3)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fcheck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.utils.fdata.pipe_4d" title="Link to this definition">¶</a></dt>
+<dd><p>Emulate a ndarray objects without loading data into memory for low memory
+reading of single/two index 4D NMRPipe data files.</p>
+<ul class="simple">
+<li><p>slicing operations return ndarray objects.</p></li>
+<li><p>can iterate over with expected results.</p></li>
+<li><p>transpose and swapaxes methods create a new objects with correct axes
+ordering.</p></li>
+<li><p>has ndim, shape, and dtype attributes.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filemask</strong> (<em>str</em>) – Filename of 4D NMRPipe file with one or two formatter (%) operators.</p></li>
+<li><p><strong>order</strong> (<em>tuple</em>) – Ordering of axes against file.</p></li>
+<li><p><strong>fcheck</strong> (<em>bool</em><em>, </em><em>optional.</em>) – True to perform a basic check to see if all files expected for the data
+set exist.  Raises a IOError if files are missing. Default is False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.pipestream_3d">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">pipestream_3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1,</span> <span class="pre">2)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.utils.fdata.pipestream_3d" title="Link to this definition">¶</a></dt>
+<dd><p>Emulate a ndarray objects without loading data into memory for low memory
+reading of 3D NMRPipe data stream files (one file data sets).</p>
+<ul class="simple">
+<li><p>slicing operations return ndarray objects.</p></li>
+<li><p>can iterate over with expected results.</p></li>
+<li><p>transpose and swapaxes methods create a new objects with correct axes
+ordering.</p></li>
+<li><p>has ndim, shape, and dtype attributes.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – Filename of 3D NMRPipe stream file.</p></li>
+<li><p><strong>order</strong> (<em>tuple</em>) – Ordering of axes against file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="nmrPype.utils.fdata.pipestream_4d">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nmrPype.utils.fdata.</span></span><span class="sig-name descname"><span class="pre">pipestream_4d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1,</span> <span class="pre">2,</span> <span class="pre">3)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nmrPype.utils.fdata.pipestream_4d" title="Link to this definition">¶</a></dt>
+<dd><p>Emulate a ndarray objects without loading data into memory for low memory
+reading of 4D NMRPipe data streams (one file 4D data sets).</p>
+<ul class="simple">
+<li><p>slicing operations return ndarray objects.</p></li>
+<li><p>can iterate over with expected results.</p></li>
+<li><p>transpose and swapaxes methods create a new objects with correct axes
+ordering.</p></li>
+<li><p>has ndim, shape, and dtype attributes.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – Filename of 4D NMRPipe stream file.</p></li>
+<li><p><strong>order</strong> (<em>tuple</em>) – Ordering of axes against file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">nmrPype</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../pype.html">Main Entry-Point</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main.html">Utility</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main.html#error-handling">Error Handling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../fn/main.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parse.html">Argument Parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nmrio/main.html">File I/O</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">NMR Input Utility</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-nmrPype.utils.fdata">Data Conversion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-0">Data Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-1">Put To Disk</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-manipulation-classes">Data Manipulation Classes</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../nmrio/write.html" title="previous chapter">Writing</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Micah Smith and Frank Delaglio.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.4</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../_sources/modules/utils/fdata.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
