@@ -233,19 +233,19 @@ class Decomposition(Function):
             output = pool.starmap(self.parallelDecomposition, args, chunksize=chunk_size)
         
         approx = np.concatenate([chunk[0] for chunk in output])
-        beta = np.concatenate([chunk[1] for chunk in output]).reshape((len(bases), -1), order='C')
+        beta = np.concatenate([chunk[1] for chunk in output], axis=-1).reshape((len(bases), -1), order='C')
 
         if verb[0]:
             Function.mpPrint("DECO{}".format(mask_msg), chunk_num, (len(chunks[0]), len(chunks[-1])), 'end')
 
         # Check to see if original array should be retained
         if not self.deco_retain:
-            return (approx.T.reshape(array.shape, order='C'), beta)
+            return (approx.reshape(array.shape, order='C'), beta)
         
         if self.deco_mask:
             # Apply elements at mask
             gaps = np.invert(mask.astype(bool))
-            array[gaps] = approx.T.reshape(array.shape, order='C')[gaps]
+            array[gaps] = approx.reshape(array.shape, order='C')[gaps]
 
         return (array, beta)
 
