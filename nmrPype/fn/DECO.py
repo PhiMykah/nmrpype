@@ -281,22 +281,32 @@ class Decomposition(Function):
         #     beta = _deco(array, np.array(bases), self.SIG_ERROR)
         # A = np.reshape(np.array(bases), (len(bases), -1,)).T
         # approx = A @ beta
-        
-        if self.deco_mask:
-            mask = DataFrame(self.deco_mask).getArray()
-            beta_real = _deco(array.real, np.array(bases).real, self.SIG_ERROR, True, mask.real)
-            beta_imag = _deco(array.imag, np.array(bases).imag, self.SIG_ERROR, True, mask.imag)
-        else:
-            beta_real = _deco(array.real, np.array(bases).real, self.SIG_ERROR)
-            beta_imag = _deco(array.imag, np.array(bases).imag, self.SIG_ERROR)
 
         A = np.reshape(np.array(bases), (len(bases), -1)).T
-        beta = beta_real + 1j*beta_imag
 
-        approx_real = A.real @ beta_real
-        approx_imag = A.imag @ beta_imag
+        if self.data_mode:
+            if self.deco_mask:
+                mask = DataFrame(self.deco_mask).getArray()
+                beta = _deco(array, np.array(bases), self.SIG_ERROR, True, mask)
+            else:
+                beta = _deco(array, np.array(bases), self.SIG_ERROR)
 
-        approx = approx_real + 1j*approx_imag
+            approx = A @ beta
+        else:
+            if self.deco_mask:
+                mask = DataFrame(self.deco_mask).getArray()
+                beta_real = _deco(array.real, np.array(bases).real, self.SIG_ERROR, True, mask.real)
+                beta_imag = _deco(array.imag, np.array(bases).imag, self.SIG_ERROR, True, mask.imag)
+            else:
+                beta_real = _deco(array.real, np.array(bases).real, self.SIG_ERROR)
+                beta_imag = _deco(array.imag, np.array(bases).imag, self.SIG_ERROR)
+
+            beta = beta_real + 1j*beta_imag
+
+            approx_real = A.real @ beta_real
+            approx_imag = A.imag @ beta_imag
+
+            approx = approx_real + 1j*approx_imag
 
         if verb[0]:
             print("DECO Rank Condition: <={:.2e}".format(self.SIG_ERROR*np.max(A.real)), file=sys.stderr)
