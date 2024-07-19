@@ -549,10 +549,19 @@ class Decomposition(Function):
             # Update dimcount
             dic[dim_count] = beta.ndim
 
-            # Update data to be real
-            dic[quad_flag] = 1
+            # Update data to be real if the data is real
+            if np.any(np.iscomplex(beta)):
+                dic[quad_flag] = 0
+            else:
+                dic[quad_flag] = 1
             
             coeffDF = DataFrame(header=dic, array=beta)
+
+            coeffDF.setParam('FDQUADFLAG', 0.0)
+            for i in range(beta.ndim):
+                if coeffDF.getParam('NDQUADFLAG', i) == 1:
+                    coeffDF.setParam('FDQUADFLAG', 1.0)
+                    break
 
             writeToFile(coeffDF, self.deco_cfile, overwrite=True)
             
@@ -685,12 +694,8 @@ class Decomposition(Function):
         # Don't update headers if dim1 and dim2 are equal
         if dim1 == dim2:
             return
-        while dim2 < sample_dim:
+        while dim2 < sample_dim+1:
             Decomposition.setNewDimVals(dic, "NDSIZE", dim1, dim2)
-            
-            # Half the data size if complex
-            if dic[paramSyntax('NDQUADFLAG', dim2, dim_order)] == 0:
-                dic[paramSyntax("NDSIZE", dim1, dim_order)] /= 2
 
             Decomposition.setNewDimVals(dic, "NDFTFLAG", dim1, dim2)
 
@@ -698,8 +703,8 @@ class Decomposition(Function):
 
             Decomposition.setNewDimVals(dic, "NDLABEL", dim1, dim2)
 
-            i += 1
-            dim += 1
+            dim1 += 1
+            dim2 += 1
 
     @staticmethod
     def setNewDimVals(dic : dict, flag : str, dim1 : int, dim2 : int):
