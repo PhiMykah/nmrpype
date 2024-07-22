@@ -705,6 +705,25 @@ class Decomposition(Function):
 
             dim1 += 1
             dim2 += 1
+        # dim1 = 2
+        # dim2 = basis_dim + 1
+        # dim_order = dic["FDDIMORDER"]
+
+        # if dim1 == dim2:
+        #     return
+        # while dim2 < sample_dim+1:
+        #     temp = dim_order[dim1-1]
+        #     dim_order[dim1-1] = dim_order[dim2-1]
+        #     dim_order[dim2-1] = temp
+
+        #     temp = dic['FDDIMORDER%1d' % dim1]
+        #     dic['FDDIMORDER%1d' % dim1] = dic['FDDIMORDER%1d' % dim2]
+        #     dic['FDDIMORDER%1d' % dim2] = temp
+            
+        #     dim1 += 1
+        #     dim2 += 1
+
+        # dic["FDDIMORDER"] = dim_order
 
     @staticmethod
     def setNewDimVals(dic : dict, flag : str, dim1 : int, dim2 : int):
