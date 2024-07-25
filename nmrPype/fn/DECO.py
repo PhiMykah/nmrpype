@@ -283,33 +283,38 @@ class Decomposition(Function):
         # approx = A @ beta
 
         A = np.reshape(np.array(bases), (len(bases), -1)).T
+        max_val = max(np.max(np.abs(A.real)), np.max(np.abs(A.imag)))
+
+        rcond = self.SIG_ERROR * max_val
+
+        if verb[0]:
+            print("DECO Rank Condition: <={:.2e}".format(rcond), file=sys.stderr)
 
         if self.data_mode:
             if self.deco_mask:
                 mask = DataFrame(self.deco_mask).getArray()
-                beta = _deco(array, np.array(bases), self.SIG_ERROR, True, mask)
+                beta = _deco(array, np.array(bases), rcond, True, mask)
             else:
-                beta = _deco(array, np.array(bases), self.SIG_ERROR)
+                beta = _deco(array, np.array(bases), rcond)
 
             approx = A @ beta
         else:
             if self.deco_mask:
                 mask = DataFrame(self.deco_mask).getArray()
-                beta_real = _deco(array.real, np.array(bases).real, self.SIG_ERROR, True, mask.real)
-                beta_imag = _deco(array.imag, np.array(bases).imag, self.SIG_ERROR, True, mask.imag)
+                beta_real = _deco(array.real, np.array(bases).real, rcond, True, mask.real)
+                beta_imag = _deco(array.imag, np.array(bases).imag, rcond, True, mask.imag)
             else:
-                beta_real = _deco(array.real, np.array(bases).real, self.SIG_ERROR)
-                beta_imag = _deco(array.imag, np.array(bases).imag, self.SIG_ERROR)
+                beta_real = _deco(array.real, np.array(bases).real, rcond)
+                beta_imag = _deco(array.imag, np.array(bases).imag, rcond)
 
+
+            approx_shape = A.shape[:-1] + beta_real.shape[1:]
+            approx = np.empty(approx_shape, dtype='complex64', order='C')
+            approx.real = A.real @ beta_real
+            approx.imag = A.imag @ beta_imag
+
+            # approx = approx_real + 1j*approx_imag 
             beta = beta_real + 1j*beta_imag
-
-            approx_real = A.real @ beta_real
-            approx_imag = A.imag @ beta_imag
-
-            approx = approx_real + 1j*approx_imag
-
-        if verb[0]:
-            print("DECO Rank Condition: <={:.2e}".format(self.SIG_ERROR*np.max(A.real)), file=sys.stderr)
 
         # Check to see if original array should be retained
         if not self.deco_retain:
@@ -324,26 +329,32 @@ class Decomposition(Function):
     
     def parallelDecomposition(self, array : np.ndarray, bases, mask : np.ndarray, verb : tuple[int,int,str] = (0,16,'H')) -> np.ndarray:
         A = np.reshape(np.array(bases), (len(bases), -1)).T
+
+        max_val = max(np.max(np.abs(A.real)), np.max(np.abs(A.imag)))
+
+        rcond = self.SIG_ERROR * max_val
+
+        if verb[0]:
+            print("DECO Rank Condition: <={:.2e}".format(rcond), file=sys.stderr)
         if self.data_mode: 
             # Check if applying the mask is necessary
             if self.deco_mask:
                 mask = DataFrame(self.deco_mask).getArray()
             else:
                 mask = np.empty(array.shape)
-            beta = self.deco_iter(array, np.array(bases), self.SIG_ERROR, mask, bool(self.deco_mask), verb)
+            beta = self.deco_iter(array, np.array(bases), rcond, mask, bool(self.deco_mask), verb)
 
             approx = A @ beta
 
-            rank = self.SIG_ERROR*np.max(A.real)
         else:
             real_args = ()
             imag_args = ()
             if self.deco_mask:
-                real_args = (array.real, np.array(bases).real, self.SIG_ERROR, mask.real, bool(self.deco_mask), verb, 'DECO-R')
-                imag_args = (array.imag, np.array(bases).imag, self.SIG_ERROR, mask.imag, bool(self.deco_mask), (0,0,'HN'), 'DECO-I')
+                real_args = (array.real, np.array(bases).real, rcond, mask.real, bool(self.deco_mask), verb, 'DECO-R')
+                imag_args = (array.imag, np.array(bases).imag, rcond, mask.imag, bool(self.deco_mask), (0,0,'HN'), 'DECO-I')
             else:
-                real_args = (array.real, np.array(bases).real, self.SIG_ERROR, np.empty(array.shape), False, verb, 'DECO-R')
-                imag_args = (array.imag, np.array(bases).imag, self.SIG_ERROR, np.empty(array.shape), False, (0,0,'HN'), 'DECO-I')
+                real_args = (array.real, np.array(bases).real, rcond, np.empty(array.shape), False, verb, 'DECO-R')
+                imag_args = (array.imag, np.array(bases).imag, rcond, np.empty(array.shape), False, (0,0,'HN'), 'DECO-I')
             
             with ThreadPoolExecutor() as executor:
                 real_thread = executor.submit(self.deco_iter, *real_args)
@@ -360,8 +371,6 @@ class Decomposition(Function):
 
             rank = self.SIG_ERROR*np.max(A.real)
 
-        if verb[0]:
-            print("DECO Rank Condition: <={:.2e}".format(rank), file=sys.stderr)
 
         # Check to see if original array should be retained
         if not self.deco_retain:
@@ -411,6 +420,13 @@ class Decomposition(Function):
         Currently feasible in notebooks
         """
         A = np.reshape(np.array(bases), (len(bases), -1)).T
+        max_val = max(np.max(np.abs(A.real)), np.max(np.abs(A.imag)))
+
+        rcond = self.SIG_ERROR * max_val
+
+        if verb[0]:
+            print("DECO Rank Condition: <={:.2e}".format(rcond), file=sys.stderr)
+
         if self.data_mode: 
             # Check if applying the mask is necessary
             if self.deco_mask:
@@ -421,18 +437,17 @@ class Decomposition(Function):
 
             approx = A @ beta
 
-            rank = self.SIG_ERROR*np.max(A.real)
         else:
             if self.deco_mask:
                 mask = DataFrame(self.deco_mask).getArray()
-                beta_real = self.deco_iter(array.real, np.array(bases).real, self.SIG_ERROR,
+                beta_real = self.deco_iter(array.real, np.array(bases).real, rcond,
                                             mask.real, bool(self.deco_mask), verb, 'DECO-R')
-                beta_imag = self.deco_iter(array.imag, np.array(bases).imag, self.SIG_ERROR,
+                beta_imag = self.deco_iter(array.imag, np.array(bases).imag, rcond,
                                             mask.imag, bool(self.deco_mask), verb, 'DECO-I')
             else:
-                beta_real = self.deco_iter(array.real, np.array(bases).real, self.SIG_ERROR,
+                beta_real = self.deco_iter(array.real, np.array(bases).real, rcond,
                                            verb=verb, msg='DECO-R')
-                beta_imag = self.deco_iter(array.imag, np.array(bases).imag, self.SIG_ERROR,
+                beta_imag = self.deco_iter(array.imag, np.array(bases).imag, rcond,
                                            verb=verb, msg='DECO-I')
 
             approx_real = A.real @ beta_real
@@ -441,10 +456,6 @@ class Decomposition(Function):
             approx = approx_real + 1j*approx_imag
             beta = beta_real + 1j*beta_imag
 
-            rank = self.SIG_ERROR*np.max(A.real)
-
-        if verb[0]:
-            print("DECO Rank Condition: <={:.2e}".format(rank), file=sys.stderr)
 
         # Check to see if original array should be retained
         if not self.deco_retain:
@@ -600,7 +611,7 @@ class Decomposition(Function):
 
         return (bases, basis_shape)
 
-    def deco_iter(self, array : np.ndarray, A : np.ndarray, err : float, 
+    def deco_iter(self, array : np.ndarray, A : np.ndarray, rcond : float,
                    mask : np.ndarray | None = None, use_mask : bool = False, 
                    verb : tuple[int,int,str] = (0,0,'16'), msg : str = 'DECO') -> np.ndarray:
         """
@@ -612,8 +623,8 @@ class Decomposition(Function):
             Target array to decompose
         A : np.ndarray
             basis array for processing
-        err : float
-            Rounding error for rank determination
+        rcond : float
+            Basis rank for calculating rank condition
         mask : np.ndarray | None, optional
             Mask used for decomposition, by default None
         verb : tuple[int,int,str], optional
@@ -642,9 +653,9 @@ class Decomposition(Function):
             if verb[0]:
                     Function.verbPrint(msg, slice_num, it.itersize, 1, verb[1:])
             if use_mask:
-                x = _deco(slice_array, A, err, use_mask, mask[it.multi_index + (slice(None),) * n])
+                x = _deco(slice_array, A, rcond, use_mask, mask[it.multi_index + (slice(None),) * n])
             else:
-                x = _deco(slice_array, A, err)
+                x = _deco(slice_array, A, rcond)
 
             # approx represents data approximation from beta and bases
             beta_planes.append(x)
@@ -778,7 +789,7 @@ class Decomposition(Function):
 # Helper Functions #
 ####################
 
-def _deco(array : np.ndarray, A : np.ndarray, err : float, use_mask : bool = False, mask : np.ndarray | None = None) -> np.ndarray:
+def _deco(array : np.ndarray, A : np.ndarray, rcond : float, use_mask : bool = False, mask : np.ndarray | None = None) -> np.ndarray:
     """
     private decomposition function
 
@@ -790,6 +801,8 @@ def _deco(array : np.ndarray, A : np.ndarray, err : float, use_mask : bool = Fal
         basis array for processing
     err : float
         Rounding error for rank determination
+    rcond : float
+        Rank condition value for least squares calculation
     use_mask : bool, optional
             Whether to use mask or not, by default False
     mask : np.ndarray | None, optional
@@ -800,9 +813,6 @@ def _deco(array : np.ndarray, A : np.ndarray, err : float, use_mask : bool = Fal
     beta : np.ndarray
         Beta array calculated by least squares
     """
-    max_val = max(np.max(np.abs(A.real)), np.max(np.abs(A.imag)))
-
-    rcond = err*max_val
 
     if use_mask:
         A = (A * mask)
