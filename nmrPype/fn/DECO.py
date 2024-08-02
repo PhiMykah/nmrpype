@@ -652,10 +652,14 @@ class Decomposition(Function):
             
             if verb[0]:
                     Function.verbPrint(msg, slice_num, it.itersize, 1, verb[1:])
-            if use_mask:
-                x = _deco(slice_array, A, rcond, use_mask, mask[it.multi_index + (slice(None),) * n])
+            # Check if any values are nonzero in the slice before calculation
+            if not np.any(slice_array):
+                x = np.zeros((A.shape[0], 1), dtype='float32')
             else:
-                x = _deco(slice_array, A, rcond)
+                if use_mask:
+                    x = _deco(slice_array, A, rcond, use_mask, mask[it.multi_index + (slice(None),) * n])
+                else:
+                    x = _deco(slice_array, A, rcond)
 
             # approx represents data approximation from beta and bases
             beta_planes.append(x)
