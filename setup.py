@@ -1,11 +1,13 @@
 from setuptools import setup,find_packages
 
 setup(name='nmrPype',
-    version='0.8.1',
+    version='0.8.6',
     packages=find_packages(), 
     install_requires=[
         'numpy',
-        'scipy'
+        'scipy',
+        'gemmi',
+        'matplotlib',
     ],
     entry_points={
         'console_scripts': [

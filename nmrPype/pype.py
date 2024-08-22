@@ -1,4 +1,4 @@
-import sys
+import sys, io
 from .utils import DataFrame, catchError, PipeBurst
 from .parse import parser
 from typing import TypeAlias
@@ -30,11 +30,14 @@ def fileInput(df : DataFrame, input : InputStream) -> int:
     int
         Integer exit code (e.g. 0 success 1 fail)
     """
-    from .nmrio import readFromFile, readFromBuffer
+    from .nmrio import readFromFile, readFromBuffer, load_ccp4_map
 
     # Determine whether or not reading from the pipeline
     if type(input) == str:
-        dic, data = readFromFile(input)
+        if input.endswith('.map'):
+            dic, data = load_ccp4_map(input)
+        else:
+            dic, data = readFromFile(input)
     else:
         dic, data = readFromBuffer(input)
         

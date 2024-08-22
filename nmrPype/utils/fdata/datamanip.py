@@ -802,6 +802,7 @@ class pipe_4d(data_nd):
         out = np.empty((len(ach), len(zch), len(ych), len(xch)),
                        dtype=self.dtype)
 
+        readable = True
         # read in the data file by file, trace by trace
         # Single index, each file is a singular cube
         if self.singleindex:
@@ -825,6 +826,8 @@ class pipe_4d(data_nd):
                     out[ai, zi, yi] = trace[sX]
 
                 f.close()
+            if not readable:
+                break
         return out
 
 

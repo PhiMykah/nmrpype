@@ -17,6 +17,13 @@ Functions
     di
 
 .. toctree::
+    :maxdepth: 1
+    :caption: nmrPype Exclusive Functions
+
+    draw
+    deco
+    
+.. toctree::
     :maxdepth: 1 
     :caption: Apod Functions
 
