@@ -1,1 +1,1 @@
-from ccp4 import load_ccp4_map
+from .ccp4 import load_ccp4_map
