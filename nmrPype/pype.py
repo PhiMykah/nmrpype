@@ -30,16 +30,16 @@ def fileInput(df : DataFrame, input : InputStream) -> int:
     int
         Integer exit code (e.g. 0 success 1 fail)
     """
-    from .nmrio import readFromFile, readFromBuffer, load_ccp4_map
+    from .nmrio import read_from_file, read_from_buffer, load_ccp4_map
 
     # Determine whether or not reading from the pipeline
     if type(input) == str:
         if input.endswith('.map'):
             dic, data = load_ccp4_map(input)
         else:
-            dic, data = readFromFile(input)
+            dic, data = read_from_file(input)
     else:
-        dic, data = readFromBuffer(input)
+        dic, data = read_from_buffer(input)
         
     df.setHeader(dic)
     df.setArray(data)
@@ -71,13 +71,13 @@ def fileOutput(data : DataFrame, args : argparse.Namespace) -> int:
     output = args.output
     overwrite = args.overwrite
 
-    from .nmrio import writeToFile, writeToBuffer
+    from .nmrio import write_to_file, write_to_buffer
     
     # Determine whether or not writing to pipeline
     if type(output) == str:
-        return writeToFile(data, output, overwrite)
+        return write_to_file(data, output, overwrite)
     else:
-        return writeToBuffer(data, output, overwrite)
+        return write_to_buffer(data, output, overwrite)
 
 
 def headerModify(data : DataFrame, param : str, value : float) -> int:

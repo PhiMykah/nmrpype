@@ -4,7 +4,7 @@ import numpy.linalg as la
 import os,sys
 from pathlib import Path
 from ..utils import catchError, DataFrame, FunctionError
-from ..nmrio import writeToFile
+from ..nmrio import write_to_file
 
 # type Imports/Definitions
 from typing import Literal
@@ -574,7 +574,7 @@ class Decomposition(Function):
                     coeffDF.setParam('FDQUADFLAG', 1.0)
                     break
 
-            writeToFile(coeffDF, self.deco_cfile, overwrite=True)
+            write_to_file(coeffDF, self.deco_cfile, overwrite=True)
             
         except:
             return 2

@@ -24,10 +24,10 @@ class DataFrame:
     """
     def __init__(self, file : str = "", header : dict = {}, array : Array = None, verb : int = 0, inc : int = 16):
         if (file): # Read only if file is provided
-            from ..nmrio import readFromFile
+            from ..nmrio import read_from_file
 
             # Initialize header and array based on file
-            dic, data = readFromFile(file)
+            dic, data = read_from_file(file)
 
             self.header = dic
             self.array = data
