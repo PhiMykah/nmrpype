@@ -14,17 +14,14 @@ Handles all of the input and output functions regarding
 
 r = [read, read_1D, read_2D, read_3D, read_4D, read_stream,
      read_lowmem, read_lowmem_2D,read_lowmem_3D, read_lowmem_4D,
-     read_lowmem_stream, load_ccp4_map]
+     read_lowmem_stream]
 w = [write, write_single, write_3D, write_4D,
      write_lowmem, write_lowmem_2D, write_lowmem_3D, write_lowmem_4D,
      write_lowmem_3Ds, write_lowmem_4Ds]
 
 all = []
-all.extend(m.__name__ for m in r)
-all.extend(m.__name__ for m in w)
-
-
-__all__ = all
+# all.extend(m.__name__ for m in r)
+# all.extend(m.__name__ for m in w)
 
 # typing imports
 from ..utils import DataFrame
@@ -37,7 +34,7 @@ WriteStream : TypeAlias = io.TextIOWrapper | io.BufferedWriter
 # Reading Operations #
 ######################
 
-def readFromFile(file : str) -> tuple[dict,np.ndarray]:
+def read_from_file(file : str) -> tuple[dict,np.ndarray]:
     """
     Set the header object and data array based on the input file
 
@@ -66,7 +63,7 @@ def readFromFile(file : str) -> tuple[dict,np.ndarray]:
     return dic, data
 
 
-def readFromBuffer(buffer : BufferStream) -> tuple[dict,np.ndarray]:
+def read_from_buffer(buffer : BufferStream) -> tuple[dict,np.ndarray]:
     """
     Set the header object and data array based on the input file
 
@@ -100,7 +97,7 @@ def readFromBuffer(buffer : BufferStream) -> tuple[dict,np.ndarray]:
 # Writing Operations #
 ######################
 
-def writeToFile(data : DataFrame, output : str, overwrite : bool) -> int:
+def write_to_file(data : DataFrame, output : str, overwrite : bool) -> int:
     """
     Utilizes modified nmrglue code to output the Dataframe to a file
     in a NMR data format.
@@ -132,7 +129,7 @@ def writeToFile(data : DataFrame, output : str, overwrite : bool) -> int:
     return 0
 
 
-def writeToBuffer(data : DataFrame, output : WriteStream, overwrite : bool) -> int:
+def write_to_buffer(data : DataFrame, output : WriteStream, overwrite : bool) -> int:
     """
     Utilizes modified nmrglue code to output the Dataframe
     to standard output or standard output buffer
@@ -267,3 +264,6 @@ def writeDataToBuffer(output : WriteStream, array : np.ndarray):
     except Exception as e:
         from ..utils import catchError, FileIOError
         catchError(e, new_e=FileIOError, msg="An exception occured when attempting to write data to buffer!")
+
+all.extend(func.__name__ for func in [read_from_file, read_from_buffer, write_to_file, write_to_buffer, load_ccp4_map])
+__all__ = all
