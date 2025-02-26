@@ -278,11 +278,13 @@ class DataFrame:
         float
             Float value of header parameter
         """
-        targetParam = self.updateParamSyntax(param, dim)
-        try:
-            return(self.header[targetParam])
-        except:
-            raise UnknownHeaderParam('Unknown Param \'{0}\''.format(targetParam))
+        if self.header:
+            targetParam = self.updateParamSyntax(param, dim)
+            try:
+                return(self.header[targetParam])
+            except:
+                raise UnknownHeaderParam('Unknown Param \'{0}\''.format(targetParam))
+        return 0.0
 
 
     def setParam(self, param : str, value : float, dim : int = 0) -> int:
@@ -303,11 +305,12 @@ class DataFrame:
         int
             Integer exit code (e.g. 0 success 1 fail)
         """
-        targetParam = self.updateParamSyntax(param, dim)
-        try:
-            self.header[targetParam] = value
-        except:
-            return 1
+        if self.header:
+            targetParam = self.updateParamSyntax(param, dim)
+            try:
+                self.header[targetParam] = value
+            except:
+                return 1
         return 0
     
     def getCurrDim(self) -> int:
@@ -344,12 +347,21 @@ class DataFrame:
             Integer corresponding to the inputted dimension
             specifically for this dataset
         """
-        if int(self.header['FDDIMORDER'][dim-1]) == 2:
-            return 1
-        elif int(self.header['FDDIMORDER'][dim-1]) == 1:
-            return 2
-        else:
-            return int(self.header['FDDIMORDER'][dim-1])
+        # Only check dim order if header is present
+        if self.header: 
+            if int(self.header['FDDIMORDER'][dim-1]) == 2:
+                return 1
+            elif int(self.header['FDDIMORDER'][dim-1]) == 1:
+                return 2
+            else:
+                return int(self.header['FDDIMORDER'][dim-1])
+        else: 
+            if dim == 1:
+                return 2
+            elif dim == 2:
+                return 1
+            else:
+                return dim
 
     def getVerb(self) -> int:
         """
