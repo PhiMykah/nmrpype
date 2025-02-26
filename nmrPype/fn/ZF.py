@@ -124,14 +124,19 @@ class ZeroFill(Function):
             if self.zf_pad:
                 # Add amount of zeros corresponding to pad amount
                 new_size += self.zf_pad
-            elif self.zf_count >= 0:
+            elif self.zf_count >= 0 and self.zf_auto:
+                # Double data zf_count times then move to next power of 2
+                magnitude = 2**self.zf_count
+                new_size = dataLength * magnitude
+                new_size = ZeroFill.nextPowerOf2(new_size)
+            elif self.zf_count >= 0 and not self.zf_auto:
                 # Double data zf_count times
                 magnitude = 2**self.zf_count
                 new_size = dataLength * magnitude
             elif self.zf_size:
                 # Match user inputted size for new array
                 new_size = self.zf_size 
-            if self.zf_auto:
+            if self.zf_auto and self.zf_count <= 0:
                 # Reach next power of 2 with auto
                 new_size = ZeroFill.nextPowerOf2(new_size)
         
@@ -248,16 +253,21 @@ class ZeroFill(Function):
                 # Add amount of zeros corresponding to pad amount
                 new_size = dataLength
                 new_size += self.zf_pad
-            elif self.zf_count >= 0:
+            elif self.zf_count >= 0 and self.zf_auto:
+                # Double data zf_count times then move to next power of 2
+                magnitude = 2**self.zf_count
+                new_size = dataLength * magnitude
+                new_size = ZeroFill.nextPowerOf2(new_size)
+            elif self.zf_count >= 0 and not self.zf_auto:
                 # Double data zf_count times
                 magnitude = 2**self.zf_count
                 new_size = dataLength * magnitude
             elif self.zf_size:
                 # Match user inputted size for new array
                 new_size = self.zf_size 
-            if self.zf_auto:
+            if self.zf_auto and self.zf_count <= 0:
                 # Reach next power of 2 with auto
-                new_size = ZeroFill.nextPowerOf2(dataLength)
+                new_size = ZeroFill.nextPowerOf2(new_size)
 
         # Obtain new array shape and then create dummy array for data transfer
         new_shape = array.shape[:-1] + (new_size,)
