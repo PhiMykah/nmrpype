@@ -789,6 +789,54 @@ class Decomposition(Function):
         # Include universal commands proceeding function call
         # Function.clArgsTail(DECO)
 
+    @staticmethod
+    def runDeco(data : DataFrame, bases : list[np.ndarray], multiprocessing : bool = False) -> tuple[np.ndarray, np.ndarray]:
+        from matplotlib import pyplot as plt
+
+        data_mode = data.getParam('NDQUADFLAG', data.getCurrDim())
+        verb = (data.verb, data.inc, data.getParam('NDLABEL'))
+        if data.array is None:
+            raise ValueError("Dataframe must have an array to run decomposition function!")
+        
+        array_shape = data.array.shape
+
+        # Obtain basis shape
+        
+        basis_shape = bases[0].shape
+
+        isAsymmetric = True if len(array_shape) > len(basis_shape) else False
+        
+        deco = Decomposition([], mp_enable=multiprocessing)
+        if isAsymmetric:
+            if not multiprocessing or data.array.ndim == 1:
+                synthetic_data, beta = deco.asymmetricDecomposition(data.array, bases, verb)
+            else:
+                synthetic_data, beta = deco.parallelize(data.array, bases, verb)
+        else:
+            synthetic_data, beta = deco.decomposition(data.array, bases, verb)
+
+        # # Plot synthetic data
+        # plt.figure(figsize=(8, 6))
+        # plt.contourf(synthetic_data, levels=50, cmap='viridis')
+        # plt.colorbar(label='Intensity')
+        # plt.title('Synthetic Data')
+        # plt.xlabel('Dimension 1')
+        # plt.ylabel('Dimension 2')
+        # plt.show()
+
+        # # Plot original data array
+        # plt.figure(figsize=(8, 6))
+        # plt.contourf(data.array, levels=50, cmap='viridis')
+        # plt.colorbar(label='Intensity')
+        # plt.title('Original Data Array')
+        # plt.xlabel('Dimension 1')
+        # plt.ylabel('Dimension 2')
+        # plt.show()
+        
+        # plt.close('all')
+        return synthetic_data, beta.flatten()
+    
+    
 ####################
 # Helper Functions #
 ####################
